@@ -1,0 +1,77 @@
+// Add your tools here.
+// Put each existing HTML app inside:
+// public/apps/<id>/index.html
+//
+// Example:
+// public/apps/cp99/index.html
+//
+// Then set path to: /apps/cp99/
+
+const apps = [
+  {
+    id: "cp100",
+    name: "CP-100 Verifier",
+    description: "Analyze CP-100 Direct or online and find payment against reference numbers.",
+    category: "Banking",
+    icon: "📖",
+    path: "apps/cp100/index.html",
+    tags: ["cp100", "pdf", "reference","number","amount", "search"]
+  },
+    {
+    id: "oncp100",
+    name: "Online CP-100 Analyzer",
+    description: "Analyze Online CP-100 and get totals of online banks.",
+    category: "Banking",
+    icon: "💻",
+    path: "apps/oncp100/index.html",
+    tags: ["cp100", "pdf", "online","total","01942", "bank"]
+  },
+
+  {
+    id: "cp99",
+    name: "CP-99 Generator",
+    description: "Generate daily CP-99 cash memo documents.",
+    category: "Revenue",
+    icon: "🧾",
+    path: "/apps/cp99/",
+    tags: ["cp99", "cash memo", "revenue"]
+  },
+  {
+    id: "cp101",
+    name: "CP-101 Analyzer",
+    description: "Analyze CP-101 collection PDFs and prepare data for reconciliation.",
+    category: "Revenue",
+    icon: "📄",
+    path: "/apps/cp101/",
+    tags: ["cp101", "pdf", "collection"]
+  },
+  {
+    id: "cp102",
+    name: "CP-102 Reconciliation",
+    description: "Work with CP-101 and CP-102 reconciliation data.",
+    category: "Revenue",
+    icon: "📊",
+    path: "/apps/cp102/",
+    tags: ["cp102", "reconciliation", "excel"]
+  },
+  {
+    id: "bank-analyzer",
+    name: "Bank Statement Analyzer",
+    description: "Analyze bank statement PDFs and organize transaction dates.",
+    category: "Banking",
+    icon: "🏦",
+    path: "/apps/bank-analyzer/",
+    tags: ["bank", "statement", "pdf", "transactions"]
+  },
+  {
+    id: "example-tool",
+    name: "Example Tool",
+    description: "A placeholder card. Replace this entry with one of your own tools.",
+    category: "Other",
+    icon: "🛠️",
+    path: "/apps/example-tool/index.html",
+    tags: ["example"]
+  }
+];
+
+export default apps;

@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEPCO CP-100 Verification System</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#F5F3EC;
+  --paper:#FFFFFF;
+  --ink:#1E2A22;
+  --ink-soft:#5B6559;
+  --line:#DCD7C6;
+  --green:#0B5D3B;
+  --green-dark:#083F28;
+  --green-pale:#E6EFE7;
+  --gold:#A9762F;
+  --gold-pale:#F4E9D6;
+  --urban:#2456A6;
+  --urban-pale:#E4EBF8;
+  --rural:#96591C;
+  --rural-pale:#F5EADB;
+  --danger:#A6272B;
+  --danger-pale:#FBEAEA;
+  --warn:#8A5A00;
+  --warn-pale:#FCF1D9;
+  --radius:10px;
+  --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+body{
+  font-family:var(--font-ui);
+  background:var(--bg);
+  color:var(--ink);
+  padding:22px;
+  line-height:1.45;
+}
+
+.container{ max-width:1360px; margin:0 auto; }
+
+/* ---------- Header ---------- */
+.header{
+  background:linear-gradient(155deg,var(--green) 0%, var(--green-dark) 100%);
+  color:#fff;
+  padding:30px 28px;
+  border-radius:var(--radius);
+  margin-bottom:18px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:12px;
+  position:relative;
+  overflow:hidden;
+}
+.header::after{
+  content:"";
+  position:absolute; right:-60px; top:-60px;
+  width:220px; height:220px;
+  background:radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+}
+.stamp{
+  flex:0 0 auto;
+  width:66px; height:66px;
+  border-radius:50%;
+  border:2px dashed rgba(255,255,255,0.55);
+  display:flex; align-items:center; justify-content:center;
+  transform:rotate(-8deg);
+  font-family:var(--font-mono);
+  font-size:9px; font-weight:700;
+  letter-spacing:0.5px;
+  text-align:center;
+  color:rgba(255,255,255,0.85);
+  position:relative;
+}
+.stamp .ring-text{ position:absolute; inset:4px; border-radius:50%; border:1px solid rgba(255,255,255,0.3); }
+.header h1{ font-size:26px; font-weight:700; letter-spacing:-0.2px; }
+.header p{ font-size:13px; opacity:0.85; margin-top:4px; font-weight:400; }
+
+/* ---------- Panels ---------- */
+.panel{
+  background:var(--paper);
+  padding:20px 22px;
+  border-radius:var(--radius);
+  border:1px solid var(--line);
+  margin-bottom:16px;
+}
+.panel h2{ font-size:13px; text-transform:uppercase; letter-spacing:0.6px; color:var(--ink-soft); margin-bottom:14px; font-weight:600; }
+
+.controls{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.control-row{ margin-bottom:16px; }
+.control-row:last-of-type{ margin-bottom:0; }
+.control-label{ font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); font-weight:700; margin-bottom:8px; }
+.control-divider{ border:none; border-top:1px solid var(--line); margin:18px 0; }
+
+input[type="text"], textarea{
+  padding:11px 13px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  font-size:14px;
+  font-family:var(--font-mono);
+  background:#FCFBF8;
+  color:var(--ink);
+}
+input[type="text"]{ flex:1 1 320px; min-width:240px; max-width:560px; }
+input[type="text"]:focus, textarea:focus{ outline:2px solid var(--green); outline-offset:1px; border-color:var(--green); }
+
+input[type="file"]{
+  font-family:var(--font-ui);
+  font-size:14px;
+  color:var(--ink-soft);
+  padding:9px 14px 9px 9px;
+  border:1.5px dashed var(--line);
+  border-radius:9px;
+  background:var(--bg);
+  cursor:pointer;
+}
+input[type="file"]::file-selector-button{
+  padding:13px 22px;
+  margin-right:16px;
+  border:none;
+  border-radius:7px;
+  background:var(--green);
+  color:#fff;
+  font-weight:700;
+  font-size:14px;
+  font-family:var(--font-ui);
+  cursor:pointer;
+  transition:0.15s;
+}
+input[type="file"]::file-selector-button:hover{ background:var(--green-dark); }
+input[type="file"]::-webkit-file-upload-button{
+  padding:13px 22px;
+  margin-right:16px;
+  border:none;
+  border-radius:7px;
+  background:var(--green);
+  color:#fff;
+  font-weight:700;
+  font-size:14px;
+  font-family:var(--font-ui);
+  cursor:pointer;
+}
+
+button{
+  padding:11px 16px;
+  border:none;
+  border-radius:8px;
+  background:var(--green);
+  color:#fff;
+  font-weight:600;
+  font-size:13px;
+  cursor:pointer;
+  transition:0.15s;
+  font-family:var(--font-ui);
+}
+button:hover{ background:var(--green-dark); }
+button:disabled{ background:#B7BDB6; cursor:not-allowed; }
+button.secondary{ background:#fff; color:var(--green); border:1px solid var(--green); }
+button.secondary:hover{ background:var(--green-pale); }
+button.ghost{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); }
+button.ghost:hover{ background:var(--bg); }
+button:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+
+.status{
+  margin-top:14px;
+  font-size:13px;
+  font-weight:600;
+  color:var(--green-dark);
+  display:flex; align-items:center; gap:8px;
+}
+.status.busy::before{
+  content:"";
+  width:12px; height:12px; border-radius:50%;
+  border:2px solid var(--green-pale); border-top-color:var(--green);
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* ---------- Stats ---------- */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px;
+  margin-top:18px;
+}
+.card{
+  background:var(--bg);
+  padding:16px 18px;
+  border-radius:8px;
+  border-left:4px solid var(--green);
+}
+.card h3{ font-size:11.5px; color:var(--ink-soft); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.4px; font-weight:600; }
+.card .value{ font-size:24px; font-weight:700; color:var(--green-dark); font-family:var(--font-mono); }
+.card.small .value{ font-size:15px; font-family:var(--font-ui); font-weight:600; }
+
+/* ---------- Failed files ---------- */
+.warning-box{
+  margin-top:16px;
+  background:var(--warn-pale);
+  border:1px solid #E9CE8C;
+  border-radius:8px;
+  padding:14px 16px;
+  font-size:13px;
+  color:var(--warn);
+}
+.warning-box strong{ display:block; margin-bottom:6px; }
+.warning-box ul{ margin:6px 0 0 18px; }
+.warning-box li{ margin-bottom:3px; font-family:var(--font-mono); font-size:12.5px; }
+
+/* ---------- History ---------- */
+.history{ margin-top:14px; }
+.history-label{ font-size:12px; color:var(--ink-soft); font-weight:600; margin-bottom:6px; }
+.history span{
+  display:inline-block;
+  background:var(--green-pale);
+  color:var(--green-dark);
+  padding:5px 10px;
+  border-radius:6px;
+  margin:0 6px 6px 0;
+  font-size:12px;
+  font-family:var(--font-mono);
+  cursor:pointer;
+  border:1px solid transparent;
+}
+.history span:hover{ border-color:var(--green); }
+
+/* ---------- Search sections ---------- */
+.search-section{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:16px 18px;
+  margin-bottom:14px;
+  background:#FCFBF8;
+}
+.search-section:last-child{ margin-bottom:0; }
+.search-section-title{
+  font-size:12.5px; font-weight:700; color:var(--green-dark);
+  text-transform:uppercase; letter-spacing:0.4px; margin-bottom:10px;
+  display:flex; align-items:center; gap:8px;
+}
+summary.search-section-title{ cursor:pointer; margin-bottom:0; user-select:none; }
+details.search-section[open] summary.search-section-title{ margin-bottom:4px; }
+details.search-section summary.search-section-title::-webkit-details-marker{ color:var(--green); }
+.search-section-title .dot{ width:7px; height:7px; border-radius:50%; background:var(--green); display:inline-block; flex:0 0 auto; }
+.batch-panel textarea{ width:100%; min-height:90px; resize:vertical; }
+.batch-hint{ font-size:12px; color:var(--ink-soft); margin-top:6px; }
+
+/* ---------- Indexed files panel ---------- */
+.indexed-files{ margin-top:16px; }
+.indexed-files summary{ cursor:pointer; font-size:12.5px; font-weight:700; color:var(--green-dark); padding:4px 0; }
+.indexed-files ul{ margin:8px 0 0 0; list-style:none; }
+.indexed-files li{
+  display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  padding:7px 0; border-bottom:1px solid var(--line);
+  font-size:12.5px;
+}
+.indexed-files li:last-child{ border-bottom:none; }
+.indexed-files .fname{ font-weight:600; font-family:var(--font-mono); word-break:break-all; }
+.indexed-files .fmeta{ color:var(--ink-soft); white-space:nowrap; }
+
+/* ---------- History type badges ---------- */
+.history span .htype{
+  font-size:9.5px; text-transform:uppercase; opacity:0.7; margin-right:5px; font-weight:700;
+}
+
+/* ---------- Modal ---------- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(20,26,20,0.55);
+  display:flex; align-items:center; justify-content:center;
+  z-index:1000; padding:20px;
+}
+.modal-box{
+  background:#fff; border-radius:12px; padding:26px 28px; max-width:460px; width:100%;
+  box-shadow:0 12px 40px rgba(0,0,0,0.25);
+}
+.modal-box h3{ font-size:16px; margin-bottom:10px; color:var(--green-dark); }
+.modal-box p{ font-size:13.5px; color:var(--ink-soft); margin-bottom:18px; line-height:1.5; }
+.modal-actions{ display:flex; flex-direction:column; gap:8px; }
+.modal-actions button{ width:100%; }
+
+/* ---------- Results ---------- */
+.results-header{
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+  margin-bottom:12px;
+}
+.results-header h2{ margin:0; }
+.search-mode-tag{
+  font-size:12px; color:var(--ink-soft); font-family:var(--font-mono);
+}
+
+.results{ background:var(--paper); padding:20px 22px; border-radius:var(--radius); border:1px solid var(--line); overflow-x:auto; }
+
+table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+th,td{ padding:11px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+th{ background:var(--green-pale); color:var(--green-dark); font-size:11.5px; text-transform:uppercase; letter-spacing:0.3px; font-weight:700; position:sticky; top:0; }
+tr:hover td{ background:#FBFAF6; }
+
+.ref-cell{ font-family:var(--font-mono); font-weight:600; }
+.amount-cell{ font-family:var(--font-mono); font-weight:600; text-align:right; white-space:nowrap; }
+
+.badge{
+  display:inline-block; padding:3px 9px; border-radius:20px;
+  font-size:11px; font-weight:700; letter-spacing:0.3px;
+}
+.badge.urban{ background:var(--urban-pale); color:var(--urban); }
+.badge.rural{ background:var(--rural-pale); color:var(--rural); }
+.badge.flag-L{ background:var(--danger-pale); color:var(--danger); margin-left:5px; }
+.badge.flag-E{ background:#EDEDED; color:#5B5B5B; margin-left:5px; }
+.badge.star{ background:var(--gold-pale); color:var(--gold); margin-left:5px; }
+.badge.dup{ background:var(--warn-pale); color:var(--warn); margin-left:5px; }
+
+.file-cell{ font-size:12.5px; }
+.file-cell .fname{ font-weight:600; }
+.file-cell .fpath{ font-size:11px; color:var(--ink-soft); word-break:break-all; margin-top:2px; }
+
+.notfound-box{
+  padding:26px 20px; text-align:center; color:var(--danger);
+}
+.notfound-box .headline{ font-size:16px; font-weight:700; margin-bottom:8px; }
+.notfound-box .detail{ font-size:13px; color:var(--ink-soft); font-weight:400; max-width:560px; margin:0 auto; }
+
+.hint-box{ padding:26px 20px; text-align:center; color:var(--ink-soft); font-size:13.5px; }
+
+.truncate-note{ padding:10px 4px; font-size:12.5px; color:var(--warn); font-weight:600; }
+
+.footer{ margin-top:24px; text-align:center; font-size:20px; font-weight:700; color:var(--green-dark); }
+
+.btn-small{ padding:6px 12px; font-size:12px; }
+
+@media print{
+  @page{ size: landscape; margin: 12mm; }
+  body{ background:#fff; padding:0; }
+  .header, .panel, .footer, .search-mode-tag, .no-print{ display:none !important; }
+  .results{ border:none; box-shadow:none; padding:0; overflow:visible !important; width:auto !important; }
+  .results-header h2{ font-size:16px; }
+  table{ font-size:11px; }
+  th{ position:static !important; }
+}
+
+@media (max-width:700px){
+  input[type="text"]{ width:100%; }
+  .controls{ flex-direction:column; align-items:stretch; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="header">
+  <div class="stamp"><div class="ring-text"></div>CP-100<br>VERIFY</div>
+  <div>
+    <h1>GEPCO CP-100 Verification System</h1>
+    <p>Revenue Office Banking &amp; Payment Verification Utility</p>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Scan &amp; Search</h2>
+
+  <div class="control-row">
+    <div class="control-label">Step 1 — Choose CP-100 Folder</div>
+    <div class="controls">
+      <input type="file" id="folderInput" webkitdirectory multiple accept="application/pdf">
+      <button id="scanBtn">Scan CP-100 PDFs</button>
+      <button id="resetBtn" class="ghost">Reset Index</button>
+    </div>
+  </div>
+
+  <div class="status" id="status">Ready for scanning...</div>
+
+  <div class="stats">
+    <div class="card"><h3>CP-100 PDFs</h3><div class="value" id="pdfCount">0</div></div>
+    <div class="card"><h3>Pages Indexed</h3><div class="value" id="pageCount">0</div></div>
+    <div class="card"><h3>Records Indexed</h3><div class="value" id="recordCount">0</div></div>
+    <div class="card"><h3>Search Results</h3><div class="value" id="resultCount">0</div></div>
+    <div class="card small"><h3>Last Scan</h3><div class="value" id="lastScan">—</div></div>
+  </div>
+
+  <div class="warning-box" id="failedBox" style="display:none;"></div>
+
+  <div class="indexed-files" id="indexedFilesPanel" style="display:none;">
+    <details>
+      <summary id="indexedFilesSummary">Currently searching 0 files</summary>
+      <ul id="indexedFilesList"></ul>
+    </details>
+  </div>
+
+  <hr class="control-divider">
+
+  <div class="control-row">
+    <div class="control-label">Step 2 — Search</div>
+
+    <div class="search-section">
+      <div class="search-section-title"><span class="dot"></span>Reference / Text Search</div>
+      <div class="controls">
+        <input type="text" id="searchInput" placeholder="14-digit reference number, or bank / division name">
+        <button id="searchBtn" class="secondary">Search</button>
+        <button id="clearRefBtn" class="ghost">Clear</button>
+        <button id="exportBtn" class="ghost">Export (CSV)</button>
+      </div>
+    </div>
+
+    <details class="search-section">
+      <summary class="search-section-title"><span class="dot"></span>Amount Search</summary>
+      <div class="controls" style="margin-top:10px;">
+        <input type="text" id="amountInput" placeholder="Exact amount, e.g. 142651" style="flex:1 1 260px; max-width:360px;">
+        <button id="amountSearchBtn" class="secondary">Search Amount</button>
+        <button id="clearAmountBtn" class="ghost">Clear</button>
+      </div>
+    </details>
+
+    <details class="search-section batch-panel">
+      <summary class="search-section-title"><span class="dot"></span>Batch Search (multiple references)</summary>
+      <textarea id="batchInput" placeholder="Paste multiple reference numbers here — one per line, or separated by commas / spaces" style="margin-top:10px;"></textarea>
+      <div class="batch-hint">Each reference is checked independently against the current index. Your pasted list stays here even after rescanning.</div>
+      <div class="controls" style="margin-top:10px;">
+        <button id="batchRunBtn" class="secondary">Check All</button>
+        <button id="batchClearBtn" class="ghost">Clear Batch</button>
+        <button id="batchExportBtn" class="ghost">Export Batch (CSV)</button>
+      </div>
+    </details>
+
+    <div class="history">
+      <div class="history-label">Recent Searches</div>
+      <div id="historyContainer"></div>
+    </div>
+  </div>
+</div>
+
+<div class="results">
+  <div class="results-header">
+    <h2 style="font-size:13px; text-transform:uppercase; letter-spacing:0.6px; color:var(--ink-soft); font-weight:600;">Results</h2>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span class="search-mode-tag" id="searchModeTag"></span>
+      <button id="printBtn" class="ghost btn-small no-print">Print</button>
+    </div>
+  </div>
+  <div id="resultsArea">
+    <div class="hint-box">Scan a folder, then search a reference number, amount, or bank / division name.</div>
+  </div>
+</div>
+
+<div class="footer">Developed by Taimoor Ali</div>
+
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ============================================================
+   DOM references
+============================================================ */
+const folderInput = document.getElementById('folderInput');
+const searchInput = document.getElementById('searchInput');
+const amountInput = document.getElementById('amountInput');
+const amountSearchBtn = document.getElementById('amountSearchBtn');
+const scanBtn = document.getElementById('scanBtn');
+const searchBtn = document.getElementById('searchBtn');
+const clearRefBtn = document.getElementById('clearRefBtn');
+const clearAmountBtn = document.getElementById('clearAmountBtn');
+const resetBtn = document.getElementById('resetBtn');
+const exportBtn = document.getElementById('exportBtn');
+const batchInput = document.getElementById('batchInput');
+const batchRunBtn = document.getElementById('batchRunBtn');
+const batchClearBtn = document.getElementById('batchClearBtn');
+const batchExportBtn = document.getElementById('batchExportBtn');
+const printBtn = document.getElementById('printBtn');
+
+const statusDiv = document.getElementById('status');
+const resultsArea = document.getElementById('resultsArea');
+const searchModeTag = document.getElementById('searchModeTag');
+
+const pdfCountEl = document.getElementById('pdfCount');
+const pageCountEl = document.getElementById('pageCount');
+const recordCountEl = document.getElementById('recordCount');
+const resultCountEl = document.getElementById('resultCount');
+const lastScanEl = document.getElementById('lastScan');
+const failedBox = document.getElementById('failedBox');
+const historyContainer = document.getElementById('historyContainer');
+const indexedFilesPanel = document.getElementById('indexedFilesPanel');
+const indexedFilesSummary = document.getElementById('indexedFilesSummary');
+const indexedFilesList = document.getElementById('indexedFilesList');
+
+/* ============================================================
+   State
+============================================================ */
+let records = [];          // structured, parsed payment records
+let meta = null;           // { scanDate, pdfCount, pageCount, recordCount, failedFiles, files }
+let searchHistory = [];    // [{ term, type }]
+let lastResults = [];      // last rendered result set, for CSV export
+let lastBatchResults = []; // for batch CSV export
+let lastActiveSearch = null; // { type: 'search' | 'amount' | 'batch', term } — used to refresh the active view after rescanning
+
+/* ============================================================
+   IndexedDB helper (replaces localStorage — handles much larger
+   indexes reliably, since a single day's CP-100 set can easily
+   contain tens of thousands of records)
+============================================================ */
+const DB_NAME = 'gepco_cp100_db';
+const STORE = 'kv';
+
+function idbOpen(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSet(key, value){
+  const db = await idbOpen();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(value, key);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function idbGet(key){
+  const db = await idbOpen();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbDelete(key){
+  const db = await idbOpen();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(key);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/* ============================================================
+   PDF text reconstruction
+   ------------------------------------------------------------
+   pdf.js returns text items in PDF drawing order, NOT left-to-
+   right / top-to-bottom reading order. For a columnar table like
+   a CP-100 list, that means reference numbers and amounts can
+   come out of the text layer scrambled. This groups items into
+   physical rows by Y position, then sorts each row left-to-right
+   by X position, so the reconstructed text matches what's
+   actually printed on the page.
+============================================================ */
+function reconstructPageLines(items){
+  const rows = [];
+  const Y_TOL = 2.5;
+  const sorted = items.filter(it => it.str.trim() !== '').sort((a,b)=> b.y - a.y);
+
+  for(const it of sorted){
+    let row = rows.find(r => Math.abs(r.y - it.y) <= Y_TOL);
+    if(!row){ row = { y: it.y, items: [] }; rows.push(row); }
+    row.items.push(it);
+  }
+  rows.sort((a,b)=> b.y - a.y);
+
+  return rows.map(row=>{
+    row.items.sort((a,b)=> a.x - b.x);
+    let line = '', lastEnd = null;
+    for(const it of row.items){
+      if(lastEnd !== null && it.x - lastEnd > 2) line += ' ';
+      line += it.str;
+      lastEnd = it.x + (it.str.length * 5);
+    }
+    return line.replace(/\s+/g,' ').trim();
+  }).filter(l => l.length > 0);
+}
+
+/* ============================================================
+   CP-100 line parsing
+   ------------------------------------------------------------
+   GEPCO's CP-100 export has at least two header layouts:
+   - "old" layout: SCROLL NO, Bank code/name, and PAYMENT DT are
+     all printed on one physical line.
+   - "new" layout: the same three facts are printed as three
+     separate lines ("Bank NNNNN NAME", "PAYMENT DT DD/MM/YYYY",
+     "SCROLL NO N NNNNN NNNN"). Both are handled below.
+   Record amounts can be negative (payment reversals), and a
+   handful of rows print the U/R status twice ("U U") — both are
+   tolerated so no real record silently drops out of the index.
+============================================================ */
+const SCROLL_RE = /SCROLL NO\s+(\d+)\s+Bank\s+(\d+)\s+(.+?)\s+PAYMENT DT\s+(\d{2}\/\d{2}\/\d{4})\s+(\d+)/;
+const BANK_LINE_RE = /^Bank\s+(\d+)\s+(.+)$/;
+const PAYDATE_LINE_RE = /^PAYMENT DT\s+(\d{2}\/\d{2}\/\d{4})$/;
+const SCROLLNO_LINE_RE = /^SCROLL NO\s+(\d+)\s+(\d+)\s+(\d+)$/;
+const DIV_RE = /^Div\.\s+(\d+)\s+(.+)$/;
+const MAIN_DATE_RE = /MAIN DATE\s+(\d{2}\/\d{2}\/\d{4})/;
+const REC_RE = /(\*)?\s*(\d{14})\s+(?:([LE])\s+)?([UR])(?:\s+[UR])?\s+(-?[\d,]+\.?\d*)/g;
+
+async function scanPDF(file){
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+
+  const fileRecords = [];
+  let currentBank = null, currentBankCode = null, currentScroll = null, currentPayDate = null, currentDiv = null, currentMainDate = null;
+
+  for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const items = textContent.items.map(it => ({ str: it.str, x: it.transform[4], y: it.transform[5] }));
+    const lines = reconstructPageLines(items);
+
+    for(const line of lines){
+      const mainDateMatch = line.match(MAIN_DATE_RE);
+      if(mainDateMatch){
+        currentMainDate = mainDateMatch[1];
+      }
+
+      // "old" single-line header
+      const scrollMatch = line.match(SCROLL_RE);
+      if(scrollMatch){
+        currentScroll = scrollMatch[1];
+        currentBankCode = scrollMatch[2];
+        currentBank = scrollMatch[3].trim();
+        currentPayDate = scrollMatch[4];
+        continue;
+      }
+
+      const divMatch = line.match(DIV_RE);
+      if(divMatch){
+        currentDiv = divMatch[2].trim();
+        continue;
+      }
+
+      // "new" split-line header: Bank / PAYMENT DT / SCROLL NO each on their own line
+      const bankLineMatch = line.match(BANK_LINE_RE);
+      if(bankLineMatch){
+        currentBankCode = bankLineMatch[1];
+        currentBank = bankLineMatch[2].trim();
+        continue;
+      }
+      const payDateLineMatch = line.match(PAYDATE_LINE_RE);
+      if(payDateLineMatch){
+        currentPayDate = payDateLineMatch[1];
+        continue;
+      }
+      const scrollNoLineMatch = line.match(SCROLLNO_LINE_RE);
+      if(scrollNoLineMatch){
+        currentScroll = scrollNoLineMatch[1];
+        continue;
+      }
+
+      let m;
+      REC_RE.lastIndex = 0;
+      while((m = REC_RE.exec(line)) !== null){
+        fileRecords.push({
+          ref: m[2],
+          star: !!m[1],
+          flag: m[3] || null,
+          status: m[4],
+          amount: parseFloat(m[5].replace(/,/g,'')),
+          bank: currentBank,
+          bankCode: currentBankCode,
+          scroll: currentScroll,
+          payDate: currentPayDate,
+          mainDate: currentMainDate,
+          div: currentDiv,
+          fileName: file.name,
+          path: file.webkitRelativePath || file.name,
+          page: pageNum
+        });
+      }
+    }
+  }
+  return { pages: pdf.numPages, records: fileRecords };
+}
+
+/* ============================================================
+   Merge vs. Replace confirmation
+============================================================ */
+function askMergeOrReplace(existingMeta){
+  return new Promise(resolve=>{
+    const recCount = (existingMeta && existingMeta.recordCount) ?? records.length;
+    const fileCount = (existingMeta && existingMeta.pdfCount) ?? '?';
+    const scanDate = existingMeta && existingMeta.scanDate ? new Date(existingMeta.scanDate).toLocaleString() : null;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <h3>Existing index found</h3>
+        <p>You already have <strong>${recCount} record(s)</strong> indexed from <strong>${fileCount} file(s)</strong>${scanDate ? `, last scanned ${scanDate}` : ''}. What should the newly selected folder do?</p>
+        <div class="modal-actions">
+          <button id="modalMergeBtn">Add new files — keep everything already indexed</button>
+          <button id="modalReplaceBtn" class="secondary">Replace everything — start fresh</button>
+          <button id="modalCancelBtn" class="ghost">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const cleanup = (choice) => { document.body.removeChild(overlay); resolve(choice); };
+    overlay.querySelector('#modalMergeBtn').addEventListener('click', () => cleanup('merge'));
+    overlay.querySelector('#modalReplaceBtn').addEventListener('click', () => cleanup('replace'));
+    overlay.querySelector('#modalCancelBtn').addEventListener('click', () => cleanup('cancel'));
+  });
+}
+
+/* ============================================================
+   Scanning
+============================================================ */
+function setBusy(isBusy, label){
+  scanBtn.disabled = isBusy;
+  resetBtn.disabled = isBusy;
+  statusDiv.classList.toggle('busy', isBusy);
+  if(label) statusDiv.textContent = label;
+}
+
+scanBtn.addEventListener('click', async () => {
+  const files = Array.from(folderInput.files || []);
+  if(!files.length){
+    alert('Please select a folder first.');
+    return;
+  }
+
+  const cp100Files = files.filter(f=>{
+    const n = f.name.toLowerCase();
+    return n.includes('cp100') || n.includes('cp-100');
+  });
+
+  if(!cp100Files.length){
+    alert('No files with "CP100" or "CP-100" in the name were found in that folder.');
+    return;
+  }
+
+  let mode = 'replace';
+  if(records.length > 0){
+    const choice = await askMergeOrReplace(meta);
+    if(choice === 'cancel') return;
+    mode = choice;
+  }
+
+  let workingRecords = mode === 'merge' ? records.slice() : [];
+  let workingFiles = mode === 'merge' && meta && meta.files ? meta.files.slice() : [];
+
+  // legacy counts: if the existing index predates per-file tracking (or already carries
+  // its own legacy offset from an earlier migration), preserve those totals as a running
+  // numeric offset instead of collapsing them into a single fake "file" entry — that offset
+  // survives every future merge, so file counts never silently shrink.
+  let legacyPdfCount = (mode === 'merge' && meta && meta.legacyPdfCount) || 0;
+  let legacyPageCount = (mode === 'merge' && meta && meta.legacyPageCount) || 0;
+  if(mode === 'merge' && meta && !meta.files && meta.pdfCount){
+    legacyPdfCount += (typeof meta.pdfCount === 'number' ? meta.pdfCount : 0);
+    legacyPageCount += (typeof meta.pageCount === 'number' ? meta.pageCount : 0);
+  }
+
+  const failedFiles = [];
+
+  setBusy(true, `Scanning 0 / ${cp100Files.length}...`);
+
+  for(let i=0; i<cp100Files.length; i++){
+    const file = cp100Files[i];
+    setBusy(true, `Scanning ${i+1} / ${cp100Files.length}: ${file.name}`);
+    try{
+      const result = await scanPDF(file);
+      const filePath = file.webkitRelativePath || file.name;
+
+      // if this exact file was already indexed (merge mode, re-scanning same folder), replace its old data instead of duplicating it
+      workingRecords = workingRecords.filter(r => !(r.fileName === file.name && r.path === filePath));
+      workingFiles = workingFiles.filter(f => !(f.name === file.name && f.path === filePath));
+
+      workingRecords = workingRecords.concat(result.records);
+      workingFiles.push({
+        name: file.name, path: filePath, pages: result.pages, records: result.records.length,
+        scanDate: new Date().toISOString()
+      });
+    }catch(err){
+      console.error(err);
+      failedFiles.push({
+        name: file.name,
+        path: file.webkitRelativePath || file.name,
+        reason: (err && err.name === 'PasswordException') ? 'Password protected' : (err && err.message ? err.message : 'Could not be read')
+      });
+    }
+  }
+
+  records = workingRecords;
+
+  meta = {
+    scanDate: new Date().toISOString(),
+    pdfCount: legacyPdfCount + workingFiles.length,
+    pageCount: legacyPageCount + workingFiles.reduce((s,f)=>s+(f.pages||0),0),
+    recordCount: records.length,
+    failedFiles,
+    files: workingFiles,
+    legacyPdfCount,
+    legacyPageCount
+  };
+
+  try{
+    await idbSet('records', records);
+    await idbSet('meta', meta);
+  }catch(err){
+    console.error(err);
+    alert('Warning: the index could not be saved for later (' + (err.message||err) + '). Search will still work for this session, but will be lost on reload.');
+  }
+
+  applyMeta(meta);
+  setBusy(false);
+
+  const scannedCount = cp100Files.length - failedFiles.length;
+  const modeNote = mode === 'merge' ? ' (added to existing index)' : '';
+  if(failedFiles.length){
+    statusDiv.textContent = `Scan complete: ${scannedCount} of ${cp100Files.length} file(s) scanned this run${modeNote}. ${failedFiles.length} file(s) failed — see warning below. Index now has ${records.length} records from ${meta.pdfCount} file(s).`;
+  }else{
+    statusDiv.textContent = `Scan complete${modeNote}: index now has ${records.length} records from ${meta.pdfCount} file(s).`;
+  }
+
+  // refresh whichever search view was last active, now against the updated index
+  if(lastActiveSearch && lastActiveSearch.type === 'search'){
+    runSearch(lastActiveSearch.term);
+  }else if(lastActiveSearch && lastActiveSearch.type === 'amount'){
+    runAmountSearch(lastActiveSearch.term);
+  }else if(lastActiveSearch && lastActiveSearch.type === 'batch'){
+    runBatchSearch();
+  }else{
+    resultsArea.innerHTML = '<div class="hint-box">Index ready. Search a reference number, amount, or bank / division name.</div>';
+  }
+});
+
+function applyMeta(m){
+  pdfCountEl.textContent = m.pdfCount ?? 0;
+  pageCountEl.textContent = m.pageCount ?? 0;
+  recordCountEl.textContent = m.recordCount ?? 0;
+  lastScanEl.textContent = m.scanDate ? new Date(m.scanDate).toLocaleString() : '—';
+  renderFailedFiles(m.failedFiles || []);
+  renderIndexedFiles(m.files || [], m.legacyPdfCount || 0, m.legacyPageCount || 0);
+}
+
+function renderIndexedFiles(files, legacyPdfCount, legacyPageCount){
+  legacyPdfCount = legacyPdfCount || 0;
+  legacyPageCount = legacyPageCount || 0;
+  if((!files || !files.length) && !legacyPdfCount){
+    indexedFilesPanel.style.display = 'none';
+    indexedFilesList.innerHTML = '';
+    return;
+  }
+  indexedFilesPanel.style.display = 'block';
+  const totalPages = files.reduce((s,f)=>s+(f.pages||0),0) + legacyPageCount;
+  const totalRecords = files.reduce((s,f)=>s+(f.records||0),0);
+  const totalFileCount = files.length + legacyPdfCount;
+  indexedFilesSummary.textContent = `Currently searching ${totalFileCount} file(s) — ${totalPages} pages, ${totalRecords || recordCountEl.textContent} records (click to see the list)`;
+  const legacyNote = legacyPdfCount
+    ? `<li><span class="fname">+ ${legacyPdfCount} earlier file(s) indexed before per-file tracking was added</span><span class="fmeta">${legacyPageCount} pages • names unavailable</span></li>`
+    : '';
+  indexedFilesList.innerHTML = legacyNote + files.map(f => `
+    <li><span class="fname">${escapeHtml(f.name)}</span><span class="fmeta">${f.pages ?? '?'} pages • ${f.records ?? '?'} records</span></li>
+  `).join('');
+}
+
+function renderFailedFiles(failedFiles){
+  if(!failedFiles || !failedFiles.length){
+    failedBox.style.display = 'none';
+    failedBox.innerHTML = '';
+    return;
+  }
+  failedBox.style.display = 'block';
+  failedBox.innerHTML = `<strong>${failedFiles.length} file(s) could not be scanned — treat references you can't find as "unverified", not "not paid", until these are fixed:</strong>
+    <ul>${failedFiles.map(f => `<li>${escapeHtml(f.name)} — ${escapeHtml(f.reason)}</li>`).join('')}</ul>`;
+}
+
+resetBtn.addEventListener('click', async () => {
+  if(!confirm('Are you sure you want to reset the saved index? This clears all scanned CP-100 data, plus your batch list and search history.')) return;
+  await idbDelete('records');
+  await idbDelete('meta');
+  records = [];
+  meta = null;
+  lastActiveSearch = null;
+  lastResults = [];
+  lastBatchResults = [];
+  batchInput.value = '';
+  searchInput.value = '';
+  amountInput.value = '';
+  pdfCountEl.textContent = '0';
+  pageCountEl.textContent = '0';
+  recordCountEl.textContent = '0';
+  resultCountEl.textContent = '0';
+  lastScanEl.textContent = '—';
+  failedBox.style.display = 'none';
+  indexedFilesPanel.style.display = 'none';
+  resultsArea.innerHTML = '<div class="hint-box">Index reset. Scan a folder to begin.</div>';
+  statusDiv.textContent = 'Saved index removed.';
+});
+
+/* ============================================================
+   Load previous index on page load
+============================================================ */
+window.addEventListener('load', async () => {
+  try{
+    const savedRecords = await idbGet('records');
+    const savedMeta = await idbGet('meta');
+    if(savedRecords && savedRecords.length){
+      records = savedRecords;
+      meta = savedMeta || { pdfCount: '?', pageCount: '?', recordCount: records.length, failedFiles: [], files: [] };
+      applyMeta(meta);
+      statusDiv.textContent = `Previous index loaded (${records.length} records, scanned ${meta.scanDate ? new Date(meta.scanDate).toLocaleString() : 'earlier'}).`;
+      resultsArea.innerHTML = '<div class="hint-box">Previous index loaded. Search a reference number, amount, or bank / division name.</div>';
+    }
+  }catch(err){
+    console.error(err);
+  }
+
+  const savedHistory = localStorage.getItem('cp100SearchHistoryV4');
+  if(savedHistory){
+    try{ searchHistory = JSON.parse(savedHistory); }catch(e){ searchHistory = []; }
+    renderHistory();
+  }
+});
+
+/* ============================================================
+   Search
+============================================================ */
+function classifyQuery(raw){
+  const q = raw.trim();
+  if(/^\d+$/.test(q)) return { type: 'numeric', value: q };
+  return { type: 'text', value: q.toLowerCase() };
+}
+
+function runSearch(term){
+  const q = classifyQuery(term);
+  let results = [];
+  let modeLabel = '';
+
+  if(!term.trim()){
+    resultsArea.innerHTML = '<div class="hint-box">Enter a reference number, or bank / division name.</div>';
+    resultCountEl.textContent = '0';
+    searchModeTag.textContent = '';
+    return;
+  }
+
+  if(q.type === 'numeric'){
+    if(q.value.length === 14){
+      results = records.filter(r => r.ref === q.value);
+      modeLabel = 'Exact 14-digit reference match';
+      if(!results.length){
+        // fall back to partial, in case of an off-by-one typo
+        const partial = records.filter(r => r.ref.includes(q.value));
+        if(partial.length){ results = partial; modeLabel = 'Partial reference match (no exact match found)'; }
+      }
+    }else if(q.value.length >= 4){
+      const refMatches = records.filter(r => r.ref.includes(q.value));
+      const amountMatches = records.filter(r => String(Math.round(r.amount)) === q.value);
+      const seen = new Set();
+      results = [...refMatches, ...amountMatches].filter(r=>{
+        const key = r.ref + '|' + r.page + '|' + r.fileName + '|' + r.amount;
+        if(seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+      modeLabel = `Reference contains "${q.value}", or exact amount match — reference numbers are 14 digits, so results below may include either`;
+    }else{
+      results = records.filter(r => r.ref.includes(q.value));
+      modeLabel = `Reference contains "${q.value}"`;
+    }
+  }else{
+    results = records.filter(r =>
+      (r.bank && r.bank.toLowerCase().includes(q.value)) ||
+      (r.div && r.div.toLowerCase().includes(q.value)) ||
+      (r.payDate && r.payDate.includes(q.value))
+    );
+    modeLabel = `Bank / division / date text match for "${term.trim()}"`;
+  }
+
+  lastActiveSearch = { type: 'search', term: term.trim() };
+  saveSearchHistory(term.trim(), q.type === 'numeric' ? 'ref' : 'text');
+  searchModeTag.textContent = modeLabel;
+  renderResults(results, q.value);
+}
+
+function runAmountSearch(raw){
+  const term = raw.trim().replace(/,/g,'');
+  if(!term){
+    resultsArea.innerHTML = '<div class="hint-box">Enter an exact amount to search for.</div>';
+    resultCountEl.textContent = '0';
+    searchModeTag.textContent = '';
+    return;
+  }
+  if(!/^-?\d+(\.\d{1,2})?$/.test(term)){
+    alert('Enter a valid amount using digits only, e.g. 142651 or 142651.00');
+    return;
+  }
+  const value = parseFloat(term);
+  const results = records.filter(r => Math.abs(r.amount - value) < 0.005);
+
+  lastActiveSearch = { type: 'amount', term };
+  saveSearchHistory(term, 'amount');
+  searchModeTag.textContent = `Exact amount match for Rs. ${formatAmount(value)}`;
+  renderResults(results, formatAmount(value), { highlightField: 'amount' });
+}
+
+function renderResults(results, term, opts){
+  opts = opts || {};
+  const highlightField = opts.highlightField || 'ref';
+  lastResults = results;
+  resultCountEl.textContent = results.length;
+
+  if(!results.length){
+    resultsArea.innerHTML = `
+      <div class="notfound-box">
+        <div class="headline">No matching record found.</div>
+        <div class="detail">
+          Not found doesn't always mean not paid — it can also mean the file hasn't been added yet, or failed to scan.
+          Currently indexed: <strong>${meta ? (meta.pdfCount ?? '?') : 0} file(s)</strong>,
+          <strong>${meta ? (meta.pageCount ?? '?') : 0} page(s)</strong>,
+          <strong>${records.length} record(s)</strong>.
+          ${meta && meta.failedFiles && meta.failedFiles.length ? `<br><strong>${meta.failedFiles.length} file(s) failed to scan</strong> — check the warning panel above before treating this as "not paid".` : ''}
+        </div>
+      </div>`;
+    return;
+  }
+
+  const rows = results.slice(0, 500).map(r => {
+    const refCell = highlightField === 'ref' ? highlight(r.ref, term) : escapeHtml(r.ref);
+    const amountText = 'Rs. ' + formatAmount(r.amount);
+    const amountCell = highlightField === 'amount'
+      ? `<mark style="background:#F4E9B8;padding:1px 2px;border-radius:2px;">${escapeHtml(amountText)}</mark>`
+      : escapeHtml(amountText);
+
+    return `<tr>
+      <td class="ref-cell">${refCell}</td>
+      <td class="amount-cell">${amountCell}</td>
+      <td>${escapeHtml(r.bank || '—')}</td>
+      <td class="ref-cell">${escapeHtml(r.bankCode || '—')}</td>
+      <td style="font-family:var(--font-mono);">${r.payDate || '—'}</td>
+      <td style="font-family:var(--font-mono);">${r.mainDate || '—'}</td>
+      <td>${escapeHtml(r.div || '—')}</td>
+      <td class="file-cell">${escapeHtml(r.fileName)}</td>
+      <td class="ref-cell">${r.page}</td>
+    </tr>`;
+  }).join('');
+
+  const truncateNote = results.length > 500
+    ? `<div class="truncate-note">Showing first 500 of ${results.length} results. Refine your search to narrow this down.</div>` : '';
+
+  resultsArea.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Reference No.</th>
+          <th>Amount Paid</th>
+          <th>Bank / Office</th>
+          <th>Bank Code</th>
+          <th>Payment Date</th>
+          <th>Main Date</th>
+          <th>Division</th>
+          <th>File</th>
+          <th>Page</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${truncateNote}
+  `;
+}
+
+function highlight(text, term){
+  if(!term) return escapeHtml(text);
+  const idx = text.indexOf(term);
+  if(idx === -1) return escapeHtml(text);
+  return escapeHtml(text.slice(0,idx)) + '<mark style="background:#F4E9B8;padding:1px 2px;border-radius:2px;">' + escapeHtml(text.slice(idx, idx+term.length)) + '</mark>' + escapeHtml(text.slice(idx+term.length));
+}
+
+function formatAmount(n){
+  return Number(n).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+searchBtn.addEventListener('click', () => runSearch(searchInput.value));
+searchInput.addEventListener('input', () => { if(searchInput.value.trim().length >= 3) runSearch(searchInput.value); });
+searchInput.addEventListener('keypress', e => { if(e.key === 'Enter') runSearch(searchInput.value); });
+
+amountSearchBtn.addEventListener('click', () => runAmountSearch(amountInput.value));
+amountInput.addEventListener('keypress', e => { if(e.key === 'Enter') runAmountSearch(amountInput.value); });
+
+clearRefBtn.addEventListener('click', () => {
+  searchInput.value = '';
+  resultCountEl.textContent = '0';
+  searchModeTag.textContent = '';
+  lastActiveSearch = null;
+  resultsArea.innerHTML = '<div class="hint-box">Enter a reference number, or bank / division name.</div>';
+});
+
+clearAmountBtn.addEventListener('click', () => {
+  amountInput.value = '';
+  resultCountEl.textContent = '0';
+  searchModeTag.textContent = '';
+  lastActiveSearch = null;
+  resultsArea.innerHTML = '<div class="hint-box">Enter an exact amount to search for.</div>';
+});
+
+printBtn.addEventListener('click', () => window.print());
+
+/* ============================================================
+   Search history
+============================================================ */
+function saveSearchHistory(term, type){
+  if(!term) return;
+  searchHistory = searchHistory.filter(h => !(h.term === term && h.type === type));
+  searchHistory.unshift({ term, type });
+  searchHistory = searchHistory.slice(0, 10);
+  localStorage.setItem('cp100SearchHistoryV4', JSON.stringify(searchHistory));
+  renderHistory();
+}
+
+function renderHistory(){
+  historyContainer.innerHTML = '';
+  searchHistory.forEach(h => {
+    const tag = document.createElement('span');
+    const label = h.type === 'amount' ? 'AMT' : h.type === 'ref' ? 'REF' : 'TXT';
+    tag.innerHTML = `<span class="htype">${label}</span>${escapeHtml(h.term)}`;
+    tag.addEventListener('click', () => {
+      if(h.type === 'amount'){ amountInput.value = h.term; runAmountSearch(h.term); }
+      else { searchInput.value = h.term; runSearch(h.term); }
+    });
+    historyContainer.appendChild(tag);
+  });
+}
+
+/* ============================================================
+   Batch search
+============================================================ */
+function runBatchSearch(){
+  const raw = batchInput.value.trim();
+  if(!raw){ alert('Paste at least one reference number.'); return; }
+
+  const terms = [...new Set(raw.split(/[\s,;]+/).map(t=>t.trim()).filter(Boolean))];
+
+  const batchResults = terms.map(term => {
+    const matches = records.filter(r => r.ref === term);
+    return {
+      term,
+      valid: /^\d{14}$/.test(term),
+      found: matches.length > 0,
+      matches
+    };
+  });
+
+  lastBatchResults = batchResults;
+  lastActiveSearch = { type: 'batch' };
+
+  const rows = batchResults.map(b => {
+    if(!b.valid){
+      return `<tr><td class="ref-cell">${escapeHtml(b.term)}</td><td colspan="7"><span class="badge flag-L">Not a 14-digit reference</span></td></tr>`;
+    }
+    if(!b.found){
+      return `<tr><td class="ref-cell">${escapeHtml(b.term)}</td><td colspan="7"><span class="badge flag-L">Not Found</span></td></tr>`;
+    }
+    return b.matches.map(r => `<tr>
+      <td class="ref-cell">${escapeHtml(r.ref)}</td>
+      <td class="amount-cell">Rs. ${formatAmount(r.amount)}</td>
+      <td>${escapeHtml(r.bank || '—')}</td>
+      <td class="ref-cell">${escapeHtml(r.bankCode || '—')}</td>
+      <td style="font-family:var(--font-mono);">${r.payDate || '—'}</td>
+      <td style="font-family:var(--font-mono);">${r.mainDate || '—'}</td>
+      <td>${escapeHtml(r.fileName)}</td>
+      <td class="ref-cell">${r.page}</td>
+    </tr>`).join('');
+  }).join('');
+
+  const foundCount = batchResults.filter(b=>b.found).length;
+  const notFoundCount = batchResults.filter(b=>b.valid && !b.found).length;
+  const invalidCount = batchResults.filter(b=>!b.valid).length;
+
+  resultsArea.innerHTML = `
+    <div style="margin-bottom:12px; font-size:13px; color:var(--ink-soft);">
+      Batch check: <strong>${foundCount} found</strong>, <strong>${notFoundCount} not found</strong>${invalidCount ? `, <strong>${invalidCount} invalid</strong> (not 14 digits)` : ''} out of ${terms.length} reference(s).
+    </div>
+    <table>
+      <thead><tr><th>Reference No.</th><th>Amount Paid</th><th>Bank / Office</th><th>Bank Code</th><th>Payment Date</th><th>Main Date</th><th>File</th><th>Page</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+  resultCountEl.textContent = foundCount;
+  searchModeTag.textContent = 'Batch search';
+}
+
+batchRunBtn.addEventListener('click', runBatchSearch);
+
+batchClearBtn.addEventListener('click', () => {
+  batchInput.value = '';
+  lastBatchResults = [];
+  lastActiveSearch = null;
+  resultCountEl.textContent = '0';
+  searchModeTag.textContent = '';
+  resultsArea.innerHTML = '<div class="hint-box">Paste reference numbers above, then click "Check All".</div>';
+});
+
+batchExportBtn.addEventListener('click', () => {
+  if(!lastBatchResults.length){ alert('Run a batch search first.'); return; }
+  const rows = [['Reference','Valid Format','Found','Amount','Status','Bank','Bank Code','Payment Date','Main Date','File','Page']];
+  lastBatchResults.forEach(b=>{
+    if(!b.found){
+      rows.push([csvSafeRef(b.term), b.valid ? 'Yes' : 'No', 'No', '', '', '', '', '', '', '', '']);
+    }else{
+      b.matches.forEach(r=>{
+        rows.push([csvSafeRef(r.ref), 'Yes', 'Yes', r.amount, r.status, r.bank||'', r.bankCode||'', r.payDate||'', r.mainDate||'', r.fileName, r.page]);
+      });
+    }
+  });
+  downloadCSV(rows, 'cp100_batch_results.csv');
+});
+
+/* ============================================================
+   CSV export (main search results)
+============================================================ */
+exportBtn.addEventListener('click', () => {
+  if(!lastResults.length){ alert('Run a search with results first.'); return; }
+  const rows = [['Reference','Amount','Status','Flag','Bank','Bank Code','Payment Date','Main Date','Division','Scroll','File','Path','Page']];
+  lastResults.forEach(r=>{
+    rows.push([csvSafeRef(r.ref), r.amount, r.status, r.flag||'', r.bank||'', r.bankCode||'', r.payDate||'', r.mainDate||'', r.div||'', r.scroll||'', r.fileName, r.path, r.page]);
+  });
+  downloadCSV(rows, 'cp100_search_results.csv');
+});
+
+// Excel auto-converts long all-digit strings (like 14-digit reference numbers) into
+// scientific notation / loses precision. Wrapping the value as ="..." forces Excel
+// to treat it as literal text. Plain CSV/text viewers will show it exactly this way too.
+function csvSafeRef(ref){
+  return `="${String(ref)}"`;
+}
+
+function downloadCSV(rows, filename){
+  const csv = rows.map(row => row.map(cell => {
+    const s = String(cell ?? '');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  }).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
