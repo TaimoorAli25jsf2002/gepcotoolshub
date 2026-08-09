@@ -50,19 +50,6 @@ h1{font-size:21px;font-weight:700;color:#1a3a6b;margin-bottom:4px}
 .divopt .dname{color:#333;flex:1}
 .divopt .dcount{font-size:11px;color:#888}
 .filterrow{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-.filelist{display:flex;flex-direction:column;gap:6px;margin-bottom:20px;max-height:280px;overflow-y:auto}
-.dupwarn{background:#fff8e1;border:1px solid #f9d879;border-radius:8px;padding:11px 14px;
-         font-size:12.5px;color:#7a5000;margin-bottom:10px;line-height:1.5}
-.filerow{display:flex;align-items:center;gap:10px;border:1px solid #dde3ee;border-radius:8px;
-         padding:9px 12px;font-size:13px;cursor:pointer}
-.filerow:hover{background:#f5f7fd}
-.filerow.dup{border-color:#f0b429;background:#fffbf0}
-.filerow.off{opacity:.5}
-.filerow input{width:16px;height:16px;flex-shrink:0;cursor:pointer}
-.frname{flex:1;word-break:break-all;color:#333}
-.frdate{font-size:12px;color:#666;white-space:nowrap}
-.frstat{font-size:11px;color:#888;white-space:nowrap}
-.fdup-tag{font-size:10px;font-weight:700;background:#f0b429;color:#5a3d00;padding:2px 8px;border-radius:10px;white-space:nowrap}
 .frbtn{background:#fff;color:#1a3a6b;border:1px solid #c9d3e8;padding:8px 16px;border-radius:6px;
        font-size:13px;font-weight:600;cursor:pointer}
 .frbtn.sel{background:#1a3a6b;color:#fff;border-color:#1a3a6b}
@@ -223,14 +210,11 @@ tr.sub td{background:#eef1f8;font-weight:700;border-top:2px solid #c9d3e8;border
   <div id="errs"></div>
 
   <div class="setup" id="setup" style="display:none">
-    <h2>1. Files in this upload</h2>
-    <div class="shint">Uncheck any file to leave it out of every calculation below. Files sharing the same date &amp; form type are checked for duplicates automatically.</div>
-    <div class="filelist" id="filelist"></div>
-    <h2>2. Choose a division</h2>
-    <div class="shint">Found across your checked file(s) above. Data will be shown only for the division you pick.</div>
+    <h2>1. Choose a division</h2>
+    <div class="shint">Found across your uploaded file(s). Data will be shown only for the division you pick.</div>
     <div class="divlist" id="divlist"></div>
-    <h2>3. Which forms to include</h2>
-    <div class="shint">Applies across every checked file in this upload</div>
+    <h2>2. Which forms to include</h2>
+    <div class="shint">Applies across every file in this upload</div>
     <div class="filterrow" id="filterrow">
       <button class="frbtn" data-f="all" onclick="setFormFilter('all')">All CP-100 (combined)</button>
       <button class="frbtn" data-f="online" onclick="setFormFilter('online')">On-line only</button>
@@ -270,14 +254,13 @@ tr.sub td{background:#eef1f8;font-weight:700;border-top:2px solid #c9d3e8;border
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-let RAW_FILES = [];     // every successfully parsed file: {_id, fname, mainDate, procDate, formType, divisions:{code:{divName,banks}}}
+let RAW_FILES = [];     // every successfully parsed file: {fname, mainDate, procDate, formType, divisions:{code:{divName,banks}}}
 let ALL_DIVS  = {};     // code -> {divName, fileCount}
 let SELECTED_DIV = null;
 let FORM_FILTER = 'all';
 let RESULTS = [];       // filtered/shaped results currently on screen
 let COMBINE_MODE = false;
 let DETAIL_VISIBLE = true;
-let EXCLUDED_FILES = new Set(); // _id's the user (or auto-duplicate-resolution) has unchecked
 
 /* ─── helpers ─────────────────────────────── */
 function pn(s){ return parseFloat(String(s||'0').replace(/,/g,''))||0; }
@@ -424,73 +407,10 @@ async function parsePDF(buf, fname){
   return {ok:true, fname, mainDate, procDate, formType: formType||'daily', divisions};
 }
 
-/* ─── duplicate-file detection (same form type + same main date) ──
-   A folder can contain two exports for the same date — a partial/
-   incomplete run and a fuller one, for example. If both were counted,
-   any bank present in both gets summed twice. We detect these groups,
-   auto-keep the most complete file in each group, and let the user
-   review/override via the checklist.                                */
-function activeFiles(){ return RAW_FILES.filter(f=>!EXCLUDED_FILES.has(f._id)); }
-
-function fileCompleteness(f){
-  let n=0;
-  for(const div of Object.values(f.divisions)) for(const bank of Object.values(div.banks)) n+=bank.scrolls.length;
-  return n;
-}
-
-function computeDuplicateGroups(){
-  const groups={};
-  for(const f of RAW_FILES){
-    const key=f.formType+'|'+f.mainDate;
-    (groups[key]=groups[key]||[]).push(f);
-  }
-  return Object.values(groups).filter(g=>g.length>1);
-}
-
-function autoResolveDuplicates(){
-  for(const g of computeDuplicateGroups()){
-    const sorted=g.slice().sort((a,b)=>fileCompleteness(b)-fileCompleteness(a));
-    for(let i=1;i<sorted.length;i++) EXCLUDED_FILES.add(sorted[i]._id);
-  }
-}
-
-function toggleFileInclusion(id){
-  if(EXCLUDED_FILES.has(id)) EXCLUDED_FILES.delete(id); else EXCLUDED_FILES.add(id);
-  renderSetup();
-}
-
-function renderFileChecklist(){
-  const box=document.getElementById('filelist');
-  if(!box) return;
-  const dupGroups=computeDuplicateGroups();
-  const dupIds=new Set();
-  dupGroups.forEach(g=>g.forEach(f=>dupIds.add(f._id)));
-
-  let html='';
-  if(dupGroups.length){
-    html+=`<div class="dupwarn">⚠ <strong>${dupGroups.length} date${dupGroups.length>1?'s have':' has'}</strong> more than one file of the same form type — likely a partial/incomplete re-export.
-    To avoid double-counting the same day, we've kept the file with the most data for each date checked below and unchecked the other(s). Review and adjust if that's wrong.</div>`;
-  }
-  html += RAW_FILES.map(f=>{
-    const excluded=EXCLUDED_FILES.has(f._id);
-    const isDup=dupIds.has(f._id);
-    const score=fileCompleteness(f);
-    return `<label class="filerow${isDup?' dup':''}${excluded?' off':''}">
-      <input type="checkbox" ${excluded?'':'checked'} onchange="toggleFileInclusion('${f._id}')">
-      <span class="frname">${esc(f.fname)}</span>
-      <span class="badge ${f.formType==='daily'?'b-dl':'b-ol'}">${f.formType==='daily'?'Daily':'On-line'}</span>
-      <span class="frdate">${esc(f.mainDate)}</span>
-      <span class="frstat">${score} scroll row${score===1?'':'s'}</span>
-      ${isDup?'<span class="fdup-tag">DUPLICATE DATE</span>':''}
-    </label>`;
-  }).join('');
-  box.innerHTML = html;
-}
-
 /* ─── setup screen: division + form filter ──────────── */
 function rebuildDivisionIndex(){
   ALL_DIVS = {};
-  for(const f of activeFiles()){
+  for(const f of RAW_FILES){
     for(const [code, div] of Object.entries(f.divisions)){
       if(!ALL_DIVS[code]) ALL_DIVS[code] = {divName:div.divName, fileCount:0};
       ALL_DIVS[code].fileCount++;
@@ -499,7 +419,6 @@ function rebuildDivisionIndex(){
 }
 
 function renderSetup(){
-  renderFileChecklist();
   rebuildDivisionIndex();
   const codes = Object.keys(ALL_DIVS).sort();
   const dl = document.getElementById('divlist');
@@ -514,12 +433,12 @@ function renderSetup(){
   }).join('');
   document.querySelectorAll('.frbtn').forEach(b=>b.classList.toggle('sel', b.dataset.f===FORM_FILTER));
   document.getElementById('viewBtn').disabled = !SELECTED_DIV;
-  document.getElementById('setup').style.display = RAW_FILES.length ? 'block' : 'none';
+  document.getElementById('setup').style.display = codes.length ? 'block' : 'none';
   document.getElementById('selbar').style.display = 'none';
   document.getElementById('tb').style.display = 'none';
   document.getElementById('summaryOut').innerHTML = '';
   document.getElementById('out').innerHTML = '';
-  document.getElementById('emp').style.display = RAW_FILES.length ? 'none' : 'block';
+  document.getElementById('emp').style.display = codes.length ? 'none' : 'block';
 }
 
 function selectDivision(code){
@@ -536,13 +455,11 @@ function backToSetup(){
 
 function showResults(){
   if(!SELECTED_DIV) return;
-  const active = activeFiles();
-  const excludedCount = RAW_FILES.length - active.length;
-  const wanted = active.filter(f=>{
+  const wanted = RAW_FILES.filter(f=>{
     if(FORM_FILTER!=='all' && f.formType!==FORM_FILTER) return false;
     return !!f.divisions[SELECTED_DIV];
   });
-  const skippedForFilter = active.length - wanted.length;
+  const skippedForFilter = RAW_FILES.length - wanted.length;
 
   RESULTS = wanted.map(f=>{
     const div = f.divisions[SELECTED_DIV];
@@ -557,10 +474,9 @@ function showResults(){
   document.getElementById('setup').style.display = 'none';
 
   const infoBox = document.getElementById('errs');
-  const notes=[];
-  if(excludedCount>0) notes.push(`<div class="info-box">ℹ ${excludedCount} uploaded file(s) are unchecked (excluded) in the file list and are not included anywhere below — use "Change Division / Filter" to review them.</div>`);
-  if(skippedForFilter>0) notes.push(`<div class="info-box">ℹ ${skippedForFilter} of ${active.length} included file(s) don't match the current filter (division not present, or form type excluded) and are hidden from the results below.</div>`);
-  const note = notes.join('');
+  const note = skippedForFilter>0
+    ? `<div class="info-box">ℹ ${skippedForFilter} of ${RAW_FILES.length} uploaded file(s) don't match the current filter (division not present, or form type excluded) and are hidden from the results below.</div>`
+    : '';
   // keep existing error boxes, just refresh the info note (identified by data attribute)
   const prior = infoBox.innerHTML.replace(/<div class="info-box">.*?<\/div>/,'');
   infoBox.innerHTML = note + prior;
@@ -1029,7 +945,6 @@ async function run(fileList, opts){
   RAW_FILES = [];
   RESULTS = [];
   SELECTED_DIV = null;
-  EXCLUDED_FILES = new Set();
 
   let pdfCandidates = files.filter(f=>f.name.toLowerCase().endsWith('.pdf'));
   const nonPdfCount = files.length - pdfCandidates.length;
@@ -1054,7 +969,7 @@ async function run(fileList, opts){
     try{
       const buf=await f.arrayBuffer();
       const res=await parsePDF(buf,f.name);
-      if(res.ok){ res._id = 'f'+i+'_'+res.fname; RAW_FILES.push(res); }
+      if(res.ok) RAW_FILES.push(res);
       else errs.push({f:f.name, r:res.reason});
     }catch(e){ errs.push({f:f.name, r:e.message||'Failed to read PDF'}); }
   }
@@ -1069,7 +984,6 @@ async function run(fileList, opts){
     errs.map(e=>`<div class="err-box">⚠ <strong>${esc(e.f)}</strong>: ${esc(e.r)}</div>`).join('');
 
   if(RAW_FILES.length){
-    autoResolveDuplicates();
     renderSetup();
   } else if(!errs.length && !isFolder){
     document.getElementById('emp').style.display='block';
