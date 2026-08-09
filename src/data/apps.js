@@ -11,7 +11,7 @@ const apps = [
   {
     id: "cp100",
     name: "CP-100 Verifier",
-    description: "Analyze CP-100 Direct or online and find payment against reference numbers.",
+    description: "Verify CP-100 Direct or online and find payment against reference numbers.",
     category: "Banking",
     icon: "📖",
     path: "apps/cp100/index.html",
