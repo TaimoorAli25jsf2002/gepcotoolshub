@@ -3,27 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CP-100 Analyzer — Division 1242</title>
+<title>CP-100 Analyzer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
-.wrap{
-  width:100%;
-  max-width:none;
-  margin:0;
-  padding:20px 24px;
-}
+.wrap{max-width:960px;margin:0 auto;padding:24px 16px}
 h1{font-size:21px;font-weight:700;color:#1a3a6b;margin-bottom:4px}
 .sub{font-size:13px;color:#666;margin-bottom:20px}
 /* drop zone */
-.dz{border:2px dashed #b0bec5;border-radius:10px;padding:32px 20px;text-align:center;
-    cursor:pointer;background:#fff;transition:all .2s;margin-bottom:14px}
+.dz{border:2px dashed #b0bec5;border-radius:10px;padding:28px 20px;text-align:center;
+    cursor:pointer;background:#fff;transition:all .2s;margin-bottom:10px}
 .dz:hover,.dz.drag{border-color:#1a3a6b;background:#eef2fb}
-.dz-icon{font-size:40px;margin-bottom:8px}
+.dz-icon{font-size:36px;margin-bottom:8px}
 .dz-title{font-size:15px;font-weight:600;color:#1a3a6b;margin-bottom:4px}
 .dz-hint{font-size:12px;color:#888}
+.upload-btns{display:flex;gap:8px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+.ubtn{background:#fff;color:#1a3a6b;border:1px solid #c9d3e8;padding:9px 18px;border-radius:6px;
+      font-size:13px;font-weight:600;cursor:pointer}
+.ubtn:hover{background:#eef2fb}
+.ubtn.primary{background:#1a3a6b;color:#fff;border-color:#1a3a6b}
+.ubtn.primary:hover{background:#142d54}
 /* loading */
 .load-bar{display:none;align-items:center;gap:10px;background:#fff;border:1px solid #e0e0e0;
           border-radius:8px;padding:13px 16px;margin-bottom:12px}
@@ -31,17 +32,61 @@ h1{font-size:21px;font-weight:700;color:#1a3a6b;margin-bottom:4px}
       border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .load-txt{font-size:13px;color:#555}
-/* error */
+/* error / info */
 .err-box{background:#fff0f0;border:1px solid #ffb3b3;border-radius:8px;padding:9px 14px;
          margin-bottom:7px;font-size:13px;color:#c0392b}
+.info-box{background:#eef4ff;border:1px solid #b7cdf5;border-radius:8px;padding:9px 14px;
+         margin-bottom:7px;font-size:13px;color:#1a3a6b}
+/* setup panel */
+.setup{background:#fff;border:1px solid #dde3ee;border-radius:10px;padding:18px 18px 20px;margin-bottom:16px}
+.setup h2{font-size:15px;color:#1a3a6b;margin-bottom:2px}
+.setup .shint{font-size:12px;color:#888;margin-bottom:12px}
+.divlist{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;max-height:280px;overflow-y:auto}
+.divopt{display:flex;align-items:center;gap:10px;border:1px solid #dde3ee;border-radius:8px;
+        padding:10px 12px;cursor:pointer;font-size:13px}
+.divopt:hover{background:#f5f7fd}
+.divopt.sel{border-color:#1a3a6b;background:#eef2fb}
+.divopt .dcode{font-weight:700;color:#1a3a6b;min-width:48px}
+.divopt .dname{color:#333;flex:1}
+.divopt .dcount{font-size:11px;color:#888}
+.filterrow{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.frbtn{background:#fff;color:#1a3a6b;border:1px solid #c9d3e8;padding:8px 16px;border-radius:6px;
+       font-size:13px;font-weight:600;cursor:pointer}
+.frbtn.sel{background:#1a3a6b;color:#fff;border-color:#1a3a6b}
+.setup-label{font-size:12px;font-weight:700;color:#1a3a6b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+/* sticky selection bar */
+.selbar{position:sticky;top:10px;z-index:30;display:none;align-items:center;justify-content:space-between;
+        background:#eef2fb;border:1px solid #b7c6ea;border-radius:10px;padding:12px 16px;margin-bottom:14px;
+        gap:12px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(26,58,107,.12)}
+.selbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.selbar-tag{background:#1a3a6b;color:#fff;font-size:13px;font-weight:700;padding:6px 13px;border-radius:6px;white-space:nowrap}
+.selbar-info{font-size:13px;color:#33415c;font-weight:500}
+.changebtn{background:#fff;color:#1a3a6b;border:2px solid #1a3a6b;padding:10px 20px;border-radius:8px;
+           font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s}
+.changebtn:hover{background:#1a3a6b;color:#fff;transform:translateY(-1px)}
 /* toolbar */
 .toolbar{display:none;justify-content:space-between;align-items:center;
          background:#fff;border:1px solid #e0e0e0;border-radius:8px;
-         padding:10px 14px;margin-bottom:12px}
+         padding:10px 14px;margin-bottom:12px;flex-wrap:wrap;gap:8px}
 .fc{font-size:13px;color:#555}
 .xbtn{background:#1a3a6b;color:#fff;border:none;padding:8px 20px;border-radius:6px;
       font-size:13px;font-weight:600;cursor:pointer}
 .xbtn:hover{background:#142d54}
+/* monthly / batch summary */
+.summary-wrap{background:#fff;border:1px solid #dde3ee;border-radius:10px;margin-bottom:22px;
+              overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.summary-head{background:linear-gradient(135deg,#1a3a6b,#2c5298);color:#fff;padding:16px 18px}
+.summary-head h2{font-size:16px;margin-bottom:3px}
+.summary-head .shsub{font-size:12px;opacity:.88}
+.summary-stats{display:flex;flex-wrap:wrap;border-bottom:1px solid #e2e7f2}
+.stat{flex:1;min-width:130px;padding:14px 12px;text-align:center;border-right:1px solid #e2e7f2}
+.stat:last-child{border-right:none}
+.stat-val{font-size:19px;font-weight:700;color:#1a3a6b}
+.stat-lbl{font-size:10.5px;color:#888;text-transform:uppercase;letter-spacing:.03em;margin-top:3px}
+.summary-sec{padding:16px 18px;border-top:1px solid #eef1f8}
+.summary-sec:first-of-type{border-top:none}
+.summary-sec h3{font-size:12.5px;color:#1a3a6b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.03em}
+.summary-sec table{table-layout:auto}
 /* result block */
 .rblock{background:#fff;border:1px solid #dde3ee;border-radius:10px;
         margin-bottom:22px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
@@ -92,6 +137,11 @@ tr.sub td{background:#eef1f8;font-weight:700;border-top:2px solid #c9d3e8;border
 .divtot-table tr.grand td{background:#1a3a6b;color:#fff;font-weight:700;font-size:14px;border-bottom:none}
 .divtot-table tr.grand td.amt{color:#fff}
 .divtot-table tr.grand td.dok,.divtot-table tr.grand td.dwarn{color:#fff}
+/* differences summary */
+.diffsum{background:#fff;border:1px solid #f3c1c1;border-radius:10px;margin-bottom:22px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.diffsum-head{background:#c0392b;color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.diffsum table{width:100%}
+.diffsum td.fn{font-size:12px;color:#555;word-break:break-all}
 /* empty */
 .empty{text-align:center;padding:50px 20px;background:#fff;border-radius:10px;border:1px dashed #ccc}
 .ei{font-size:48px;margin-bottom:12px}
@@ -111,7 +161,7 @@ tr.sub td{background:#eef1f8;font-weight:700;border-top:2px solid #c9d3e8;border
 @media print{
   body{background:#fff}
   .wrap{max-width:100%;padding:0}
-  .dz, .load-bar, #errs, .toolbar{display:none !important}
+  .dz, .upload-btns, .load-bar, #errs, .toolbar, .setup, .selbar{display:none !important}
   .empty{display:none !important}
   .print-head{display:block;text-align:center;margin-bottom:14px}
   .print-head h1{font-size:18px;color:#000;margin-bottom:2px}
@@ -125,6 +175,9 @@ tr.sub td{background:#eef1f8;font-weight:700;border-top:2px solid #c9d3e8;border
   table{font-size:11px}
   .divtot{background:#f3f3f3 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .divtot-table tr.grand td{background:#333 !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .diffsum-head{background:#eee !important;color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .summary-wrap{page-break-inside:avoid;box-shadow:none;border:1px solid #999}
+  .summary-head{background:#eee !important;color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .footer{margin-top:20px;border-top:1px solid #ccc;padding-top:8px}
 }
 </style>
@@ -132,17 +185,22 @@ tr.sub td{background:#eef1f8;font-weight:700;border-top:2px solid #c9d3e8;border
 <body>
 <div class="wrap">
   <div class="print-head">
-    <h1>CP-100 Analyzer — Division 1242</h1>
-    <div class="sub">City-2, Sialkot &nbsp;·&nbsp; Printed <span id="printDate"></span></div>
+    <h1 id="printTitle">CP-100 Analyzer</h1>
+    <div class="sub" id="printSub">Printed <span id="printDate"></span></div>
   </div>
-  <h1 class="screen-only">CP-100 Analyzer — Division 1242</h1>
-  <p class="sub screen-only">Extracts City-2, Sialkot bank totals from On-line &amp; Daily CP-100 PDFs &nbsp;·&nbsp; Works offline</p>
+  <h1 class="screen-only">CP-100 Analyzer</h1>
+  <p class="sub screen-only">Extracts bank totals from On-line &amp; Daily CP-100 PDFs, by division &nbsp;·&nbsp; Works offline</p>
 
   <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
     <div class="dz-icon">📂</div>
     <div class="dz-title">Drop CP-100 PDFs here or click to browse</div>
-    <div class="dz-hint">On-line or Daily · Multiple files at once · Works offline after first load</div>
+    <div class="dz-hint">On-line or Daily · Single or multiple files · Works offline after first load</div>
     <input type="file" id="fi" accept=".pdf" multiple style="display:none">
+  </div>
+  <div class="upload-btns">
+    <button class="ubtn" onclick="document.getElementById('fi').click()">📄 Choose Files</button>
+    <button class="ubtn" onclick="document.getElementById('fd').click()">📁 Choose Folder</button>
+    <input type="file" id="fd" webkitdirectory directory multiple style="display:none">
   </div>
 
   <div class="load-bar" id="lb">
@@ -150,19 +208,44 @@ tr.sub td{background:#eef1f8;font-weight:700;border-top:2px solid #c9d3e8;border
     <span class="load-txt" id="lmsg">Processing…</span>
   </div>
   <div id="errs"></div>
+
+  <div class="setup" id="setup" style="display:none">
+    <h2>1. Choose a division</h2>
+    <div class="shint">Found across your uploaded file(s). Data will be shown only for the division you pick.</div>
+    <div class="divlist" id="divlist"></div>
+    <h2>2. Which forms to include</h2>
+    <div class="shint">Applies across every file in this upload</div>
+    <div class="filterrow" id="filterrow">
+      <button class="frbtn" data-f="all" onclick="setFormFilter('all')">All CP-100 (combined)</button>
+      <button class="frbtn" data-f="online" onclick="setFormFilter('online')">On-line only</button>
+      <button class="frbtn" data-f="daily" onclick="setFormFilter('daily')">Daily only</button>
+    </div>
+    <button class="xbtn" id="viewBtn" onclick="showResults()" disabled>View Results</button>
+  </div>
+
+  <div class="selbar" id="selbar" style="display:none">
+    <div class="selbar-left">
+      <span class="selbar-tag" id="selDivTag"></span>
+      <span class="selbar-info" id="selInfo"></span>
+    </div>
+    <button class="changebtn" onclick="backToSetup()">⇄ Change Division / Filter</button>
+  </div>
+
   <div class="toolbar" id="tb">
     <span class="fc" id="fc"></span>
     <div class="btn-row">
+      <button class="sbtn" id="detailBtn" onclick="toggleDetail()" style="display:none">▾ Show Per-File Detail</button>
       <button class="sbtn" id="combineBtn" onclick="toggleCombine()">Σ Show combined totals</button>
       <button class="sbtn" onclick="window.print()">🖨 Print / Save as PDF</button>
       <button class="xbtn" onclick="doExport()">⬇ Export to Excel</button>
     </div>
   </div>
+  <div id="summaryOut"></div>
   <div id="out"></div>
   <div class="empty" id="emp">
     <div class="ei">📄</div>
     <div class="et">No files yet</div>
-    <div class="eh">Upload on-line or daily CP-100 PDFs to extract Division 1242 bank totals</div>
+    <div class="eh">Upload on-line or daily CP-100 PDFs (single files, multiple files, or an entire folder) to get started</div>
   </div>
   <div class="footer">Developed by <b>Taimoor Ali</b></div>
 </div>
@@ -171,43 +254,40 @@ tr.sub td{background:#eef1f8;font-weight:700;border-top:2px solid #c9d3e8;border
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-let RESULTS = [];
+let RAW_FILES = [];     // every successfully parsed file: {fname, mainDate, procDate, formType, divisions:{code:{divName,banks}}}
+let ALL_DIVS  = {};     // code -> {divName, fileCount}
+let SELECTED_DIV = null;
+let FORM_FILTER = 'all';
+let RESULTS = [];       // filtered/shaped results currently on screen
+let COMBINE_MODE = false;
+let DETAIL_VISIBLE = true;
 
 /* ─── helpers ─────────────────────────────── */
 function pn(s){ return parseFloat(String(s||'0').replace(/,/g,''))||0; }
 function fn(n){ return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function isCP100Filename(name){ return /cp[\s\-_]?100/i.test(name); }
 
 /* ─── pdf.js → array of line-strings per page ─
    Groups text items by rounded y-coordinate (top→bottom),
-   sorts each group by x, joins with space.
-   This faithfully mimics how pdf.js streams glyphs.           */
+   sorts each group by x, joins with space.                  */
 async function pdfToLines(buf){
   const pdf = await pdfjsLib.getDocument({data:buf}).promise;
   const pages = [];
-  const Y_TOL = 3; // px tolerance for clustering same-row text fragments
+  const Y_TOL = 3;
   for(let p=1;p<=pdf.numPages;p++){
     const pg = await pdf.getPage(p);
     const tc = await pg.getTextContent();
-
-    /* collect items as {x,y,s} — y is from BOTTOM of page in pdf.js coords */
     const items = tc.items.map(it=>({x:it.transform[4], y:it.transform[5], s:it.str}))
                            .filter(it=>it.s && it.s.trim().length>0);
-
-    /* sort top→bottom (descending y), then left→right for tie-break */
     items.sort((a,b)=> (b.y-a.y) || (a.x-b.x));
-
-    /* cluster into rows: items whose y is within Y_TOL of the running
-       cluster's average y belong to the same row. This avoids the bug
-       where naive Math.round() splits a single PDF row into two buckets
-       when its baseline sits exactly on a .5 boundary. */
     const rows = [];
     let cluster = [];
     let clusterY = null;
     for(const it of items){
       if(clusterY===null || Math.abs(it.y-clusterY) <= Y_TOL){
         cluster.push(it);
-        clusterY = cluster.reduce((s,c)=>s+c.y,0)/cluster.length; // running average
+        clusterY = cluster.reduce((s,c)=>s+c.y,0)/cluster.length;
       } else {
         rows.push(cluster);
         cluster=[it];
@@ -215,103 +295,343 @@ async function pdfToLines(buf){
       }
     }
     if(cluster.length) rows.push(cluster);
-
     const lines = rows.map(row=>
       row.slice().sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ').replace(/\s+/g,' ').trim()
     ).filter(l=>l.length>0);
-
     pages.push(lines);
   }
   return pages;
 }
 
-/* ─── parse one CP-100 PDF ────────────────── */
+/* ─── parse one CP-100 PDF — ALL divisions, ANY layout ──
+   The real CP-100 text stream prints each scroll's header across
+   THREE separate rows: "Bank <code> <name>", "PAYMENT DT <date>",
+   then "SCROLL NO <n> <code> <ref>" — never all on one line.
+   A single-line fallback pattern is also checked, in case a form
+   layout does combine them.
+   Scroll total / DIFFERENCE / BANK TOTALS are matched with regexes
+   that allow negative amounts (real data includes reversal/adjustment
+   entries with negative totals).                                     */
 async function parsePDF(buf, fname){
   const pages = await pdfToLines(buf);
 
-  /* regexes — compiled once */
-  const RE_DIV   = /BANK DIV\.: (\d+)/;                                    // division header
-  const RE_DATE  = /MAIN DATE\s+([\d\/]+)/;                                 // main date
-  const RE_PROC  = /PROCESSING DATE\s+([\d\/]+)/;                           // processing date
-  const RE_TYPE  = /(on-line|Daily)/;                                        // form type
-  const RE_SCR   = /^SCROLL NO (\d+) Bank (\d{5}) (.+?) PAYMENT DT ([\d\/]+)/; // scroll header (no., code, name, date)
-  const RE_STOT  = /Scroll total ([\d,]+\.\d+) T DIFFERENCE: ([\d,]+\.\d+)/;// scroll total
+  const RE_DIV    = /BANK DIV\.:\s*(\d+)\s+(.+?)\s+\d{4}\s+MAIN DATE\s+([\d\/]+)/;
+  const RE_PROC   = /PROCESSING DATE\s+([\d\/]+)/;
+  const RE_TYPE   = /\b(on-line|Daily)\b/;
+  const RE_BANKHD = /^Bank (\d{5})\s+(.+)$/;
+  const RE_PAYDT  = /^PAYMENT DT\s+([\d\/]+)/;
+  const RE_SCROLL = /^SCROLL NO (\d+)\s+(\d{5})\s+(\S+)/;
+  const RE_SCR1L  = /^SCROLL NO (\d+) Bank (\d{5}) (.+?) PAYMENT DT ([\d\/]+)/; // fallback: single-line variant
+  const RE_BTOT   = /BANK TOTALS:\s*(-?[\d,]+\.\d+)/;
+  const RE_STOT   = /Scroll total\s+(-?[\d,]+\.\d+)\s*T\s*DIFFERENCE:\s*(-?[\d,]+\.\d+)/;
+  const RE_FORM   = /CP-FORM:\s*100\b/;
 
-  let mainDate='', procDate='', formType='';
-  let inDiv=false, curCode=null;
-  const banks={};   // code → {name, scrolls:[{payDate,total,diff}]}
+  let mainDate='', procDate='', formType='', sawCPForm=false;
+  let curDivCode=null, curBankCode=null, curPayDate=null, pendingBankTotal=null;
+  const divisions = {}; // code -> {divName, banks:{code:{name,scrolls:[]}}}
 
   for(const lines of pages){
     for(const line of lines){
-
-      /* ── metadata (grab from ANY page header line) ── */
-      if(!mainDate){ const m=RE_DATE.exec(line); if(m) mainDate=m[1]; }
+      if(!sawCPForm && RE_FORM.test(line)) sawCPForm = true;
       if(!procDate){ const m=RE_PROC.exec(line); if(m) procDate=m[1]; }
       if(!formType){ const m=RE_TYPE.exec(line); if(m) formType=m[1].toLowerCase().replace('-',''); }
-      // 'on-line' → 'online',  'Daily' → 'daily'
 
-      /* ── division switch — MUST come before 'continue' so metadata above is read ── */
-      const dm=RE_DIV.exec(line);
+      const dm = RE_DIV.exec(line);
       if(dm){
-        inDiv=(dm[1]==='1242');
-        continue;   // header line; no scroll data on it
+        const code=dm[1], name=dm[2].trim(), md=dm[3];
+        if(!mainDate) mainDate = md;
+        if(code!==curDivCode){
+          curDivCode=code; curBankCode=null; curPayDate=null; pendingBankTotal=null;
+        }
+        if(!divisions[code]) divisions[code]={divName:name, banks:{}};
+        else if(name.length>divisions[code].divName.length) divisions[code].divName=name;
+        continue;
       }
+      if(!curDivCode) continue;
+      const div = divisions[curDivCode];
 
-      if(!inDiv) continue;
-
-      /* ── new scroll ── */
-      const sm=RE_SCR.exec(line);
-      if(sm){
-        const scrollNo=parseInt(sm[1],10), code=sm[2], name=sm[3].trim(), payDate=sm[4];
-        curCode=code;
-        if(!banks[code]) banks[code]={name, scrolls:[]};
-        if(name.length>banks[code].name.length) banks[code].name=name;
-        /* index scrolls by their printed SCROLL NO so a total that lands on
-           the wrong "last scroll" (e.g. due to a page break) still gets
-           attributed to the correct scroll once we see its real number  */
-        banks[code].scrolls.push({scrollNo, payDate, total:0, diff:0, filled:false});
+      /* fallback: bank+name+paydate all on one line */
+      const sm1 = RE_SCR1L.exec(line);
+      if(sm1){
+        const code=sm1[2], name=sm1[3].trim(), payDate=sm1[4];
+        curBankCode=code; curPayDate=payDate;
+        if(!div.banks[code]) div.banks[code]={name, scrolls:[]};
+        else if(name.length>div.banks[code].name.length) div.banks[code].name=name;
+        div.banks[code].scrolls.push({scrollNo:parseInt(sm1[1],10),payDate,total:0,diff:0,bankTotal:0,filled:false});
         continue;
       }
 
-      /* ── scroll total + difference ── */
-      const stm=RE_STOT.exec(line);
-      if(stm && curCode && banks[curCode].scrolls.length){
-        /* fill the most recent UNFILLED scroll for this bank — guards
-           against a scroll header on the next page stealing the pointer
-           before its own total line has appeared                        */
-        const arr=banks[curCode].scrolls;
+      const bm = RE_BANKHD.exec(line);
+      if(bm){
+        const code=bm[1], name=bm[2].trim();
+        curBankCode=code;
+        if(!div.banks[code]) div.banks[code]={name, scrolls:[]};
+        else if(name.length>div.banks[code].name.length) div.banks[code].name=name;
+        continue;
+      }
+
+      const pm = RE_PAYDT.exec(line);
+      if(pm){ curPayDate=pm[1]; continue; }
+
+      const scm = RE_SCROLL.exec(line);
+      if(scm){
+        const scrollNo=parseInt(scm[1],10), code=scm[2];
+        if(!curBankCode) curBankCode=code;
+        if(!div.banks[code]) div.banks[code]={name:'', scrolls:[]};
+        div.banks[code].scrolls.push({scrollNo, payDate:curPayDate||'', total:0, diff:0, bankTotal:0, filled:false});
+        continue;
+      }
+
+      const btm = RE_BTOT.exec(line);
+      if(btm){ pendingBankTotal = pn(btm[1]); continue; }
+
+      const stm = RE_STOT.exec(line);
+      if(stm && curBankCode && div.banks[curBankCode] && div.banks[curBankCode].scrolls.length){
+        const arr = div.banks[curBankCode].scrolls;
         let target=null;
         for(let i=arr.length-1;i>=0;i--){ if(!arr[i].filled){ target=arr[i]; break; } }
-        if(!target) target=arr[arr.length-1];
-        target.total=pn(stm[1]);
-        target.diff =pn(stm[2]);
-        target.filled=true;
+        if(!target) target = arr[arr.length-1];
+        target.total = pn(stm[1]);
+        target.diff  = pn(stm[2]);
+        target.bankTotal = pendingBankTotal!=null ? pendingBankTotal : (target.total - target.diff);
+        target.filled = true;
+        pendingBankTotal = null;
       }
     }
   }
 
-  if(!formType) return {ok:false, reason:'Not a CP-100 form (on-line / Daily not found)'};
-  if(!Object.keys(banks).length)
-    return {ok:false, reason:'Division 1242 (City-2, Sialkot) not found or has no transactions'};
+  if(!formType && !sawCPForm) return {ok:false, reason:'Not a CP-100 form (on-line / Daily not found)'};
+  if(!Object.keys(divisions).length)
+    return {ok:false, reason:'No division/bank data found in this PDF'};
 
-  /* ── package per-bank scroll lists (no aggregation/summing) ── */
-  const result={};
-  for(const [code,bank] of Object.entries(banks)){
-    result[code]={ code, name:bank.name, scrolls: bank.scrolls };
+  return {ok:true, fname, mainDate, procDate, formType: formType||'daily', divisions};
+}
+
+/* ─── setup screen: division + form filter ──────────── */
+function rebuildDivisionIndex(){
+  ALL_DIVS = {};
+  for(const f of RAW_FILES){
+    for(const [code, div] of Object.entries(f.divisions)){
+      if(!ALL_DIVS[code]) ALL_DIVS[code] = {divName:div.divName, fileCount:0};
+      ALL_DIVS[code].fileCount++;
+    }
   }
+}
 
-  return {ok:true, fname, mainDate, procDate, formType, banks:result};
+function renderSetup(){
+  rebuildDivisionIndex();
+  const codes = Object.keys(ALL_DIVS).sort();
+  const dl = document.getElementById('divlist');
+  dl.innerHTML = codes.map(code=>{
+    const d = ALL_DIVS[code];
+    const sel = SELECTED_DIV===code ? ' sel' : '';
+    return `<div class="divopt${sel}" onclick="selectDivision('${code}')">
+      <span class="dcode">${esc(code)}</span>
+      <span class="dname">${esc(d.divName)}</span>
+      <span class="dcount">${d.fileCount} file${d.fileCount>1?'s':''}</span>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.frbtn').forEach(b=>b.classList.toggle('sel', b.dataset.f===FORM_FILTER));
+  document.getElementById('viewBtn').disabled = !SELECTED_DIV;
+  document.getElementById('setup').style.display = codes.length ? 'block' : 'none';
+  document.getElementById('selbar').style.display = 'none';
+  document.getElementById('tb').style.display = 'none';
+  document.getElementById('summaryOut').innerHTML = '';
+  document.getElementById('out').innerHTML = '';
+  document.getElementById('emp').style.display = codes.length ? 'none' : 'block';
+}
+
+function selectDivision(code){
+  SELECTED_DIV = code;
+  renderSetup();
+}
+function setFormFilter(f){
+  FORM_FILTER = f;
+  renderSetup();
+}
+function backToSetup(){
+  renderSetup();
+}
+
+function showResults(){
+  if(!SELECTED_DIV) return;
+  const wanted = RAW_FILES.filter(f=>{
+    if(FORM_FILTER!=='all' && f.formType!==FORM_FILTER) return false;
+    return !!f.divisions[SELECTED_DIV];
+  });
+  const skippedForFilter = RAW_FILES.length - wanted.length;
+
+  RESULTS = wanted.map(f=>{
+    const div = f.divisions[SELECTED_DIV];
+    const banks = {};
+    for(const [code, bank] of Object.entries(div.banks)) banks[code] = Object.assign({code}, bank);
+    return {
+      fname:f.fname, mainDate:f.mainDate, procDate:f.procDate, formType:f.formType,
+      divCode:SELECTED_DIV, divName:div.divName, banks
+    };
+  });
+
+  document.getElementById('setup').style.display = 'none';
+
+  const infoBox = document.getElementById('errs');
+  const note = skippedForFilter>0
+    ? `<div class="info-box">ℹ ${skippedForFilter} of ${RAW_FILES.length} uploaded file(s) don't match the current filter (division not present, or form type excluded) and are hidden from the results below.</div>`
+    : '';
+  // keep existing error boxes, just refresh the info note (identified by data attribute)
+  const prior = infoBox.innerHTML.replace(/<div class="info-box">.*?<\/div>/,'');
+  infoBox.innerHTML = note + prior;
+
+  const divInfo = ALL_DIVS[SELECTED_DIV];
+  document.getElementById('printTitle').textContent = `CP-100 Analyzer — Division ${SELECTED_DIV}`;
+  document.getElementById('printSub').innerHTML = `${esc(divInfo?divInfo.divName:'')} &nbsp;·&nbsp; Printed <span id="printDate"></span>`;
+
+  const filterLabel = FORM_FILTER==='all' ? 'All CP-100 (combined)' : (FORM_FILTER==='online' ? 'On-line only' : 'Daily only');
+  document.getElementById('selDivTag').textContent = `Division ${SELECTED_DIV}`;
+  document.getElementById('selInfo').textContent = `${divInfo?divInfo.divName:''} · ${filterLabel}`;
+  document.getElementById('selbar').style.display = 'flex';
+
+  if(RESULTS.length){
+    const ol=RESULTS.filter(r=>r.formType==='online').length;
+    const dl=RESULTS.filter(r=>r.formType==='daily').length;
+    const parts=[];
+    if(ol) parts.push(ol+' on-line'); if(dl) parts.push(dl+' daily');
+    document.getElementById('fc').textContent =
+      `Division ${SELECTED_DIV} — ${divInfo?divInfo.divName:''} · ${RESULTS.length} file${RESULTS.length>1?'s':''} (${parts.join(', ')})`;
+    document.getElementById('tb').style.display='flex';
+    document.getElementById('emp').style.display='none';
+
+    const detailBtn = document.getElementById('detailBtn');
+    if(RESULTS.length>1){
+      detailBtn.style.display='inline-block';
+      DETAIL_VISIBLE = RESULTS.length<=3;
+    } else {
+      detailBtn.style.display='none';
+      DETAIL_VISIBLE = true;
+    }
+    updateDetailBtn();
+    renderSummary();
+    render();
+  } else {
+    document.getElementById('tb').style.display='none';
+    document.getElementById('summaryOut').innerHTML='';
+    document.getElementById('out').innerHTML='';
+    document.getElementById('emp').style.display='block';
+  }
+}
+
+/* ─── per-file detail show/hide (large batches default to summary-only) ── */
+function updateDetailBtn(){
+  const btn=document.getElementById('detailBtn');
+  btn.textContent = DETAIL_VISIBLE ? '▴ Hide Per-File Detail' : '▾ Show Per-File Detail';
+  document.getElementById('out').style.display = DETAIL_VISIBLE ? 'block' : 'none';
+}
+function toggleDetail(){
+  DETAIL_VISIBLE = !DETAIL_VISIBLE;
+  updateDetailBtn();
+}
+
+/* ─── date helper: CP-100 dates are DD/MM/YYYY ──────── */
+function parseDMY(s){
+  const m=/(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s||'');
+  if(!m) return 0;
+  return new Date(+m[3], +m[2]-1, +m[1]).getTime();
+}
+
+/* ─── batch / monthly aggregation across every included file ── */
+function buildBatchSummary(){
+  const bankAgg={}, dateAgg={};
+  let grandTotal=0, grandDiff=0, grandScrolls=0;
+  const bankSet=new Set();
+  for(const res of RESULTS){
+    if(!dateAgg[res.mainDate]) dateAgg[res.mainDate]={total:0,diff:0,scrollCount:0,bankCodes:new Set(),fnames:[]};
+    dateAgg[res.mainDate].fnames.push(res.fname);
+    for(const bank of Object.values(res.banks)){
+      bankSet.add(bank.code);
+      if(!bankAgg[bank.code]) bankAgg[bank.code]={code:bank.code,name:bank.name,total:0,diff:0,bankTotal:0,scrollCount:0,fileCount:0};
+      let touched=false;
+      for(const sc of bank.scrolls){
+        bankAgg[bank.code].total+=sc.total;
+        bankAgg[bank.code].diff+=sc.diff;
+        bankAgg[bank.code].bankTotal+=sc.bankTotal;
+        bankAgg[bank.code].scrollCount++;
+        dateAgg[res.mainDate].total+=sc.total;
+        dateAgg[res.mainDate].diff+=sc.diff;
+        dateAgg[res.mainDate].scrollCount++;
+        dateAgg[res.mainDate].bankCodes.add(bank.code);
+        grandTotal+=sc.total; grandDiff+=sc.diff; grandScrolls++;
+        touched=true;
+      }
+      if(touched) bankAgg[bank.code].fileCount++;
+      if(bank.name && bank.name.length>bankAgg[bank.code].name.length) bankAgg[bank.code].name=bank.name;
+    }
+  }
+  return {bankAgg, dateAgg, grandTotal, grandDiff, grandScrolls, bankCount:bankSet.size};
+}
+
+function renderSummary(){
+  const sEl=document.getElementById('summaryOut');
+  if(RESULTS.length<2){ sEl.innerHTML=''; return; }
+
+  const s=buildBatchSummary();
+  const banks=Object.values(s.bankAgg).sort((a,b)=>a.code.localeCompare(b.code));
+  const dates=Object.keys(s.dateAgg).sort((a,b)=>parseDMY(a)-parseDMY(b));
+  const anyDiff = RESULTS.some(r=>r.formType==='daily');
+  const dateRangeTxt = dates.length ? (dates.length>1 ? `${dates[0]} – ${dates[dates.length-1]}` : dates[0]) : '—';
+  const divInfo = ALL_DIVS[SELECTED_DIV];
+
+  let html=`<div class="summary-wrap">
+    <div class="summary-head">
+      <h2>📅 Monthly / Batch Summary — Division ${esc(SELECTED_DIV)}, ${esc(divInfo?divInfo.divName:'')}</h2>
+      <div class="shsub">Combined totals across all ${RESULTS.length} included files &nbsp;·&nbsp; ${esc(dateRangeTxt)}</div>
+    </div>
+    <div class="summary-stats">
+      <div class="stat"><div class="stat-val">${fn(s.grandTotal)}</div><div class="stat-lbl">Total Amount (PKR)</div></div>
+      <div class="stat"><div class="stat-val">${RESULTS.length}</div><div class="stat-lbl">Files / Days</div></div>
+      <div class="stat"><div class="stat-val">${s.bankCount}</div><div class="stat-lbl">Unique Banks</div></div>
+      <div class="stat"><div class="stat-val">${s.grandScrolls}</div><div class="stat-lbl">Total Scrolls</div></div>`;
+  if(anyDiff){
+    html+=`<div class="stat"><div class="stat-val" style="color:${s.grandDiff===0?'#2e7d32':'#c62828'}">${fn(s.grandDiff)}</div><div class="stat-lbl">Total Difference</div></div>`;
+  }
+  html+=`</div>`;
+
+  html+=`<div class="summary-sec"><h3>Bank-wise Totals — Whole Batch</h3>
+    <table><thead><tr><th>Bank Code</th><th>Bank Name</th><th class="r">Files</th><th class="r">Scrolls</th><th class="r">Total</th>`;
+  if(anyDiff) html+=`<th class="r">Difference</th><th class="r">Bank Total</th>`;
+  html+=`</tr></thead><tbody>`;
+  for(const b of banks){
+    html+=`<tr>
+      <td class="code">${esc(b.code)}</td><td>${esc(b.name)}</td>
+      <td class="r">${b.fileCount}</td><td class="r">${b.scrollCount}</td>
+      <td class="amt">${fn(b.total)}</td>`;
+    if(anyDiff) html+=`<td class="${b.diff===0?'dok':'dwarn'}">${fn(b.diff)}</td><td class="amt">${fn(b.bankTotal)}</td>`;
+    html+=`</tr>`;
+  }
+  html+=`<tr class="sub">
+    <td colspan="2" style="text-align:right;padding-right:16px">Grand Total</td>
+    <td class="r">${RESULTS.length}</td><td class="r">${s.grandScrolls}</td>
+    <td class="amt">${fn(s.grandTotal)}</td>`;
+  if(anyDiff) html+=`<td class="${s.grandDiff===0?'dok':'dwarn'}">${fn(s.grandDiff)}</td><td class="amt">${fn(s.grandTotal-s.grandDiff)}</td>`;
+  html+=`</tr></tbody></table></div>`;
+
+  html+=`<div class="summary-sec"><h3>Date-wise Totals</h3>
+    <table><thead><tr><th>Main Date</th><th>File</th><th class="r">Banks</th><th class="r">Scrolls</th><th class="r">Total</th>`;
+  if(anyDiff) html+=`<th class="r">Difference</th>`;
+  html+=`</tr></thead><tbody>`;
+  for(const d of dates){
+    const dr=s.dateAgg[d];
+    html+=`<tr>
+      <td>${esc(d)}</td><td class="fn">${esc(dr.fnames.join(', '))}</td>
+      <td class="r">${dr.bankCodes.size}</td><td class="r">${dr.scrollCount}</td>
+      <td class="amt">${fn(dr.total)}</td>`;
+    if(anyDiff) html+=`<td class="${dr.diff===0?'dok':'dwarn'}">${fn(dr.diff)}</td>`;
+    html+=`</tr>`;
+  }
+  html+=`</tbody></table></div></div>`;
+
+  sEl.innerHTML=html;
 }
 
 /* ─── render ──────────────────────────────── */
-/* Every scroll is shown as its own independent row — bank code, name,
-   payment date, scroll number, and that scroll's own total.
-   When COMBINE_MODE is on, banks with more than one scroll (whether on
-   the same date or different dates) also get a bold "Combined Total"
-   row underneath, summing just that bank's own scrolls — nothing is
-   ever summed across different banks.                                  */
-let COMBINE_MODE = false;
-
 function toggleCombine(){
   COMBINE_MODE = !COMBINE_MODE;
   const btn=document.getElementById('combineBtn');
@@ -320,13 +640,54 @@ function toggleCombine(){
   render();
 }
 
+function buildDifferencesSummary(){
+  const rows=[];
+  for(const res of RESULTS){
+    const isD = res.formType==='daily';
+    if(!isD) continue;
+    const list=Object.values(res.banks).sort((a,b)=>a.code?a.code.localeCompare(b.code):0);
+    for(const [code,bank] of Object.entries(res.banks)){
+      for(const sc of bank.scrolls){
+        if(sc.diff!==0){
+          rows.push({fname:res.fname, code, name:bank.name, payDate:sc.payDate, scrollNo:sc.scrollNo, total:sc.total, diff:sc.diff, bankTotal:sc.bankTotal});
+        }
+      }
+    }
+  }
+  rows.sort((a,b)=> a.fname.localeCompare(b.fname) || a.code.localeCompare(b.code));
+  return rows;
+}
+
 function render(){
   const el=document.getElementById('out');
   if(!RESULTS.length){ el.innerHTML=''; return; }
   let html='';
 
+  /* ── differences summary (across all included files) ── */
+  const diffRows = buildDifferencesSummary();
+  if(diffRows.length){
+    html += `<div class="diffsum">
+      <div class="diffsum-head">⚠ Differences Summary — ${diffRows.length} scroll${diffRows.length>1?'s':''} with a non-zero DIFFERENCE</div>
+      <table><thead><tr>
+        <th>File</th><th>Bank Code</th><th>Bank Name</th><th>Payment Date</th>
+        <th class="r">Scroll No</th><th class="r">Scroll Total</th><th class="r">Difference</th><th class="r">Bank Total</th>
+      </tr></thead><tbody>`;
+    for(const r of diffRows){
+      html += `<tr>
+        <td class="fn">${esc(r.fname)}</td>
+        <td class="code">${esc(r.code)}</td>
+        <td>${esc(r.name)}</td>
+        <td>${esc(r.payDate)}</td>
+        <td class="r">${r.scrollNo}</td>
+        <td class="amt">${fn(r.total)}</td>
+        <td class="dwarn">${fn(r.diff)}</td>
+        <td class="amt">${fn(r.bankTotal)}</td>
+      </tr>`;
+    }
+    html += `</tbody></table></div>`;
+  }
+
   for(const res of RESULTS){
-    /* sort banks by code, and within a bank sort scrolls by date then scroll no */
     const list=Object.values(res.banks).sort((a,b)=>a.code.localeCompare(b.code));
     const isD=res.formType==='daily';
     const totalScrolls=list.reduce((s,b)=>s+b.scrolls.length,0);
@@ -340,18 +701,18 @@ function render(){
       <div class="rmeta">
         <span class="mi"><span class="ml">Main Date:</span>${esc(res.mainDate)}</span>
         <span class="mi"><span class="ml">Proc Date:</span>${esc(res.procDate)}</span>
-        <span class="mi"><span class="ml">Division:</span>1242 — City-2, Sialkot</span>
+        <span class="mi"><span class="ml">Division:</span>${esc(res.divCode)} — ${esc(res.divName)}</span>
         <span class="mi"><span class="ml">Banks:</span>${list.length}</span>
         <span class="mi"><span class="ml">Scroll rows:</span>${totalScrolls}</span>
       </div>`;
 
     if(anyDiff)
-      html+=`<div class="warn-ban">⚠ One or more scrolls have a non-zero DIFFERENCE — highlighted in red below</div>`;
+      html+=`<div class="warn-ban">⚠ One or more scrolls have a non-zero DIFFERENCE — highlighted in red below, and listed in the Differences Summary above</div>`;
 
     html+=`<table><thead><tr>
       <th>Bank Code</th><th>Bank Name</th><th>Payment Date</th>
-      <th class="r">Scroll No</th><th class="r">Bank Total</th>`;
-    if(isD) html+=`<th class="r">Difference</th>`;
+      <th class="r">Scroll No</th><th class="r">Scroll Total</th>`;
+    if(isD) html+=`<th class="r">Difference</th><th class="r">Bank Total</th>`;
     html+=`</tr></thead><tbody>`;
 
     for(const bank of list){
@@ -365,30 +726,27 @@ function render(){
           <td>${esc(sc.payDate)}</td>
           <td class="r">${sc.scrollNo}</td>
           <td class="amt">${fn(sc.total)}</td>`;
-        if(isD) html+=`<td class="${sc.diff===0?'dok':'dwarn'}">${fn(sc.diff)}</td>`;
+        if(isD) html+=`<td class="${sc.diff===0?'dok':'dwarn'}">${fn(sc.diff)}</td><td class="amt">${fn(sc.bankTotal)}</td>`;
         html+=`</tr>`;
         first=false;
       }
 
-      /* combined total row — only when this bank has more than one
-         scroll (same date or different dates) AND combine mode is on */
       if(COMBINE_MODE && sorted.length>1){
         const combTotal = sorted.reduce((s,sc)=>s+sc.total,0);
         const combDiff   = sorted.reduce((s,sc)=>s+sc.diff, 0);
+        const combBankTotal = sorted.reduce((s,sc)=>s+sc.bankTotal, 0);
         html+=`<tr class="sub">
           <td colspan="3" style="text-align:right;padding-right:16px">Combined Total — ${esc(bank.name)} (${sorted.length} scrolls)</td>
           <td></td>
           <td class="amt">${fn(combTotal)}</td>`;
-        if(isD) html+=`<td class="${combDiff===0?'dok':'dwarn'}">${fn(combDiff)}</td>`;
+        if(isD) html+=`<td class="${combDiff===0?'dok':'dwarn'}">${fn(combDiff)}</td><td class="amt">${fn(combBankTotal)}</td>`;
         html+=`</tr>`;
       }
     }
     html+=`</tbody></table>`;
 
     /* ── divisional total — every bank's every scroll, grouped by
-       payment date, plus a single grand total for the whole file.
-       This sums ACROSS banks (unlike the per-bank combined row above)
-       to answer "what's the total for this date / this PDF".          */
+       payment date, plus a single grand total for the whole file. ── */
     const byDate={};
     let grandTotal=0, grandDiff=0, grandScrollCount=0;
     for(const bank of list){
@@ -405,7 +763,7 @@ function render(){
     const multiDateFile = dateRows.length>1;
 
     html+=`<div class="divtot">
-      <div class="divtot-head">📊 Divisional Total — 1242, City-2, Sialkot</div>
+      <div class="divtot-head">📊 Divisional Total — ${esc(res.divCode)}, ${esc(res.divName)}</div>
       <table class="divtot-table"><thead><tr>
         <th>Payment Date</th><th class="r">Banks</th><th class="r">Scrolls</th><th class="r">Total</th>`;
     if(isD) html+=`<th class="r">Difference</th>`;
@@ -436,27 +794,79 @@ function render(){
 }
 
 /* ─── excel export ────────────────────────── */
-/* One row per scroll. If a bank has more than one scroll (same date or
-   different dates) a bold "Combined Total" row is appended after its
-   scrolls — clearly labeled, never mixed into other banks' figures.    */
 function doExport(){
   if(!RESULTS.length) return;
   const wb=XLSX.utils.book_new();
+
+  /* monthly / batch summary sheet, if more than one file */
+  if(RESULTS.length>1){
+    const s=buildBatchSummary();
+    const banks=Object.values(s.bankAgg).sort((a,b)=>a.code.localeCompare(b.code));
+    const dates=Object.keys(s.dateAgg).sort((a,b)=>parseDMY(a)-parseDMY(b));
+    const anyDiff = RESULTS.some(r=>r.formType==='daily');
+    const divInfo = ALL_DIVS[SELECTED_DIV];
+
+    const mrows=[
+      ['Monthly / Batch Summary — Division '+SELECTED_DIV+' — '+(divInfo?divInfo.divName:'')],[''],
+      ['Files included', RESULTS.length],
+      ['Unique banks', s.bankCount],
+      ['Total scrolls', s.grandScrolls],
+      ['Total amount (PKR)', s.grandTotal],
+    ];
+    if(anyDiff) mrows.push(['Total difference', s.grandDiff]);
+    mrows.push([''],['BANK-WISE TOTALS']);
+    const bHdr=['Bank Code','Bank Name','Files','Scrolls','Total (PKR)'];
+    if(anyDiff) bHdr.push('Difference','Bank Total (PKR)');
+    mrows.push(bHdr);
+    for(const b of banks){
+      const row=[b.code,b.name,b.fileCount,b.scrollCount,b.total];
+      if(anyDiff) row.push(b.diff,b.bankTotal);
+      mrows.push(row);
+    }
+    const grow=['GRAND TOTAL','',RESULTS.length,s.grandScrolls,s.grandTotal];
+    if(anyDiff) grow.push(s.grandDiff, s.grandTotal-s.grandDiff);
+    mrows.push(grow);
+
+    mrows.push([''],['DATE-WISE TOTALS']);
+    const dHdr=['Main Date','File(s)','Banks','Scrolls','Total (PKR)'];
+    if(anyDiff) dHdr.push('Difference');
+    mrows.push(dHdr);
+    for(const d of dates){
+      const dr=s.dateAgg[d];
+      const row=[d, dr.fnames.join(', '), dr.bankCodes.size, dr.scrollCount, dr.total];
+      if(anyDiff) row.push(dr.diff);
+      mrows.push(row);
+    }
+    const mws=XLSX.utils.aoa_to_sheet(mrows);
+    mws['!cols']=[{wch:26},{wch:34},{wch:12},{wch:10},{wch:16},{wch:12},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,mws,'Monthly Summary');
+  }
+
+  /* differences sheet, if any */
+  const diffRows = buildDifferencesSummary();
+  if(diffRows.length){
+    const drows=[['Differences Summary — Division '+SELECTED_DIV],[''],
+      ['File','Bank Code','Bank Name','Payment Date','Scroll No','Scroll Total (PKR)','Difference','Bank Total (PKR)']];
+    for(const r of diffRows) drows.push([r.fname,r.code,r.name,r.payDate,r.scrollNo,r.total,r.diff,r.bankTotal]);
+    const dws=XLSX.utils.aoa_to_sheet(drows);
+    dws['!cols']=[{wch:28},{wch:12},{wch:34},{wch:14},{wch:10},{wch:16},{wch:12},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,dws,'Differences');
+  }
 
   for(const res of RESULTS){
     const isD=res.formType==='daily';
     const list=Object.values(res.banks).sort((a,b)=>a.code.localeCompare(b.code));
 
     const rows=[
-      ['CP-100 Analyzer — Division 1242 Bank Totals'],[''],
+      ['CP-100 Analyzer — Division '+res.divCode+' Bank Totals'],[''],
       ['File', res.fname],
       ['Form Type', isD?'Daily':'On-line'],
       ['Main Date', res.mainDate],
       ['Processing Date', res.procDate],
-      ['Division','1242 — City-2, Sialkot'],['']
+      ['Division', res.divCode+' — '+res.divName],['']
     ];
-    const hdr=['Bank Code','Bank Name','Payment Date','Scroll No','Bank Total (PKR)'];
-    if(isD) hdr.push('Difference');
+    const hdr=['Bank Code','Bank Name','Payment Date','Scroll No','Scroll Total (PKR)'];
+    if(isD) hdr.push('Difference','Bank Total (PKR)');
     rows.push(hdr);
 
     for(const bank of list){
@@ -464,19 +874,19 @@ function doExport(){
         a.payDate.localeCompare(b.payDate) || a.scrollNo-b.scrollNo);
       sorted.forEach((sc,i)=>{
         const row=[i===0?bank.code:'', i===0?bank.name:'', sc.payDate, sc.scrollNo, sc.total];
-        if(isD) row.push(sc.diff);
+        if(isD) row.push(sc.diff, sc.bankTotal);
         rows.push(row);
       });
       if(sorted.length>1){
         const combTotal=sorted.reduce((s,sc)=>s+sc.total,0);
         const combDiff =sorted.reduce((s,sc)=>s+sc.diff, 0);
+        const combBankTotal=sorted.reduce((s,sc)=>s+sc.bankTotal, 0);
         const row=['','Combined Total — '+bank.name+' ('+sorted.length+' scrolls)','','',combTotal];
-        if(isD) row.push(combDiff);
+        if(isD) row.push(combDiff, combBankTotal);
         rows.push(row);
       }
     }
 
-    /* ── divisional total — sums across ALL banks, grouped by date ── */
     const byDate={};
     let grandTotal=0, grandDiff=0, grandScrollCount=0;
     for(const bank of list){
@@ -492,7 +902,7 @@ function doExport(){
     const dateKeys=Object.keys(byDate).sort();
 
     rows.push([]);
-    rows.push(['DIVISIONAL TOTAL — 1242, City-2, Sialkot']);
+    rows.push(['DIVISIONAL TOTAL — '+res.divCode+', '+res.divName]);
     const dHdr=['Payment Date','Banks','Scrolls','Total (PKR)'];
     if(isD) dHdr.push('Difference');
     rows.push(dHdr);
@@ -510,83 +920,107 @@ function doExport(){
 
     const sn=((isD?'DL_':'OL_')+res.mainDate.replace(/\//g,'-')).slice(0,31);
     const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:12},{wch:40},{wch:14},{wch:10},{wch:18},{wch:14}];
+    ws['!cols']=[{wch:12},{wch:40},{wch:14},{wch:10},{wch:18},{wch:14},{wch:16}];
     XLSX.utils.book_append_sheet(wb,ws,sn);
   }
-  XLSX.writeFile(wb,'CP100_Div1242_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  XLSX.writeFile(wb,'CP100_Div'+SELECTED_DIV+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
 /* ─── file processing ─────────────────────── */
-async function run(files){
+async function run(fileList, opts){
+  opts = opts || {};
+  const isFolder = !!opts.isFolder;
+  const files = [...fileList];
   if(!files.length) return;
+
   const lb=document.getElementById('lb');
   lb.style.display='flex';
   document.getElementById('out').innerHTML='';
   document.getElementById('errs').innerHTML='';
+  document.getElementById('setup').style.display='none';
+  document.getElementById('selbar').style.display='none';
+  document.getElementById('summaryOut').innerHTML='';
   document.getElementById('tb').style.display='none';
   document.getElementById('emp').style.display='none';
-  RESULTS=[];
+  RAW_FILES = [];
+  RESULTS = [];
+  SELECTED_DIV = null;
 
-  const pdfs=[...files].filter(f=>f.name.toLowerCase().endsWith('.pdf'));
-  const errs=[...[...files].filter(f=>!f.name.toLowerCase().endsWith('.pdf'))
-               .map(f=>({f:f.name,r:'Not a PDF file'}))];
+  let pdfCandidates = files.filter(f=>f.name.toLowerCase().endsWith('.pdf'));
+  const nonPdfCount = files.length - pdfCandidates.length;
 
-  for(let i=0;i<pdfs.length;i++){
-    const f=pdfs[i];
-    document.getElementById('lmsg').textContent=
-      `Processing ${i+1} of ${pdfs.length}: ${f.name}`;
+  let skippedByName = 0;
+  if(isFolder){
+    const before = pdfCandidates.length;
+    pdfCandidates = pdfCandidates.filter(f=>isCP100Filename(f.name));
+    skippedByName = before - pdfCandidates.length;
+  }
+
+  const errs=[];
+  if(!isFolder && nonPdfCount>0){
+    files.filter(f=>!f.name.toLowerCase().endsWith('.pdf'))
+         .forEach(f=>errs.push({f:f.name, r:'Not a PDF file'}));
+  }
+
+  for(let i=0;i<pdfCandidates.length;i++){
+    const f=pdfCandidates[i];
+    document.getElementById('lmsg').textContent =
+      `Processing ${i+1} of ${pdfCandidates.length}: ${f.name}`;
     try{
       const buf=await f.arrayBuffer();
       const res=await parsePDF(buf,f.name);
-      if(res.ok) RESULTS.push(res);
-      else errs.push({f:f.name,r:res.reason});
-    }catch(e){ errs.push({f:f.name,r:e.message||'Failed to read PDF'}); }
+      if(res.ok) RAW_FILES.push(res);
+      else errs.push({f:f.name, r:res.reason});
+    }catch(e){ errs.push({f:f.name, r:e.message||'Failed to read PDF'}); }
   }
 
   lb.style.display='none';
-  document.getElementById('errs').innerHTML=
+
+  let notes='';
+  if(isFolder){
+    notes += `<div class="info-box">ℹ Folder scan: ${files.length} item(s) found, ${nonPdfCount} non-PDF skipped, ${skippedByName} PDF(s) skipped (filename doesn't look like a CP-100), ${pdfCandidates.length} checked as CP-100 candidates.</div>`;
+  }
+  document.getElementById('errs').innerHTML = notes +
     errs.map(e=>`<div class="err-box">⚠ <strong>${esc(e.f)}</strong>: ${esc(e.r)}</div>`).join('');
 
-  if(RESULTS.length){
-    const ol=RESULTS.filter(r=>r.formType==='online').length;
-    const dl=RESULTS.filter(r=>r.formType==='daily').length;
-    const parts=[];
-    if(ol) parts.push(ol+' on-line'); if(dl) parts.push(dl+' daily');
-    document.getElementById('fc').textContent=
-      `${RESULTS.length} file${RESULTS.length>1?'s':''} processed (${parts.join(', ')})`;
-    document.getElementById('tb').style.display='flex';
-    render();
-  } else if(!errs.length){
+  if(RAW_FILES.length){
+    renderSetup();
+  } else if(!errs.length && !isFolder){
     document.getElementById('emp').style.display='block';
+  } else {
+    document.getElementById('emp').style.display = RAW_FILES.length ? 'none' : 'block';
   }
 }
 
 /* ─── events ──────────────────────────────── */
-const dz=document.getElementById('dz'), fi=document.getElementById('fi');
+const dz=document.getElementById('dz'), fi=document.getElementById('fi'), fd=document.getElementById('fd');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');run(e.dataTransfer.files)});
-fi.addEventListener('change',e=>{run(e.target.files);e.target.value='';});
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');run(e.dataTransfer.files,{isFolder:false})});
+fi.addEventListener('change',e=>{run(e.target.files,{isFolder:false});e.target.value='';});
+fd.addEventListener('change',e=>{run(e.target.files,{isFolder:true});e.target.value='';});
 
 /* ─── print support ──────────────────────────
-   Stamp the print date, and make sure combined-total rows are visible
-   in the printed/PDF output regardless of the on-screen toggle state
-   (then restore the user's previous screen view afterwards).          */
+   Stamp the print date, and make sure combined totals AND per-file
+   detail are visible in the printed/PDF output regardless of the
+   on-screen toggle state (then restore the user's previous screen
+   view afterwards).                                                 */
 let _preprintCombine = null;
+let _preprintDetail  = null;
 window.addEventListener('beforeprint', ()=>{
-  document.getElementById('printDate').textContent = new Date().toLocaleString();
-  if(!COMBINE_MODE){
-    _preprintCombine = false;
-    COMBINE_MODE = true;
+  const pd = document.getElementById('printDate');
+  if(pd) pd.textContent = new Date().toLocaleString();
+  if(!COMBINE_MODE){ _preprintCombine=false; COMBINE_MODE=true; }
+  if(!DETAIL_VISIBLE){ _preprintDetail=false; DETAIL_VISIBLE=true; }
+  if(_preprintCombine===false || _preprintDetail===false){
     render();
+    document.getElementById('out').style.display='block';
   }
 });
 window.addEventListener('afterprint', ()=>{
-  if(_preprintCombine===false){
-    COMBINE_MODE = false;
-    render();
-    _preprintCombine = null;
-  }
+  if(_preprintCombine===false){ COMBINE_MODE=false; _preprintCombine=null; }
+  if(_preprintDetail===false){ DETAIL_VISIBLE=false; _preprintDetail=null; updateDetailBtn(); }
+  render();
 });
 </script>
 </body>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CP-100 Analyzer — Division 1242</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
+.wrap{
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:20px 24px;
+}
+h1{font-size:21px;font-weight:700;color:#1a3a6b;margin-bottom:4px}
+.sub{font-size:13px;color:#666;margin-bottom:20px}
+/* drop zone */
+.dz{border:2px dashed #b0bec5;border-radius:10px;padding:32px 20px;text-align:center;
+    cursor:pointer;background:#fff;transition:all .2s;margin-bottom:14px}
+.dz:hover,.dz.drag{border-color:#1a3a6b;background:#eef2fb}
+.dz-icon{font-size:40px;margin-bottom:8px}
+.dz-title{font-size:15px;font-weight:600;color:#1a3a6b;margin-bottom:4px}
+.dz-hint{font-size:12px;color:#888}
+/* loading */
+.load-bar{display:none;align-items:center;gap:10px;background:#fff;border:1px solid #e0e0e0;
+          border-radius:8px;padding:13px 16px;margin-bottom:12px}
+.spin{width:18px;height:18px;flex-shrink:0;border:3px solid #e0e0e0;border-top-color:#1a3a6b;
+      border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:13px;color:#555}
+/* error */
+.err-box{background:#fff0f0;border:1px solid #ffb3b3;border-radius:8px;padding:9px 14px;
+         margin-bottom:7px;font-size:13px;color:#c0392b}
+/* toolbar */
+.toolbar{display:none;justify-content:space-between;align-items:center;
+         background:#fff;border:1px solid #e0e0e0;border-radius:8px;
+         padding:10px 14px;margin-bottom:12px}
+.fc{font-size:13px;color:#555}
+.xbtn{background:#1a3a6b;color:#fff;border:none;padding:8px 20px;border-radius:6px;
+      font-size:13px;font-weight:600;cursor:pointer}
+.xbtn:hover{background:#142d54}
+/* result block */
+.rblock{background:#fff;border:1px solid #dde3ee;border-radius:10px;
+        margin-bottom:22px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.rhead{background:#1a3a6b;color:#fff;padding:12px 16px;
+       display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.rfn{font-size:14px;font-weight:600;word-break:break-all}
+.badge{font-size:11px;font-weight:700;padding:3px 11px;border-radius:12px;white-space:nowrap}
+.b-ol{background:#bbdefb;color:#0d47a1}
+.b-dl{background:#e1bee7;color:#4a148c}
+.rmeta{display:flex;gap:22px;padding:11px 16px;background:#f8f9fb;
+       border-bottom:1px solid #e8ecf4;flex-wrap:wrap}
+.mi{font-size:12px;color:#444}
+.ml{font-weight:700;color:#1a3a6b;margin-right:4px}
+.grand-row{display:flex;justify-content:space-between;align-items:center;
+           padding:10px 16px;background:#e8edf8;border-bottom:1px solid #c9d3e8}
+.gl{font-size:13px;font-weight:700;color:#1a3a6b}
+.gv{font-size:17px;font-weight:700;color:#1a3a6b}
+.warn-ban{background:#fff8e1;border-left:4px solid #f9a825;padding:9px 14px;
+          margin:10px 16px 0;font-size:12px;color:#7a5000;border-radius:0 6px 6px 0}
+/* table */
+table{width:100%;border-collapse:collapse}
+thead tr{background:#eef1f8}
+th{padding:9px 13px;text-align:left;font-size:11px;font-weight:700;color:#1a3a6b;
+   border-bottom:2px solid #c9d3e8;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+th.r{text-align:right}
+td{padding:8px 13px;font-size:13px;border-bottom:1px solid #f0f2f8;color:#333;vertical-align:middle}
+td.r{text-align:right}
+td.code{font-weight:700;color:#1a3a6b;font-size:12px;white-space:nowrap}
+td.amt{text-align:right;font-weight:600;color:#1a3a6b}
+td.dok{text-align:right;color:#2e7d32}
+td.dwarn{text-align:right;color:#c62828;font-weight:700}
+tr:hover td{background:#f5f7fd}
+tr.dt td{background:#fafbff}
+tr.sub td{background:#eef1f8;font-weight:700;border-top:2px solid #c9d3e8;border-bottom:2px solid #c9d3e8}
+.ss{font-size:11px;color:#888;font-weight:400}
+/* divisional total block */
+.divtot{border-top:3px solid #1a3a6b;background:#f6f8fc}
+.divtot-head{padding:10px 16px;font-size:13px;font-weight:700;color:#1a3a6b}
+.divtot-table{width:100%;border-collapse:collapse}
+.divtot-table th{padding:7px 13px;text-align:left;font-size:10px;font-weight:700;color:#1a3a6b;
+   border-bottom:1px solid #c9d3e8;text-transform:uppercase;letter-spacing:.04em;background:transparent}
+.divtot-table th.r{text-align:right}
+.divtot-table td{padding:8px 13px;font-size:13px;border-bottom:1px solid #e2e7f2;color:#333}
+.divtot-table td.r{text-align:right}
+.divtot-table td.amt{text-align:right;font-weight:600;color:#1a3a6b}
+.divtot-table td.dok{text-align:right;color:#2e7d32}
+.divtot-table td.dwarn{text-align:right;color:#c62828;font-weight:700}
+.divtot-table tr.grand td{background:#1a3a6b;color:#fff;font-weight:700;font-size:14px;border-bottom:none}
+.divtot-table tr.grand td.amt{color:#fff}
+.divtot-table tr.grand td.dok,.divtot-table tr.grand td.dwarn{color:#fff}
+/* empty */
+.empty{text-align:center;padding:50px 20px;background:#fff;border-radius:10px;border:1px dashed #ccc}
+.ei{font-size:48px;margin-bottom:12px}
+.et{font-size:16px;font-weight:600;color:#555;margin-bottom:6px}
+.eh{font-size:13px;color:#888}
+/* toolbar buttons (secondary style) */
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.sbtn{background:#fff;color:#1a3a6b;border:1px solid #c9d3e8;padding:8px 16px;border-radius:6px;
+      font-size:13px;font-weight:600;cursor:pointer}
+.sbtn:hover{background:#eef2fb}
+.sbtn.on{background:#1a3a6b;color:#fff;border-color:#1a3a6b}
+/* footer */
+.footer{text-align:center;padding:22px 10px 8px;font-size:12px;color:#8a93a3}
+.footer b{color:#5a6478}
+/* print-only header (hidden on screen) */
+.print-head{display:none}
+@media print{
+  body{background:#fff}
+  .wrap{max-width:100%;padding:0}
+  .dz, .load-bar, #errs, .toolbar{display:none !important}
+  .empty{display:none !important}
+  .print-head{display:block;text-align:center;margin-bottom:14px}
+  .print-head h1{font-size:18px;color:#000;margin-bottom:2px}
+  .print-head .sub{color:#444;font-size:11px}
+  h1.screen-only, p.sub.screen-only{display:none}
+  .rblock{box-shadow:none;border:1px solid #999;page-break-inside:avoid;margin-bottom:14px}
+  .rhead{background:#eee !important;color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .badge{border:1px solid #999}
+  thead tr{background:#eee !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  tr.sub td{background:#f3f3f3 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table{font-size:11px}
+  .divtot{background:#f3f3f3 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .divtot-table tr.grand td{background:#333 !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .footer{margin-top:20px;border-top:1px solid #ccc;padding-top:8px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="print-head">
+    <h1>CP-100 Analyzer — Division 1242</h1>
+    <div class="sub">City-2, Sialkot &nbsp;·&nbsp; Printed <span id="printDate"></span></div>
+  </div>
+  <h1 class="screen-only">CP-100 Analyzer — Division 1242</h1>
+  <p class="sub screen-only">Extracts City-2, Sialkot bank totals from On-line &amp; Daily CP-100 PDFs &nbsp;·&nbsp; Works offline</p>
+
+  <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
+    <div class="dz-icon">📂</div>
+    <div class="dz-title">Drop CP-100 PDFs here or click to browse</div>
+    <div class="dz-hint">On-line or Daily · Multiple files at once · Works offline after first load</div>
+    <input type="file" id="fi" accept=".pdf" multiple style="display:none">
+  </div>
+
+  <div class="load-bar" id="lb">
+    <div class="spin"></div>
+    <span class="load-txt" id="lmsg">Processing…</span>
+  </div>
+  <div id="errs"></div>
+  <div class="toolbar" id="tb">
+    <span class="fc" id="fc"></span>
+    <div class="btn-row">
+      <button class="sbtn" id="combineBtn" onclick="toggleCombine()">Σ Show combined totals</button>
+      <button class="sbtn" onclick="window.print()">🖨 Print / Save as PDF</button>
+      <button class="xbtn" onclick="doExport()">⬇ Export to Excel</button>
+    </div>
+  </div>
+  <div id="out"></div>
+  <div class="empty" id="emp">
+    <div class="ei">📄</div>
+    <div class="et">No files yet</div>
+    <div class="eh">Upload on-line or daily CP-100 PDFs to extract Division 1242 bank totals</div>
+  </div>
+  <div class="footer">Developed by <b>Taimoor Ali</b></div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let RESULTS = [];
+
+/* ─── helpers ─────────────────────────────── */
+function pn(s){ return parseFloat(String(s||'0').replace(/,/g,''))||0; }
+function fn(n){ return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ─── pdf.js → array of line-strings per page ─
+   Groups text items by rounded y-coordinate (top→bottom),
+   sorts each group by x, joins with space.
+   This faithfully mimics how pdf.js streams glyphs.           */
+async function pdfToLines(buf){
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  const pages = [];
+  const Y_TOL = 3; // px tolerance for clustering same-row text fragments
+  for(let p=1;p<=pdf.numPages;p++){
+    const pg = await pdf.getPage(p);
+    const tc = await pg.getTextContent();
+
+    /* collect items as {x,y,s} — y is from BOTTOM of page in pdf.js coords */
+    const items = tc.items.map(it=>({x:it.transform[4], y:it.transform[5], s:it.str}))
+                           .filter(it=>it.s && it.s.trim().length>0);
+
+    /* sort top→bottom (descending y), then left→right for tie-break */
+    items.sort((a,b)=> (b.y-a.y) || (a.x-b.x));
+
+    /* cluster into rows: items whose y is within Y_TOL of the running
+       cluster's average y belong to the same row. This avoids the bug
+       where naive Math.round() splits a single PDF row into two buckets
+       when its baseline sits exactly on a .5 boundary. */
+    const rows = [];
+    let cluster = [];
+    let clusterY = null;
+    for(const it of items){
+      if(clusterY===null || Math.abs(it.y-clusterY) <= Y_TOL){
+        cluster.push(it);
+        clusterY = cluster.reduce((s,c)=>s+c.y,0)/cluster.length; // running average
+      } else {
+        rows.push(cluster);
+        cluster=[it];
+        clusterY=it.y;
+      }
+    }
+    if(cluster.length) rows.push(cluster);
+
+    const lines = rows.map(row=>
+      row.slice().sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ').replace(/\s+/g,' ').trim()
+    ).filter(l=>l.length>0);
+
+    pages.push(lines);
+  }
+  return pages;
+}
+
+/* ─── parse one CP-100 PDF ────────────────── */
+async function parsePDF(buf, fname){
+  const pages = await pdfToLines(buf);
+
+  /* regexes — compiled once */
+  const RE_DIV   = /BANK DIV\.: (\d+)/;                                    // division header
+  const RE_DATE  = /MAIN DATE\s+([\d\/]+)/;                                 // main date
+  const RE_PROC  = /PROCESSING DATE\s+([\d\/]+)/;                           // processing date
+  const RE_TYPE  = /(on-line|Daily)/;                                        // form type
+  const RE_SCR   = /^SCROLL NO (\d+) Bank (\d{5}) (.+?) PAYMENT DT ([\d\/]+)/; // scroll header (no., code, name, date)
+  const RE_STOT  = /Scroll total ([\d,]+\.\d+) T DIFFERENCE: ([\d,]+\.\d+)/;// scroll total
+
+  let mainDate='', procDate='', formType='';
+  let inDiv=false, curCode=null;
+  const banks={};   // code → {name, scrolls:[{payDate,total,diff}]}
+
+  for(const lines of pages){
+    for(const line of lines){
+
+      /* ── metadata (grab from ANY page header line) ── */
+      if(!mainDate){ const m=RE_DATE.exec(line); if(m) mainDate=m[1]; }
+      if(!procDate){ const m=RE_PROC.exec(line); if(m) procDate=m[1]; }
+      if(!formType){ const m=RE_TYPE.exec(line); if(m) formType=m[1].toLowerCase().replace('-',''); }
+      // 'on-line' → 'online',  'Daily' → 'daily'
+
+      /* ── division switch — MUST come before 'continue' so metadata above is read ── */
+      const dm=RE_DIV.exec(line);
+      if(dm){
+        inDiv=(dm[1]==='1242');
+        continue;   // header line; no scroll data on it
+      }
+
+      if(!inDiv) continue;
+
+      /* ── new scroll ── */
+      const sm=RE_SCR.exec(line);
+      if(sm){
+        const scrollNo=parseInt(sm[1],10), code=sm[2], name=sm[3].trim(), payDate=sm[4];
+        curCode=code;
+        if(!banks[code]) banks[code]={name, scrolls:[]};
+        if(name.length>banks[code].name.length) banks[code].name=name;
+        /* index scrolls by their printed SCROLL NO so a total that lands on
+           the wrong "last scroll" (e.g. due to a page break) still gets
+           attributed to the correct scroll once we see its real number  */
+        banks[code].scrolls.push({scrollNo, payDate, total:0, diff:0, filled:false});
+        continue;
+      }
+
+      /* ── scroll total + difference ── */
+      const stm=RE_STOT.exec(line);
+      if(stm && curCode && banks[curCode].scrolls.length){
+        /* fill the most recent UNFILLED scroll for this bank — guards
+           against a scroll header on the next page stealing the pointer
+           before its own total line has appeared                        */
+        const arr=banks[curCode].scrolls;
+        let target=null;
+        for(let i=arr.length-1;i>=0;i--){ if(!arr[i].filled){ target=arr[i]; break; } }
+        if(!target) target=arr[arr.length-1];
+        target.total=pn(stm[1]);
+        target.diff =pn(stm[2]);
+        target.filled=true;
+      }
+    }
+  }
+
+  if(!formType) return {ok:false, reason:'Not a CP-100 form (on-line / Daily not found)'};
+  if(!Object.keys(banks).length)
+    return {ok:false, reason:'Division 1242 (City-2, Sialkot) not found or has no transactions'};
+
+  /* ── package per-bank scroll lists (no aggregation/summing) ── */
+  const result={};
+  for(const [code,bank] of Object.entries(banks)){
+    result[code]={ code, name:bank.name, scrolls: bank.scrolls };
+  }
+
+  return {ok:true, fname, mainDate, procDate, formType, banks:result};
+}
+
+/* ─── render ──────────────────────────────── */
+/* Every scroll is shown as its own independent row — bank code, name,
+   payment date, scroll number, and that scroll's own total.
+   When COMBINE_MODE is on, banks with more than one scroll (whether on
+   the same date or different dates) also get a bold "Combined Total"
+   row underneath, summing just that bank's own scrolls — nothing is
+   ever summed across different banks.                                  */
+let COMBINE_MODE = false;
+
+function toggleCombine(){
+  COMBINE_MODE = !COMBINE_MODE;
+  const btn=document.getElementById('combineBtn');
+  btn.classList.toggle('on', COMBINE_MODE);
+  btn.textContent = COMBINE_MODE ? '✓ Combined totals shown' : 'Σ Show combined totals';
+  render();
+}
+
+function render(){
+  const el=document.getElementById('out');
+  if(!RESULTS.length){ el.innerHTML=''; return; }
+  let html='';
+
+  for(const res of RESULTS){
+    /* sort banks by code, and within a bank sort scrolls by date then scroll no */
+    const list=Object.values(res.banks).sort((a,b)=>a.code.localeCompare(b.code));
+    const isD=res.formType==='daily';
+    const totalScrolls=list.reduce((s,b)=>s+b.scrolls.length,0);
+    const anyDiff=isD&&list.some(b=>b.scrolls.some(sc=>sc.diff!==0));
+
+    html+=`<div class="rblock">
+      <div class="rhead">
+        <span class="rfn">${esc(res.fname)}</span>
+        <span class="badge ${isD?'b-dl':'b-ol'}">${isD?'Daily':'On-line'}</span>
+      </div>
+      <div class="rmeta">
+        <span class="mi"><span class="ml">Main Date:</span>${esc(res.mainDate)}</span>
+        <span class="mi"><span class="ml">Proc Date:</span>${esc(res.procDate)}</span>
+        <span class="mi"><span class="ml">Division:</span>1242 — City-2, Sialkot</span>
+        <span class="mi"><span class="ml">Banks:</span>${list.length}</span>
+        <span class="mi"><span class="ml">Scroll rows:</span>${totalScrolls}</span>
+      </div>`;
+
+    if(anyDiff)
+      html+=`<div class="warn-ban">⚠ One or more scrolls have a non-zero DIFFERENCE — highlighted in red below</div>`;
+
+    html+=`<table><thead><tr>
+      <th>Bank Code</th><th>Bank Name</th><th>Payment Date</th>
+      <th class="r">Scroll No</th><th class="r">Bank Total</th>`;
+    if(isD) html+=`<th class="r">Difference</th>`;
+    html+=`</tr></thead><tbody>`;
+
+    for(const bank of list){
+      const sorted=bank.scrolls.slice().sort((a,b)=>
+        a.payDate.localeCompare(b.payDate) || a.scrollNo-b.scrollNo);
+      let first=true;
+      for(const sc of sorted){
+        html+=`<tr>
+          <td class="code">${first?bank.code:''}</td>
+          <td>${first?esc(bank.name):''}</td>
+          <td>${esc(sc.payDate)}</td>
+          <td class="r">${sc.scrollNo}</td>
+          <td class="amt">${fn(sc.total)}</td>`;
+        if(isD) html+=`<td class="${sc.diff===0?'dok':'dwarn'}">${fn(sc.diff)}</td>`;
+        html+=`</tr>`;
+        first=false;
+      }
+
+      /* combined total row — only when this bank has more than one
+         scroll (same date or different dates) AND combine mode is on */
+      if(COMBINE_MODE && sorted.length>1){
+        const combTotal = sorted.reduce((s,sc)=>s+sc.total,0);
+        const combDiff   = sorted.reduce((s,sc)=>s+sc.diff, 0);
+        html+=`<tr class="sub">
+          <td colspan="3" style="text-align:right;padding-right:16px">Combined Total — ${esc(bank.name)} (${sorted.length} scrolls)</td>
+          <td></td>
+          <td class="amt">${fn(combTotal)}</td>`;
+        if(isD) html+=`<td class="${combDiff===0?'dok':'dwarn'}">${fn(combDiff)}</td>`;
+        html+=`</tr>`;
+      }
+    }
+    html+=`</tbody></table>`;
+
+    /* ── divisional total — every bank's every scroll, grouped by
+       payment date, plus a single grand total for the whole file.
+       This sums ACROSS banks (unlike the per-bank combined row above)
+       to answer "what's the total for this date / this PDF".          */
+    const byDate={};
+    let grandTotal=0, grandDiff=0, grandScrollCount=0;
+    for(const bank of list){
+      for(const sc of bank.scrolls){
+        if(!byDate[sc.payDate]) byDate[sc.payDate]={payDate:sc.payDate,total:0,diff:0,scrollCount:0,bankCodes:new Set()};
+        byDate[sc.payDate].total+=sc.total;
+        byDate[sc.payDate].diff +=sc.diff;
+        byDate[sc.payDate].scrollCount++;
+        byDate[sc.payDate].bankCodes.add(bank.code);
+        grandTotal+=sc.total; grandDiff+=sc.diff; grandScrollCount++;
+      }
+    }
+    const dateRows=Object.values(byDate).sort((a,b)=>a.payDate.localeCompare(b.payDate));
+    const multiDateFile = dateRows.length>1;
+
+    html+=`<div class="divtot">
+      <div class="divtot-head">📊 Divisional Total — 1242, City-2, Sialkot</div>
+      <table class="divtot-table"><thead><tr>
+        <th>Payment Date</th><th class="r">Banks</th><th class="r">Scrolls</th><th class="r">Total</th>`;
+    if(isD) html+=`<th class="r">Difference</th>`;
+    html+=`</tr></thead><tbody>`;
+    for(const dr of dateRows){
+      html+=`<tr>
+        <td>${esc(dr.payDate)}</td>
+        <td class="r">${dr.bankCodes.size}</td>
+        <td class="r">${dr.scrollCount}</td>
+        <td class="amt">${fn(dr.total)}</td>`;
+      if(isD) html+=`<td class="${dr.diff===0?'dok':'dwarn'}">${fn(dr.diff)}</td>`;
+      html+=`</tr>`;
+    }
+    if(multiDateFile){
+      html+=`<tr class="grand">
+        <td>All Dates — Grand Total</td>
+        <td class="r">${list.length}</td>
+        <td class="r">${grandScrollCount}</td>
+        <td class="amt">${fn(grandTotal)}</td>`;
+      if(isD) html+=`<td class="${grandDiff===0?'dok':'dwarn'}">${fn(grandDiff)}</td>`;
+      html+=`</tr>`;
+    }
+    html+=`</tbody></table></div>`;
+
+    html+=`</div>`; // close rblock
+  }
+  el.innerHTML=html;
+}
+
+/* ─── excel export ────────────────────────── */
+/* One row per scroll. If a bank has more than one scroll (same date or
+   different dates) a bold "Combined Total" row is appended after its
+   scrolls — clearly labeled, never mixed into other banks' figures.    */
+function doExport(){
+  if(!RESULTS.length) return;
+  const wb=XLSX.utils.book_new();
+
+  for(const res of RESULTS){
+    const isD=res.formType==='daily';
+    const list=Object.values(res.banks).sort((a,b)=>a.code.localeCompare(b.code));
+
+    const rows=[
+      ['CP-100 Analyzer — Division 1242 Bank Totals'],[''],
+      ['File', res.fname],
+      ['Form Type', isD?'Daily':'On-line'],
+      ['Main Date', res.mainDate],
+      ['Processing Date', res.procDate],
+      ['Division','1242 — City-2, Sialkot'],['']
+    ];
+    const hdr=['Bank Code','Bank Name','Payment Date','Scroll No','Bank Total (PKR)'];
+    if(isD) hdr.push('Difference');
+    rows.push(hdr);
+
+    for(const bank of list){
+      const sorted=bank.scrolls.slice().sort((a,b)=>
+        a.payDate.localeCompare(b.payDate) || a.scrollNo-b.scrollNo);
+      sorted.forEach((sc,i)=>{
+        const row=[i===0?bank.code:'', i===0?bank.name:'', sc.payDate, sc.scrollNo, sc.total];
+        if(isD) row.push(sc.diff);
+        rows.push(row);
+      });
+      if(sorted.length>1){
+        const combTotal=sorted.reduce((s,sc)=>s+sc.total,0);
+        const combDiff =sorted.reduce((s,sc)=>s+sc.diff, 0);
+        const row=['','Combined Total — '+bank.name+' ('+sorted.length+' scrolls)','','',combTotal];
+        if(isD) row.push(combDiff);
+        rows.push(row);
+      }
+    }
+
+    /* ── divisional total — sums across ALL banks, grouped by date ── */
+    const byDate={};
+    let grandTotal=0, grandDiff=0, grandScrollCount=0;
+    for(const bank of list){
+      for(const sc of bank.scrolls){
+        if(!byDate[sc.payDate]) byDate[sc.payDate]={total:0,diff:0,scrollCount:0,bankCodes:new Set()};
+        byDate[sc.payDate].total+=sc.total;
+        byDate[sc.payDate].diff +=sc.diff;
+        byDate[sc.payDate].scrollCount++;
+        byDate[sc.payDate].bankCodes.add(bank.code);
+        grandTotal+=sc.total; grandDiff+=sc.diff; grandScrollCount++;
+      }
+    }
+    const dateKeys=Object.keys(byDate).sort();
+
+    rows.push([]);
+    rows.push(['DIVISIONAL TOTAL — 1242, City-2, Sialkot']);
+    const dHdr=['Payment Date','Banks','Scrolls','Total (PKR)'];
+    if(isD) dHdr.push('Difference');
+    rows.push(dHdr);
+    for(const dk of dateKeys){
+      const dr=byDate[dk];
+      const row=[dk, dr.bankCodes.size, dr.scrollCount, dr.total];
+      if(isD) row.push(dr.diff);
+      rows.push(row);
+    }
+    if(dateKeys.length>1){
+      const row=['ALL DATES — GRAND TOTAL', list.length, grandScrollCount, grandTotal];
+      if(isD) row.push(grandDiff);
+      rows.push(row);
+    }
+
+    const sn=((isD?'DL_':'OL_')+res.mainDate.replace(/\//g,'-')).slice(0,31);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:40},{wch:14},{wch:10},{wch:18},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,ws,sn);
+  }
+  XLSX.writeFile(wb,'CP100_Div1242_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+/* ─── file processing ─────────────────────── */
+async function run(files){
+  if(!files.length) return;
+  const lb=document.getElementById('lb');
+  lb.style.display='flex';
+  document.getElementById('out').innerHTML='';
+  document.getElementById('errs').innerHTML='';
+  document.getElementById('tb').style.display='none';
+  document.getElementById('emp').style.display='none';
+  RESULTS=[];
+
+  const pdfs=[...files].filter(f=>f.name.toLowerCase().endsWith('.pdf'));
+  const errs=[...[...files].filter(f=>!f.name.toLowerCase().endsWith('.pdf'))
+               .map(f=>({f:f.name,r:'Not a PDF file'}))];
+
+  for(let i=0;i<pdfs.length;i++){
+    const f=pdfs[i];
+    document.getElementById('lmsg').textContent=
+      `Processing ${i+1} of ${pdfs.length}: ${f.name}`;
+    try{
+      const buf=await f.arrayBuffer();
+      const res=await parsePDF(buf,f.name);
+      if(res.ok) RESULTS.push(res);
+      else errs.push({f:f.name,r:res.reason});
+    }catch(e){ errs.push({f:f.name,r:e.message||'Failed to read PDF'}); }
+  }
+
+  lb.style.display='none';
+  document.getElementById('errs').innerHTML=
+    errs.map(e=>`<div class="err-box">⚠ <strong>${esc(e.f)}</strong>: ${esc(e.r)}</div>`).join('');
+
+  if(RESULTS.length){
+    const ol=RESULTS.filter(r=>r.formType==='online').length;
+    const dl=RESULTS.filter(r=>r.formType==='daily').length;
+    const parts=[];
+    if(ol) parts.push(ol+' on-line'); if(dl) parts.push(dl+' daily');
+    document.getElementById('fc').textContent=
+      `${RESULTS.length} file${RESULTS.length>1?'s':''} processed (${parts.join(', ')})`;
+    document.getElementById('tb').style.display='flex';
+    render();
+  } else if(!errs.length){
+    document.getElementById('emp').style.display='block';
+  }
+}
+
+/* ─── events ──────────────────────────────── */
+const dz=document.getElementById('dz'), fi=document.getElementById('fi');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');run(e.dataTransfer.files)});
+fi.addEventListener('change',e=>{run(e.target.files);e.target.value='';});
+
+/* ─── print support ──────────────────────────
+   Stamp the print date, and make sure combined-total rows are visible
+   in the printed/PDF output regardless of the on-screen toggle state
+   (then restore the user's previous screen view afterwards).          */
+let _preprintCombine = null;
+window.addEventListener('beforeprint', ()=>{
+  document.getElementById('printDate').textContent = new Date().toLocaleString();
+  if(!COMBINE_MODE){
+    _preprintCombine = false;
+    COMBINE_MODE = true;
+    render();
+  }
+});
+window.addEventListener('afterprint', ()=>{
+  if(_preprintCombine===false){
+    COMBINE_MODE = false;
+    render();
+    _preprintCombine = null;
+  }
+});
+</script>
+</body>
+</html>
