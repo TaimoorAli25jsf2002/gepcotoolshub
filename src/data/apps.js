@@ -20,7 +20,7 @@ const apps = [
     {
     id: "oncp100",
     name: "Online CP-100 Analyzer",
-    description: "Analyze Online CP-100 and get totals of online banks.",
+    description: "Analyze Online or Direct CP-100 and get totals of banks for single date or for multiple dates .",
     category: "Banking",
     icon: "💻",
     path: "apps/oncp100/index.html",
