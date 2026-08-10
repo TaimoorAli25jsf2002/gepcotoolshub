@@ -110,7 +110,7 @@ export default function App() {
         <footer>
           <span>GEPCO Tools Hub</span>
           <span>•</span>
-          <span>Built as a launcher for your office utilities</span>
+          <span>Tools for GEPCO Revenue Office</span>
         </footer>
       </main>
     </div>
