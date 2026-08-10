@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Statement Ledger — Monthly Bank Statement Analyzer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --ink:#101a14;
+    --paper:#f6f4ee;
+    --paper-deep:#efece3;
+    --line:#d8d3c4;
+    --rule:#c9c3ae;
+    --ledger:#1f4d3a;
+    --ledger-deep:#143527;
+    --gold:#a9842c;
+    --red:#9b2c2c;
+    --red-bg:#fbeaea;
+    --green-bg:#e9f3ec;
+    --mono:'JetBrains Mono','SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --serif:'Source Serif Pro','Iowan Old Style',Georgia,'Times New Roman',serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:13px;
+    background-image:
+      linear-gradient(var(--paper) 1px, transparent 1px);
+    background-size:100% 28px;
+  }
+
+  /* ---------- HEADER ---------- */
+  header{
+    background:var(--ledger-deep);
+    color:#f1efe4;
+    padding:38px 28px 30px;
+    border-bottom:4px double var(--gold);
+  }
+  header .inner{max-width:1180px; margin:0 auto;}
+  header .mark{
+    font-family:var(--mono); font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--gold); margin-bottom:10px; display:flex; align-items:center; gap:10px;
+  }
+  header .mark::before, header .mark::after{content:""; flex:1; height:1px; background:rgba(169,132,44,.5);}
+  header h1{
+    font-family:var(--serif); font-weight:600; font-size:32px; letter-spacing:.01em;
+    margin:0 0 10px; color:#fbfaf4;
+  }
+  header p{
+    margin:0; font-size:13px; line-height:1.65; color:#cdd3c8; max-width:680px;
+  }
+
+  .container{max-width:1180px; margin:0 auto; padding:30px 24px 50px;}
+
+  /* ---------- CARD / LEDGER SHEET ---------- */
+  .sheet{
+    background:#fffdf7; border:1px solid var(--line); border-radius:2px;
+    margin-bottom:24px; box-shadow:0 1px 0 rgba(16,26,20,.04);
+    position:relative;
+  }
+  .sheet::before{
+    content:""; position:absolute; left:46px; top:0; bottom:0; width:1px;
+    background:rgba(155,44,44,.18);
+  }
+  .sheet-head{
+    display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding:18px 24px 14px 56px; border-bottom:1px solid var(--rule);
+  }
+  .sheet-head .tag{
+    font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--ledger);
+    font-weight:700;
+  }
+  .sheet-head h2{
+    margin:2px 0 0; font-family:var(--serif); font-weight:600; font-size:19px; color:var(--ink);
+  }
+  .sheet-head .note{font-size:11.5px; color:#6b6354; max-width:480px; line-height:1.5;}
+  .sheet-body{padding:20px 24px 24px 56px;}
+
+  /* ---------- UPLOAD ---------- */
+  .upload-row{display:flex; gap:12px; flex-wrap:wrap; align-items:center;}
+  .file-drop{
+    flex:1; min-width:260px; border:1.5px dashed var(--rule); background:var(--paper-deep);
+    padding:14px 16px; font-size:12.5px; color:#5b5446; cursor:pointer; display:flex; align-items:center; gap:10px;
+  }
+  .file-drop:hover{border-color:var(--ledger);}
+  .file-drop .pin{color:var(--red); font-weight:700;}
+
+  button{
+    font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.04em;
+    text-transform:uppercase; padding:12px 22px; border:1px solid var(--ledger-deep);
+    background:var(--ledger); color:#fdfcf6; cursor:pointer; border-radius:1px;
+    transition:background .15s, transform .08s;
+  }
+  button:hover:not(:disabled){background:var(--ledger-deep);}
+  button:active:not(:disabled){transform:translateY(1px);}
+  button:disabled{background:#cfc9ba; border-color:#cfc9ba; color:#79735f; cursor:not-allowed;}
+  button.ghost{
+    background:transparent; color:var(--ledger-deep); border:1px solid var(--ledger-deep);
+  }
+  button.ghost:hover:not(:disabled){background:var(--paper-deep);}
+
+  #status{font-size:11.5px; color:#6b6354; margin-top:12px; min-height:14px;}
+  #status.err{color:var(--red); font-weight:700;}
+
+  /* ---------- SUMMARY STATS ---------- */
+  .stat-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); margin-bottom:18px;}
+  .stat{background:#fffdf7; padding:16px 14px; text-align:center;}
+  .stat .num{font-family:var(--serif); font-size:25px; font-weight:600; color:var(--ledger-deep);}
+  .stat .label{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#8a8270; margin-top:6px;}
+
+  .compare{
+    border:1px solid var(--rule); padding:16px 18px; display:flex; justify-content:space-between;
+    align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  .compare.match{background:var(--green-bg); border-color:#bcd9c5;}
+  .compare.mismatch{background:var(--red-bg); border-color:#e3bcbc;}
+  .compare .figs{display:flex; gap:30px; flex-wrap:wrap;}
+  .compare .figs div span.k{display:block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#7c7461;}
+  .compare .figs div span.v{font-family:var(--serif); font-size:18px; font-weight:600;}
+  .stamp{
+    padding:7px 16px; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    border:2px solid; border-radius:2px; transform:rotate(-2deg);
+  }
+  .stamp.match{color:var(--ledger); border-color:var(--ledger);}
+  .stamp.mismatch{color:var(--red); border-color:var(--red);}
+  .stamp.na{color:#8a8270; border-color:#8a8270;}
+
+  /* ---------- TABLES ---------- */
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  thead th{
+    text-align:left; padding:9px 10px; font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    color:#6b6354; border-bottom:1.5px solid var(--ink); font-weight:700; background:var(--paper-deep);
+  }
+  tbody td{padding:8px 10px; border-bottom:1px solid var(--rule);}
+  tbody tr:nth-child(even){background:#faf8f1;}
+  tbody tr:hover{background:#f1ede0;}
+  td.amt, th.amt{text-align:right; font-variant-numeric:tabular-nums;}
+  td.idx{color:#a39c89; width:36px;}
+  tr.missing-row td{color:var(--red); font-weight:700;}
+  .table-wrap{max-height:440px; overflow-y:auto; border:1px solid var(--rule);}
+  .table-wrap thead th{position:sticky; top:0; z-index:1;}
+
+  .badge{
+    display:inline-block; padding:1px 9px; border:1px solid var(--ledger); color:var(--ledger);
+    font-size:10.5px; font-weight:700; border-radius:9px;
+  }
+  .badge.miss{border-color:var(--red); color:var(--red);}
+
+  .two-col{display:grid; grid-template-columns:1.2fr 1fr; gap:22px;}
+  @media (max-width:880px){.two-col{grid-template-columns:1fr;}}
+
+  .sheet-head-row{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px;}
+  .empty-note{text-align:center; color:#8a8270; padding:34px 10px; font-size:12.5px;}
+
+  footer{
+    text-align:center; padding:30px 20px 40px; color:#7c7461; font-size:11.5px;
+    letter-spacing:.03em;
+  }
+  footer b{color:var(--ink); font-family:var(--serif); font-size:13px;}
+  footer .rule{width:60px; height:1px; background:var(--rule); margin:0 auto 14px;}
+
+  /* ---------- PRINT ---------- */
+  @media print{
+    body{background:#fff; font-size:11px;}
+    header, .no-print, button{display:none !important;}
+    .container{max-width:100%; margin:0; padding:0;}
+    .sheet{box-shadow:none; border:1px solid #999; break-inside:avoid;}
+    .sheet::before{display:none;}
+    .table-wrap{max-height:none; overflow:visible; border:none;}
+    footer{display:block !important; border-top:1px solid #999; margin-top:18px;}
+    #resultsArea > .sheet{display:none !important;}
+    body.printing-present .present-sheet{display:block !important;}
+    body.printing-missing .missing-sheet{display:block !important;}
+    body.printing-present .print-title-present{display:block !important;}
+    body.printing-missing .print-title-missing{display:block !important;}
+  }
+  .print-title{display:none; font-family:var(--serif); font-size:18px; font-weight:700; margin:6px 0 16px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div class="mark">Statement Ledger</div>
+    <h1>Monthly Bank Statement Analyzer</h1>
+    <p>Upload an Institution Wise Cleared Report (PDF). The tool reads every transaction date, totals the amounts per date, checks the result against the bank's own printed grand total, and lists exactly which calendar dates inside the statement period have no cleared transaction — all processed locally in your browser, ready to view or print.</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="sheet no-print">
+    <div class="sheet-head">
+      <div>
+        <div class="tag">Step 01</div>
+        <h2>Load the Statement</h2>
+      </div>
+      <div class="note">Nothing leaves your device — the PDF is parsed entirely in-browser.</div>
+    </div>
+    <div class="sheet-body">
+      <div class="upload-row">
+        <label class="file-drop" for="pdfFile"><span class="pin">＋</span><span id="fileLabel">Click to choose a PDF statement…</span></label>
+        <input type="file" id="pdfFile" accept="application/pdf" style="display:none;">
+        <button id="processBtn" disabled>Analyze Statement</button>
+      </div>
+      <div id="status">Waiting for a file…</div>
+    </div>
+  </div>
+
+  <div id="resultsArea" style="display:none;">
+
+    <div class="sheet summary-sheet">
+      <div class="sheet-head">
+        <div>
+          <div class="tag">Step 02</div>
+          <h2>Summary</h2>
+        </div>
+      </div>
+      <div class="sheet-body">
+        <div class="stat-row">
+          <div class="stat"><div class="num" id="sTotalTx">0</div><div class="label">Total Transactions</div></div>
+          <div class="stat"><div class="num" id="sUniqueDates">0</div><div class="label">Dates Present</div></div>
+          <div class="stat"><div class="num" id="sRange">-</div><div class="label">Statement Period</div></div>
+          <div class="stat"><div class="num" id="sMissing">0</div><div class="label">Missing Dates</div></div>
+        </div>
+
+        <div id="compareBox" class="compare">
+          <div class="figs">
+            <div><span class="k">Computed Sum</span><span class="v" id="cComputed">0.00</span></div>
+            <div><span class="k">Printed Total</span><span class="v" id="cStatement">—</span></div>
+            <div><span class="k">Difference</span><span class="v" id="cDiff">—</span></div>
+          </div>
+          <div class="stamp na" id="cPill">N/A</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="sheet present-sheet">
+        <div class="sheet-head">
+          <div>
+            <div class="tag">Step 03</div>
+            <h2>Dates Present</h2>
+          </div>
+        </div>
+        <div class="sheet-body">
+          <div class="print-title print-title-present">Dates Present in Statement</div>
+          <div class="sheet-head-row no-print">
+            <div class="note">One row per calendar date, sorted in order, with transaction count and amount total.</div>
+            <button class="ghost" id="printPresentBtn" disabled>Print This List</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th class="idx">#</th><th>Date</th><th>Transactions</th><th class="amt">Amount Total</th></tr></thead>
+              <tbody id="dateTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet missing-sheet">
+        <div class="sheet-head">
+          <div>
+            <div class="tag">Step 04</div>
+            <h2>Missing Dates</h2>
+          </div>
+        </div>
+        <div class="sheet-body">
+          <div class="print-title print-title-missing">Dates Missing from Statement</div>
+          <div class="sheet-head-row no-print">
+            <div class="note">Calendar days within the statement range with no cleared transaction.</div>
+            <button class="ghost" id="printMissingBtn" disabled>Print This List</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th class="idx">#</th><th>Date</th></tr></thead>
+              <tbody id="missingTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  <div class="rule"></div>
+  Statement Ledger — Monthly Bank Statement Analyzer<br>
+  Developed by <b>Taimoor Ali</b>
+</footer>
+
+<script>
+const fileInput = document.getElementById('pdfFile');
+const fileLabel = document.getElementById('fileLabel');
+const processBtn = document.getElementById('processBtn');
+const statusEl = document.getElementById('status');
+const resultsArea = document.getElementById('resultsArea');
+const printPresentBtn = document.getElementById('printPresentBtn');
+const printMissingBtn = document.getElementById('printMissingBtn');
+
+let selectedFile = null;
+
+fileInput.addEventListener('change', () => {
+  selectedFile = fileInput.files[0] || null;
+  processBtn.disabled = !selectedFile;
+  fileLabel.textContent = selectedFile ? selectedFile.name : 'Click to choose a PDF statement…';
+  statusEl.classList.remove('err');
+  statusEl.textContent = selectedFile ? 'Ready. Click "Analyze Statement".' : 'Waiting for a file…';
+});
+
+const datePattern = /^\d{2}-[A-Z]{3}-\d{2}$/;
+const amountPattern = /^[\d,]+\.\d{2}$/;
+const monthMap = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+
+function parseDate(str) {
+  const [dd, mmm, yy] = str.split('-');
+  return new Date(2000 + parseInt(yy,10), monthMap[mmm.toUpperCase()], parseInt(dd,10));
+}
+function fmtDate(d) {
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mmm = Object.keys(monthMap).find(k => monthMap[k] === d.getMonth());
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}-${mmm}-${yy}`;
+}
+function fmtMoney(n) {
+  return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+processBtn.addEventListener('click', async () => {
+  if (!selectedFile) return;
+  processBtn.disabled = true;
+  printPresentBtn.disabled = true;
+  printMissingBtn.disabled = true;
+  resultsArea.style.display = 'none';
+  statusEl.classList.remove('err');
+  statusEl.textContent = 'Reading PDF…';
+
+  try {
+    const arrayBuffer = await selectedFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let allDates = [];
+    let allAmounts = [];
+    let statementTotal = null;
+    let totalLabelSeen = false;
+
+    for (let p = 1; p <= pdf.numPages; p++) {
+      statusEl.textContent = `Scanning page ${p} of ${pdf.numPages}…`;
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      const items = content.items.map(it => it.str.trim()).filter(s => s.length > 0);
+
+      // Every page repeats a "From: To: <date> <date>" statement-period header.
+      // Because of how this report's PDF text stream is ordered, those two
+      // labels are grouped together and immediately followed by the two
+      // period dates as a 4-token block ("From:", "To:", date, date) — NOT
+      // interleaved with their labels. Those two dates match the same
+      // strict date pattern as transaction dates, so without masking them
+      // out here, every page's date-count was inflated by 2, which broke
+      // the date/amount pairing (and the total-detection logic) on every
+      // single page. We mask them out by position, not by value, since a
+      // transaction could legitimately share the same calendar date.
+      const headerDateIdx = new Set();
+      for (let i = 0; i < items.length - 3; i++) {
+        if (items[i] === 'From:' && items[i + 1] === 'To:' &&
+            datePattern.test(items[i + 2]) && datePattern.test(items[i + 3])) {
+          headerDateIdx.add(i + 2);
+          headerDateIdx.add(i + 3);
+        }
+      }
+
+      const pageDates = [];
+      const pageAmountsAll = [];
+      items.forEach((s, i) => {
+        if (headerDateIdx.has(i)) return;
+        if (datePattern.test(s)) pageDates.push(s);
+        if (amountPattern.test(s)) pageAmountsAll.push(s);
+      });
+      let pageAmounts = pageAmountsAll;
+
+      const hasTotalLabel = items.some(s => /^total$/i.test(s));
+      if (hasTotalLabel) totalLabelSeen = true;
+
+      // The report's printed grand total is rendered as a standalone amount
+      // token on the page that contains the "Total" label and "End of Report".
+      // Because of how the PDF's text stream is ordered, this token shows up
+      // as ONE EXTRA amount on that page — i.e. amount-count = date-count + 1.
+      // Whichever single extra value remains after removing one amount for
+      // every date is the printed total; everything else pairs 1:1 with dates.
+      if (hasTotalLabel && pageAmounts.length === pageDates.length + 1) {
+        // The extra amount is the one NOT needed to pair with this page's dates.
+        // It reliably appears as the very first amount-pattern token on the
+        // page (the total is laid out ahead of the per-row data in the
+        // underlying content stream).
+        statementTotal = parseFloat(pageAmounts[0].replace(/,/g, ''));
+        pageAmounts = pageAmounts.slice(1);
+      }
+
+      allDates = allDates.concat(pageDates);
+
+      if (pageAmounts.length === pageDates.length) {
+        allAmounts = allAmounts.concat(pageAmounts);
+      } else {
+        // Column counts didn't line up on this page — don't guess, leave blanks
+        // so the discrepancy is visible rather than silently wrong.
+        allAmounts = allAmounts.concat(new Array(pageDates.length).fill(null));
+      }
+    }
+
+    if (allDates.length === 0) {
+      statusEl.classList.add('err');
+      statusEl.textContent = 'No transaction dates found — this PDF layout may differ from the expected report format.';
+      processBtn.disabled = false;
+      return;
+    }
+
+    const counts = {};
+    const sums = {};
+    allDates.forEach((ds, i) => {
+      const key = fmtDate(parseDate(ds));
+      counts[key] = (counts[key] || 0) + 1;
+      const amt = allAmounts[i] !== null && allAmounts[i] !== undefined
+        ? parseFloat(allAmounts[i].replace(/,/g, ''))
+        : 0;
+      sums[key] = (sums[key] || 0) + (isNaN(amt) ? 0 : amt);
+    });
+
+    const sortedKeys = Object.keys(counts).sort((a,b) => parseDate(a) - parseDate(b));
+    const minDate = parseDate(sortedKeys[0]);
+    const maxDate = parseDate(sortedKeys[sortedKeys.length - 1]);
+
+    const missingDates = [];
+    let cursor = new Date(minDate);
+    while (cursor <= maxDate) {
+      const key = fmtDate(cursor);
+      if (!counts[key]) missingDates.push(new Date(cursor));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    const computedTotal = Object.values(sums).reduce((a,b) => a+b, 0);
+
+    document.getElementById('sTotalTx').textContent = allDates.length;
+    document.getElementById('sUniqueDates').textContent = sortedKeys.length;
+    document.getElementById('sRange').textContent = `${fmtDate(minDate)} → ${fmtDate(maxDate)}`;
+    document.getElementById('sMissing').textContent = missingDates.length;
+
+    document.getElementById('cComputed').textContent = fmtMoney(computedTotal);
+    const compareBox = document.getElementById('compareBox');
+    const pill = document.getElementById('cPill');
+
+    if (statementTotal !== null) {
+      document.getElementById('cStatement').textContent = fmtMoney(statementTotal);
+      const diff = computedTotal - statementTotal;
+      document.getElementById('cDiff').textContent = (diff >= 0 ? '+' : '') + fmtMoney(diff);
+      const isMatch = Math.abs(diff) < 0.01;
+      compareBox.className = 'compare ' + (isMatch ? 'match' : 'mismatch');
+      pill.className = 'stamp ' + (isMatch ? 'match' : 'mismatch');
+      pill.textContent = isMatch ? 'Matches' : 'Mismatch';
+    } else {
+      document.getElementById('cStatement').textContent = totalLabelSeen ? 'Found "Total" but value unclear' : 'Not found in PDF';
+      document.getElementById('cDiff').textContent = '—';
+      compareBox.className = 'compare';
+      pill.className = 'stamp na';
+      pill.textContent = 'N/A';
+    }
+
+    const dateBody = document.getElementById('dateTableBody');
+    dateBody.innerHTML = '';
+    sortedKeys.forEach((key, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="idx">${idx+1}</td><td>${key}</td><td><span class="badge">${counts[key]}</span></td><td class="amt">${fmtMoney(sums[key])}</td>`;
+      dateBody.appendChild(tr);
+    });
+
+    const missBody = document.getElementById('missingTableBody');
+    missBody.innerHTML = '';
+    if (missingDates.length === 0) {
+      missBody.innerHTML = '<tr><td colspan="2" class="empty-note">No missing dates — every day in the period has at least one cleared transaction.</td></tr>';
+    } else {
+      missingDates.forEach((d, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'missing-row';
+        tr.innerHTML = `<td class="idx">${idx+1}</td><td>${fmtDate(d)} &nbsp;<span class="badge miss">missing</span></td>`;
+        missBody.appendChild(tr);
+      });
+    }
+
+    resultsArea.style.display = 'block';
+    statusEl.textContent = `Done — analyzed ${pdf.numPages} pages, ${allDates.length} transactions across ${sortedKeys.length} dates.`;
+    printPresentBtn.disabled = false;
+    printMissingBtn.disabled = missingDates.length === 0;
+
+  } catch (err) {
+    console.error(err);
+    statusEl.classList.add('err');
+    statusEl.textContent = 'Error reading PDF: ' + err.message;
+  } finally {
+    processBtn.disabled = false;
+  }
+});
+
+printPresentBtn.addEventListener('click', () => {
+  document.body.classList.add('printing-present');
+  window.print();
+});
+printMissingBtn.addEventListener('click', () => {
+  document.body.classList.add('printing-missing');
+  window.print();
+});
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('printing-present', 'printing-missing');
+});
+</script>
+
+</body>
+</html>

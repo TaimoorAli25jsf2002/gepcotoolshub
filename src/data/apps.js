@@ -83,7 +83,7 @@ const apps = [
     description: "Analyze bank statement PDFs and organize transaction dates.",
     category: "Banking",
     icon: "🏦",
-    path: "/apps/bank-analyzer/",
+    path: "/apps/bank-analyzer/index.html",
     tags: ["bank", "statement", "pdf", "transactions"]
   },
   // {
