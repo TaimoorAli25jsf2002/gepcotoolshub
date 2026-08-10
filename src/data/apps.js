@@ -26,6 +26,16 @@ const apps = [
     path: "apps/oncp100/index.html",
     tags: ["cp100", "pdf", "online","total","01942", "bank"]
   },
+  ,
+    {
+    id: "cp107",
+    name: "CP-107 Verifier",
+    description: "Verify Daily Online or Direct & Weekly CP-107 and verify details .",
+    category: "Banking",
+    icon: "📕",
+    path: "apps/cp107/index.html",
+    tags: ["cp107", "pdf", "online","total","daily", "unidentified","ut", "cash"]
+  },
 
   {
     id: "cp99",
