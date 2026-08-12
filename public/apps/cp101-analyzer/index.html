@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CP-101 Analyzer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f1f4f3;color:#1a1a1a;min-height:100vh;font-size:15px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px}
+h1{font-size:21px;font-weight:700;color:#0b5d4f;margin-bottom:4px}
+.sub{font-size:13px;color:#666;margin-bottom:20px}
+/* drop zone */
+.dz{border:2px dashed #a7c9c1;border-radius:10px;padding:28px 20px;text-align:center;
+    cursor:pointer;background:#fff;transition:all .2s;margin-bottom:10px}
+.dz:hover,.dz.drag{border-color:#0b5d4f;background:#eaf5f2}
+.dz-icon{font-size:36px;margin-bottom:8px}
+.dz-title{font-size:15px;font-weight:600;color:#0b5d4f;margin-bottom:4px}
+.dz-hint{font-size:12px;color:#888}
+.upload-btns{display:flex;gap:8px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+.ubtn{background:#fff;color:#0b5d4f;border:1px solid #bcdad3;padding:9px 18px;border-radius:6px;
+      font-size:13px;font-weight:600;cursor:pointer}
+.ubtn:hover{background:#eaf5f2}
+/* loading */
+.load-bar{display:none;align-items:center;gap:10px;background:#fff;border:1px solid #e0e0e0;
+          border-radius:8px;padding:13px 16px;margin-bottom:12px}
+.spin{width:18px;height:18px;flex-shrink:0;border:3px solid #e0e0e0;border-top-color:#0b5d4f;
+      border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:13px;color:#555}
+/* error / info */
+.err-box{background:#fff0f0;border:1px solid #ffb3b3;border-radius:8px;padding:9px 14px;
+         margin-bottom:7px;font-size:13px;color:#c0392b}
+.info-box{background:#eaf5f2;border:1px solid #a7cec3;border-radius:8px;padding:9px 14px;
+         margin-bottom:7px;font-size:13px;color:#0b5d4f}
+/* setup */
+.setup{background:#fff;border:1px solid #dbe6e3;border-radius:10px;padding:18px 18px 20px;margin-bottom:16px}
+.setup h2{font-size:15px;color:#0b5d4f;margin-bottom:2px}
+.setup .shint{font-size:12px;color:#888;margin-bottom:12px}
+.filelist{display:flex;flex-direction:column;gap:6px;margin-bottom:20px;max-height:260px;overflow-y:auto}
+.dupwarn{background:#fff8e1;border:1px solid #f9d879;border-radius:8px;padding:11px 14px;
+         font-size:12.5px;color:#7a5000;margin-bottom:10px;line-height:1.5}
+.filerow{display:flex;align-items:center;gap:10px;border:1px solid #dbe6e3;border-radius:8px;
+         padding:9px 12px;font-size:13px;cursor:pointer}
+.filerow:hover{background:#f5faf8}
+.filerow.dup{border-color:#f0b429;background:#fffbf0}
+.filerow.off{opacity:.5}
+.filerow input{width:16px;height:16px;flex-shrink:0;cursor:pointer}
+.frname{flex:1;word-break:break-all;color:#333}
+.frdate{font-size:12px;color:#666;white-space:nowrap}
+.frstat{font-size:11px;color:#888;white-space:nowrap}
+.fdup-tag{font-size:10px;font-weight:700;background:#f0b429;color:#5a3d00;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.divlist{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;max-height:300px;overflow-y:auto}
+.divopt{display:flex;align-items:center;gap:10px;border:1px solid #dbe6e3;border-radius:8px;
+        padding:10px 12px;font-size:13px}
+.divopt:hover{background:#f5faf8}
+.divopt.sel{border-color:#0b5d4f;background:#eaf5f2}
+.divopt .dclick{display:flex;align-items:center;gap:10px;cursor:pointer;flex:1}
+.divopt .dcode{font-weight:700;color:#0b5d4f;min-width:48px}
+.divopt .dcount{font-size:11px;color:#888;white-space:nowrap}
+.divopt .dlabel{border:1px solid #cfe0da;border-radius:5px;padding:5px 8px;font-size:12px;width:170px;color:#333}
+.divopt .dlabel:focus{outline:none;border-color:#0b5d4f}
+.xbtn{background:#0b5d4f;color:#fff;border:none;padding:8px 20px;border-radius:6px;
+      font-size:13px;font-weight:600;cursor:pointer}
+.xbtn:hover{background:#08473d}
+.xbtn:disabled{background:#a9c2bd;cursor:not-allowed}
+/* selbar */
+.selbar{position:sticky;top:10px;z-index:30;display:none;align-items:center;justify-content:space-between;
+        background:#eaf5f2;border:1px solid #a7cec3;border-radius:10px;padding:12px 16px;margin-bottom:14px;
+        gap:12px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(11,93,79,.12)}
+.selbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.selbar-tag{background:#0b5d4f;color:#fff;font-size:13px;font-weight:700;padding:6px 13px;border-radius:6px;white-space:nowrap}
+.selbar-info{font-size:13px;color:#2b4842;font-weight:500}
+.changebtn{background:#fff;color:#0b5d4f;border:2px solid #0b5d4f;padding:10px 20px;border-radius:8px;
+           font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.changebtn:hover{background:#0b5d4f;color:#fff}
+/* stats */
+.stats-wrap{background:#fff;border:1px solid #dbe6e3;border-radius:10px;margin-bottom:16px;overflow:hidden;
+            box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.stats-head{background:linear-gradient(135deg,#0b5d4f,#127a68);color:#fff;padding:14px 18px}
+.stats-head h2{font-size:15px}
+.stats-head .shsub{font-size:12px;opacity:.88;margin-top:2px}
+.stats-row{display:flex;flex-wrap:wrap}
+.stat{flex:1;min-width:110px;padding:13px 12px;text-align:center;border-right:1px solid #eef3f1;border-top:1px solid #eef3f1}
+.stat:last-child{border-right:none}
+.stat-val{font-size:22px;font-weight:700;color:#0b5d4f}
+.stat-lbl{font-size:11.5px;color:#888;text-transform:uppercase;letter-spacing:.03em;margin-top:4px}
+/* tabs */
+.tabbar{display:none;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.tabs-left{display:flex;gap:6px;flex-wrap:wrap}
+.tabbtn{background:#fff;color:#0b5d4f;border:1px solid #bcdad3;padding:9px 18px;border-radius:7px;
+        font-size:13px;font-weight:600;cursor:pointer}
+.tabbtn.on{background:#0b5d4f;color:#fff;border-color:#0b5d4f}
+.toolbtns{display:flex;gap:8px;flex-wrap:wrap}
+.sbtn{background:#fff;color:#0b5d4f;border:1px solid #bcdad3;padding:8px 16px;border-radius:6px;
+      font-size:13px;font-weight:600;cursor:pointer}
+.sbtn:hover{background:#eaf5f2}
+.searchbox{padding:9px 13px;border:1px solid #cfe0da;border-radius:7px;font-size:13px;width:230px;max-width:100%}
+.searchbox:focus{outline:none;border-color:#0b5d4f}
+/* date explorer */
+.datecard{background:#fff;border:1px solid #dbe6e3;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.datecard summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;
+                  justify-content:space-between;gap:10px;flex-wrap:wrap;background:#f7fbfa}
+.datecard summary::-webkit-details-marker{display:none}
+.datecard summary:hover{background:#eef7f4}
+.dc-left{display:flex;align-items:center;gap:10px}
+.dc-arrow{font-size:11px;color:#0b5d4f;transition:transform .15s}
+.datecard[open] .dc-arrow{transform:rotate(90deg)}
+.dc-date{font-size:16px;font-weight:700;color:#0b5d4f}
+.dc-sub{font-size:11.5px;color:#888}
+.dc-total{font-size:18px;font-weight:700;color:#0b5d4f}
+.datecard table{width:100%;border-collapse:collapse}
+.datecard th{padding:11px 16px;text-align:left;font-size:12px;font-weight:700;color:#0b5d4f;
+   border-top:1px solid #eef3f1;text-transform:uppercase;letter-spacing:.03em}
+.datecard th.r{text-align:right}
+.datecard td{padding:10px 16px;font-size:14.5px;border-top:1px solid #f3f6f5;color:#333}
+.datecard td.r{text-align:right;font-weight:600;color:#0b5d4f}
+.datecard tr:hover td{background:#fafcfb}
+/* bank explorer */
+.bankcard{background:#fff;border:1px solid #dbe6e3;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.bankcard summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;
+                   justify-content:space-between;gap:10px;flex-wrap:wrap;background:#f7fbfa}
+.bankcard summary::-webkit-details-marker{display:none}
+.bankcard summary:hover{background:#eef7f4}
+.bc-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bc-arrow{font-size:11px;color:#0b5d4f;transition:transform .15s}
+.bankcard[open] .bc-arrow{transform:rotate(90deg)}
+.bc-code{font-size:11px;font-weight:700;color:#fff;background:#0b5d4f;padding:3px 9px;border-radius:5px;white-space:nowrap}
+.bc-name{font-size:16px;font-weight:700;color:#1a1a1a}
+.bc-sub{font-size:11.5px;color:#888}
+.bc-total{font-size:18px;font-weight:700;color:#0b5d4f}
+.bc-detail{padding:12px 16px;border-top:1px solid #eef3f1}
+.rusplit{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+/* CP-48 entry tab */
+.entry-sec-head{display:flex;align-items:center;gap:10px;margin:18px 0 10px;flex-wrap:wrap}
+.entry-sec-head:first-child{margin-top:0}
+.entry-sec-head h3{font-size:16px;color:#0b5d4f}
+.entry-sec-head.online h3{color:#155a8a}
+.entry-count{font-size:11px;color:#888;background:#eef3f1;padding:3px 10px;border-radius:10px}
+.entry-empty{font-size:13px;color:#888;padding:14px;background:#fff;border:1px dashed #cfe0da;border-radius:8px;margin-bottom:12px}
+.bc-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.typebtn{background:#fff;color:#666;border:1px solid #ddd;padding:6px 11px;border-radius:6px;
+         font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}
+.typebtn:hover{background:#f5f5f5;border-color:#bbb}
+.copybtn{background:#0b5d4f;color:#fff;border:none;padding:7px 13px;border-radius:6px;
+         font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.copybtn:hover{background:#08473d}
+.copybtn.copied{background:#2e7d32}
+.copybtn.ghost{background:#fff;color:#0b5d4f;border:1px solid #0b5d4f}
+.copybtn.ghost:hover{background:#eaf5f2}
+.rangepicker{background:#fff;border:1px solid #dbe6e3;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+.rp-label{font-size:13px;color:#555;margin-bottom:10px;line-height:1.5}
+.rp-inputs{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.rp-inputs label{font-size:13px;color:#333;display:flex;align-items:center;gap:6px}
+.rp-inputs input[type=date]{padding:7px 9px;border:1px solid #cfe0da;border-radius:6px;font-size:13px}
+.rp-count{font-size:12px;color:#888;background:#f1f6f4;padding:6px 12px;border-radius:14px}
+.zerorow td{color:#b7bfbc}
+.totrow td{font-weight:700;background:#f5faf8;border-top:2px solid #dbe6e3}
+.rutag{font-size:12px;padding:7px 13px;border-radius:7px;background:#f1f6f4;color:#333}
+.rutag b{color:#0b5d4f}
+.bankcard table{width:100%;border-collapse:collapse}
+.bankcard th{padding:10px 10px;text-align:left;font-size:12px;font-weight:700;color:#0b5d4f;
+   border-bottom:1px solid #eef3f1;text-transform:uppercase;letter-spacing:.03em}
+.bankcard th.r{text-align:right}
+.bankcard td{padding:9px 10px;font-size:14.5px;border-bottom:1px solid #f6f8f7;color:#333}
+.bankcard td.r{text-align:right}
+.bankcard td.amt{text-align:right;font-weight:600;color:#0b5d4f}
+.neg{color:#c62828;font-weight:700}
+/* families */
+.famtable{width:100%;border-collapse:collapse;background:#fff;border:1px solid #dbe6e3;border-radius:10px;overflow:hidden}
+.famtable th{padding:12px 16px;text-align:left;font-size:12.5px;font-weight:700;color:#0b5d4f;
+   background:#f7fbfa;text-transform:uppercase;letter-spacing:.03em;border-bottom:2px solid #dbe6e3}
+.famtable th.r{text-align:right}
+.famtable td{padding:11px 16px;font-size:14.5px;border-bottom:1px solid #f0f4f2;color:#333}
+.famtable td.r{text-align:right;font-weight:600;color:#0b5d4f}
+.famtable tr.grand td{background:#0b5d4f;color:#fff;font-weight:700;border-bottom:none}
+.famtable tr.grand td.r{color:#fff}
+.fambar-wrap{width:140px}
+.fambar-bg{background:#eef3f1;border-radius:4px;height:8px;overflow:hidden}
+.fambar-fg{background:#0b5d4f;height:8px;border-radius:4px}
+/* empty */
+.empty{text-align:center;padding:50px 20px;background:#fff;border-radius:10px;border:1px dashed #ccc}
+.ei{font-size:48px;margin-bottom:12px}
+.et{font-size:16px;font-weight:600;color:#555;margin-bottom:6px}
+.eh{font-size:13px;color:#888}
+/* footer */
+.footer{text-align:center;padding:22px 10px 8px;font-size:12px;color:#8a93a3}
+.footer b{color:#5a6478}
+.print-head{display:none}
+@media print{
+  body{background:#fff}
+  .wrap{max-width:100%;padding:0}
+  .dz,.upload-btns,.load-bar,#errs,.setup,.selbar,.tabbar,.searchbox{display:none !important}
+  .empty{display:none !important}
+  .print-head{display:block;text-align:center;margin-bottom:14px}
+  .print-head h1{font-size:18px;color:#000;margin-bottom:2px}
+  .print-head .sub{color:#444;font-size:11px}
+  h1.screen-only,p.sub.screen-only{display:none}
+  .stats-head{background:#eee !important;color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .datecard,.bankcard{page-break-inside:avoid;box-shadow:none;border:1px solid #999}
+  .datecard summary,.bankcard summary{background:#eee !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .datecard[open] summary::after,.bankcard[open] summary::after{content:''}
+  details:not([open]) summary ~ *{display:none}
+  details{display:block}
+  .famtable tr.grand td{background:#333 !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .footer{margin-top:20px;border-top:1px solid #ccc;padding-top:8px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="print-head">
+    <h1 id="printTitle">CP-101 Analyzer</h1>
+    <div class="sub" id="printSub">Printed <span id="printDate"></span></div>
+  </div>
+  <h1 class="screen-only">CP-101 Analyzer</h1>
+  <p class="sub screen-only">Weekly Cash Collection Book by Bank Branches — explore by date, by bank, or by bank family &nbsp;·&nbsp; Works offline</p>
+
+  <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
+    <div class="dz-icon">📂</div>
+    <div class="dz-title">Drop CP-101 PDFs here or click to browse</div>
+    <div class="dz-hint">Single week or multiple weeks · Works offline after first load</div>
+    <input type="file" id="fi" accept=".pdf" multiple style="display:none">
+  </div>
+  <div class="upload-btns">
+    <button class="ubtn" onclick="document.getElementById('fi').click()">📄 Choose Files</button>
+    <button class="ubtn" onclick="document.getElementById('fd').click()">📁 Choose Folder</button>
+    <input type="file" id="fd" webkitdirectory directory multiple style="display:none">
+  </div>
+
+  <div class="load-bar" id="lb">
+    <div class="spin"></div>
+    <span class="load-txt" id="lmsg">Processing…</span>
+  </div>
+  <div id="errs"></div>
+
+  <div class="setup" id="setup" style="display:none">
+    <h2>1. Files in this upload</h2>
+    <div class="shint">Uncheck any file to leave it out. Files sharing the same Week-Ending date are checked for duplicates automatically.</div>
+    <div class="filelist" id="filelist"></div>
+    <h2>2. Choose a division</h2>
+    <div class="shint">CP-101 doesn't print division names, only codes — optionally give any division a label to remember it (saved in this browser).</div>
+    <div class="divlist" id="divlist"></div>
+    <button class="xbtn" id="viewBtn" onclick="showResults()" disabled>View Results</button>
+  </div>
+
+  <div class="selbar" id="selbar" style="display:none">
+    <div class="selbar-left">
+      <span class="selbar-tag" id="selDivTag"></span>
+      <span class="selbar-info" id="selInfo"></span>
+    </div>
+    <button class="changebtn" onclick="backToSetup()">⇄ Change Division</button>
+  </div>
+
+  <div id="statsOut"></div>
+
+  <div class="tabbar" id="tabbar">
+    <div class="tabs-left">
+      <button class="tabbtn" data-t="cp48" onclick="switchTab('cp48')">📋 CP-48 Entry</button>
+      <button class="tabbtn" data-t="date" onclick="switchTab('date')">📅 By Date</button>
+      <button class="tabbtn" data-t="bank" onclick="switchTab('bank')">🏦 By Bank</button>
+      <button class="tabbtn" data-t="fam" onclick="switchTab('fam')">📊 Bank Families</button>
+    </div>
+    <div class="toolbtns">
+      <input type="text" class="searchbox" id="searchBox" placeholder="Search bank name or code…" oninput="onSearch()" style="display:none">
+      <button class="sbtn" id="expandBtn" onclick="toggleExpandAll()">⤢ Expand All</button>
+      <button class="sbtn" onclick="window.print()">🖨 Print / Save as PDF</button>
+      <button class="xbtn" onclick="doExport()">⬇ Export to Excel</button>
+    </div>
+  </div>
+
+  <div id="out"></div>
+  <div class="empty" id="emp">
+    <div class="ei">📄</div>
+    <div class="et">No files yet</div>
+    <div class="eh">Upload one or more CP-101 weekly PDFs (single files, multiple files, or an entire folder) to get started</div>
+  </div>
+  <div class="footer">Developed by <b>Taimoor Ali</b></div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let RAW_FILES = [];        // every successfully parsed file: {_id, fname, procDate, weekEnding, divisions:{code:{...}}}
+let EXCLUDED_FILES = new Set();
+let ALL_DIVS = {};         // code -> {fileCount}
+let SELECTED_DIV = null;
+let DIV_LABELS = {};       // code -> user label (persisted to localStorage)
+let RESULTS = null;        // merged multi-week data for the selected division
+let ACTIVE_TAB = 'cp48';
+let ENTRY_RANGE = null; // {from:Date, to:Date} — the dense day-by-day range for CP-48 entry (user-adjustable)
+let EXPAND_ALL = true;
+let BANK_TYPE_OVERRIDE = {}; // "divCode|bankKey" -> 'manual' | 'online', user override on top of the auto rule
+try{ BANK_TYPE_OVERRIDE = JSON.parse(localStorage.getItem('cp101_bank_type')||'{}'); }catch(e){ BANK_TYPE_OVERRIDE={}; }
+function saveBankType(key, type){
+  BANK_TYPE_OVERRIDE[key]=type;
+  try{ localStorage.setItem('cp101_bank_type', JSON.stringify(BANK_TYPE_OVERRIDE)); }catch(e){}
+}
+/* Manual banks = FBL branches and Post Offices (PPO/PPC) — everything else
+   (ONLINE-tagged banks, NADRA, 1-Link, UMF, etc.) is treated as online and
+   only needs a single monthly total. This matches the real CP-48 workflow:
+   manual banks get entered date-by-date, online banks get one total.       */
+function isManualByName(name){
+  return /^FBL\b/i.test(name) || /^PP[OC]\b/i.test(name);
+}
+function bankType(bankKey, name){
+  const ovKey = SELECTED_DIV+'|'+bankKey;
+  if(BANK_TYPE_OVERRIDE[ovKey]) return BANK_TYPE_OVERRIDE[ovKey];
+  return isManualByName(name) ? 'manual' : 'online';
+}
+function toggleBankType(bankKey){
+  const b = RESULTS.banks[bankKey];
+  const name = b ? b.name : '';
+  const cur = bankType(bankKey, name);
+  saveBankType(SELECTED_DIV+'|'+bankKey, cur==='manual' ? 'online' : 'manual');
+  renderEntryTab();
+}
+function copyToClipboard(text, btn){
+  const done=()=>{
+    if(!btn) return;
+    const orig=btn.textContent;
+    btn.textContent='✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent=orig; btn.classList.remove('copied'); }, 1400);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>{ fallbackCopy(text); done(); });
+  } else {
+    fallbackCopy(text); done();
+  }
+}
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');
+  ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ─── helpers ─────────────────────────────── */
+function pn(s){ return parseFloat(String(s||'0').replace(/,/g,''))||0; }
+function fn(n){
+  n = Number(n||0);
+  // Amounts in these forms are always whole rupees — drop the .00 noise unless truly fractional
+  if(Math.abs(n - Math.round(n)) < 0.005) return Math.round(n).toLocaleString('en-PK');
+  return n.toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtDMY(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+function fmtExcelSafeDate(d){
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return String(d.getDate()).padStart(2,'0')+'-'+months[d.getMonth()]+'-'+d.getFullYear();
+}
+function eachDateInRange(from,to){
+  const list=[]; let d=new Date(from.getFullYear(),from.getMonth(),from.getDate());
+  const end=new Date(to.getFullYear(),to.getMonth(),to.getDate());
+  while(d<=end){ list.push(new Date(d)); d.setDate(d.getDate()+1); }
+  return list;
+}
+function isoToDate(iso){ const [y,m,d]=iso.split('-').map(Number); return new Date(y,m-1,d); }
+function dateToIso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function dmyToExcelSafe(dmy){ const ms=parseDMY(dmy); return ms ? fmtExcelSafeDate(new Date(ms)) : dmy; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function isCP101Filename(name){ return /cp[\s\-_]?101/i.test(name); }
+function parseDMY(s){
+  const m=/(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s||'');
+  if(!m) return 0;
+  return new Date(+m[3], +m[2]-1, +m[1]).getTime();
+}
+
+try{ DIV_LABELS = JSON.parse(localStorage.getItem('cp101_div_labels')||'{}'); }catch(e){ DIV_LABELS={}; }
+function saveDivLabel(code, label){
+  DIV_LABELS[code]=label;
+  try{ localStorage.setItem('cp101_div_labels', JSON.stringify(DIV_LABELS)); }catch(e){}
+}
+function divDisplay(code){
+  const lbl=DIV_LABELS[code];
+  return lbl ? `${code} — ${lbl}` : `Division ${code}`;
+}
+
+/* ─── pdf.js → array of line-strings per page ─ */
+async function pdfToLines(buf){
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  const pages = [];
+  const Y_TOL = 3;
+  for(let p=1;p<=pdf.numPages;p++){
+    const pg = await pdf.getPage(p);
+    const tc = await pg.getTextContent();
+    const items = tc.items.map(it=>({x:it.transform[4], y:it.transform[5], s:it.str}))
+                           .filter(it=>it.s && it.s.trim().length>0);
+    items.sort((a,b)=> (b.y-a.y) || (a.x-b.x));
+    const rows = [];
+    let cluster = [];
+    let clusterY = null;
+    for(const it of items){
+      if(clusterY===null || Math.abs(it.y-clusterY) <= Y_TOL){
+        cluster.push(it);
+        clusterY = cluster.reduce((s,c)=>s+c.y,0)/cluster.length;
+      } else {
+        rows.push(cluster);
+        cluster=[it];
+        clusterY=it.y;
+      }
+    }
+    if(cluster.length) rows.push(cluster);
+    const lines = rows.map(row=>
+      row.slice().sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ').replace(/\s+/g,' ').trim()
+    ).filter(l=>l.length>0);
+    pages.push(lines);
+  }
+  return pages;
+}
+
+/* ─── parse one CP-101 weekly PDF — ALL divisions ──
+   Structure per division: a run of banks, each bank a run of dated
+   scroll rows, then Bank Total(R)/(U)/combined, then at the end of
+   the division a Div Total(R)/(U)/combined and a bank-family summary
+   table ("01 ALLIED BANK LIMITED ... / Divisional Totals ...").
+   Validated against the PDF's own printed Div Total AND the bank-
+   family summary total for every division — both match exactly.      */
+async function parsePDF(buf, fname){
+  const pages = await pdfToLines(buf);
+
+  const RE_CP101   = /\bCP-101\b/;
+  const RE_PROC    = /PROCESSING DATE\s+([\d\/]+)/;
+  const RE_DIVHDR  = /BANK DIVISION\s+(\d+)\s+W\/E\s+([\d\/]+)\s+Page No\.\s+(\d+)/;
+  const RE_CARRY   = /^Total for the last week\s+(-?[\d,]+\.?\d*)/;
+  const RE_BANKHDR = /^(\d{5})\s+(\d{5})\s+(.+)$/;
+  const RE_DATEROW = /^(\d{2}\/\d{2}\/\d{4})\s+(.+)$/;
+  const RE_BTOT_RU = /^Bank Total\((R|U)\)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)$/;
+  const RE_BTOT    = /^Bank Total\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)$/;
+  const RE_DTOT_RU = /^Div Total\((R|U)\)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)$/;
+  const RE_DTOT    = /^Div Total\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)$/;
+  const RE_FAMILY  = /^(\d{1,2})\s+([A-Z].+?)\s+(\d+)\s+([\d,]+\.?\d*)$/;
+  const RE_DIVFAM_TOTAL = /^Divisional Totals\s+(\d+)\s+([\d,]+\.?\d*)/;
+
+  let procDate='', weekEnding='', sawCP101=false;
+  let curDivCode=null, curBankKey=null, pendingCarry=null;
+  const divisions = {};
+
+  for(const lines of pages){
+    for(const line of lines){
+      if(!sawCP101 && RE_CP101.test(line)) sawCP101=true;
+      if(!procDate){ const m=RE_PROC.exec(line); if(m) procDate=m[1]; }
+
+      const dm = RE_DIVHDR.exec(line);
+      if(dm){
+        const code=dm[1], we=dm[2];
+        if(!weekEnding) weekEnding=we;
+        if(code!==curDivCode){ curDivCode=code; curBankKey=null; pendingCarry=null; }
+        if(!divisions[code]) divisions[code]={weekEnding:we, banks:{}, order:[], families:[], familiesTotal:null, totals:{R:null,U:null,combined:null}};
+        continue;
+      }
+      if(!curDivCode) continue;
+      const div = divisions[curDivCode];
+
+      const cm = RE_CARRY.exec(line);
+      if(cm){ pendingCarry=pn(cm[1]); continue; }
+
+      const bm = RE_BANKHDR.exec(line);
+      if(bm){
+        const branchCode=bm[1], bankCode=bm[2], name=bm[3].trim();
+        curBankKey = branchCode+'-'+bankCode;
+        if(!div.banks[curBankKey]){
+          div.banks[curBankKey]={branchCode,bankCode,name,carryForward:pendingCarry||0,scrolls:[],totals:{R:null,U:null,combined:null}};
+          div.order.push(curBankKey);
+        }
+        pendingCarry=null;
+        continue;
+      }
+
+      const rm = RE_DATEROW.exec(line);
+      if(rm && curBankKey && div.banks[curBankKey]){
+        const payDate=rm[1];
+        const toks=rm[2].trim().split(/\s+/);
+        if(toks.length>=3 && /^\d+$/.test(toks[0])){
+          const scrollNo=parseInt(toks[0],10);
+          const negative=pn(toks[toks.length-1]);
+          const mid=toks.slice(1, toks.length-1);
+          const amount=pn(mid[0]);
+          const daily = mid.length>=2 ? pn(mid[1]) : amount;
+          const week  = mid.length>=3 ? pn(mid[2]) : daily;
+          const month = mid.length>=4 ? pn(mid[3]) : week;
+          div.banks[curBankKey].scrolls.push({payDate,scrollNo,amount,daily,week,month,negative});
+          continue;
+        }
+      }
+
+      const brm = RE_BTOT_RU.exec(line);
+      if(brm && curBankKey && div.banks[curBankKey]){
+        div.banks[curBankKey].totals[brm[1]]={week:pn(brm[2]),month:pn(brm[5])};
+        continue;
+      }
+      const bt = RE_BTOT.exec(line);
+      if(bt && curBankKey && div.banks[curBankKey]){
+        div.banks[curBankKey].totals.combined={week:pn(bt[1]),month:pn(bt[4]),negative:pn(bt[5])};
+        continue;
+      }
+
+      const drm = RE_DTOT_RU.exec(line);
+      if(drm){ div.totals[drm[1]]={week:pn(drm[2]),month:pn(drm[5])}; continue; }
+      const dt = RE_DTOT.exec(line);
+      if(dt){ div.totals.combined={week:pn(dt[1]),month:pn(dt[4]),negative:pn(dt[5])}; continue; }
+
+      const fm = RE_FAMILY.exec(line);
+      if(fm){ div.families.push({code:fm[1],name:fm[2].trim(),stubs:parseInt(fm[3],10),amount:pn(fm[4])}); continue; }
+
+      const dftm = RE_DIVFAM_TOTAL.exec(line);
+      if(dftm){ div.familiesTotal={stubs:parseInt(dftm[1],10),amount:pn(dftm[2])}; continue; }
+    }
+  }
+
+  if(!sawCP101) return {ok:false, reason:'Not a CP-101 form (CP-101 marker not found)'};
+  if(!Object.keys(divisions).length)
+    return {ok:false, reason:'No division/bank data found in this PDF'};
+
+  return {ok:true, fname, procDate, weekEnding, divisions};
+}
+
+/* ─── duplicate-file detection (same week-ending date) ── */
+function activeFiles(){ return RAW_FILES.filter(f=>!EXCLUDED_FILES.has(f._id)); }
+
+function fileCompleteness(f){
+  let n=0;
+  for(const div of Object.values(f.divisions)) for(const bank of Object.values(div.banks)) n+=bank.scrolls.length;
+  return n;
+}
+
+function computeDuplicateGroups(){
+  const groups={};
+  for(const f of RAW_FILES){
+    const key=f.weekEnding||'?';
+    (groups[key]=groups[key]||[]).push(f);
+  }
+  return Object.values(groups).filter(g=>g.length>1);
+}
+
+function autoResolveDuplicates(){
+  for(const g of computeDuplicateGroups()){
+    const sorted=g.slice().sort((a,b)=>fileCompleteness(b)-fileCompleteness(a));
+    for(let i=1;i<sorted.length;i++) EXCLUDED_FILES.add(sorted[i]._id);
+  }
+}
+
+function toggleFileInclusion(id){
+  if(EXCLUDED_FILES.has(id)) EXCLUDED_FILES.delete(id); else EXCLUDED_FILES.add(id);
+  renderSetup();
+}
+
+function renderFileChecklist(){
+  const box=document.getElementById('filelist');
+  const dupGroups=computeDuplicateGroups();
+  const dupIds=new Set();
+  dupGroups.forEach(g=>g.forEach(f=>dupIds.add(f._id)));
+
+  let html='';
+  if(dupGroups.length){
+    html+=`<div class="dupwarn">⚠ <strong>${dupGroups.length} week-ending date${dupGroups.length>1?'s have':' has'}</strong> more than one file — likely a partial/incomplete re-export.
+    We've kept the file with the most data for each week checked below and unchecked the other(s). Review and adjust if that's wrong.</div>`;
+  }
+  html += RAW_FILES.map(f=>{
+    const excluded=EXCLUDED_FILES.has(f._id);
+    const isDup=dupIds.has(f._id);
+    const score=fileCompleteness(f);
+    return `<label class="filerow${isDup?' dup':''}${excluded?' off':''}">
+      <input type="checkbox" ${excluded?'':'checked'} onchange="toggleFileInclusion('${f._id}')">
+      <span class="frname">${esc(f.fname)}</span>
+      <span class="frdate">W/E ${esc(f.weekEnding)}</span>
+      <span class="frstat">${score} scroll row${score===1?'':'s'}</span>
+      ${isDup?'<span class="fdup-tag">DUPLICATE WEEK</span>':''}
+    </label>`;
+  }).join('');
+  box.innerHTML = html;
+}
+
+/* ─── setup screen ────────────────────────── */
+function rebuildDivisionIndex(){
+  ALL_DIVS = {};
+  for(const f of activeFiles()){
+    for(const code of Object.keys(f.divisions)){
+      if(!ALL_DIVS[code]) ALL_DIVS[code] = {fileCount:0};
+      ALL_DIVS[code].fileCount++;
+    }
+  }
+}
+
+function renderSetup(){
+  renderFileChecklist();
+  rebuildDivisionIndex();
+  const codes = Object.keys(ALL_DIVS).sort();
+  const dl = document.getElementById('divlist');
+  dl.innerHTML = codes.map(code=>{
+    const d = ALL_DIVS[code];
+    const sel = SELECTED_DIV===code ? ' sel' : '';
+    return `<div class="divopt${sel}">
+      <span class="dclick" onclick="selectDivision('${code}')">
+        <span class="dcode">${esc(code)}</span>
+        <span class="dcount">${d.fileCount} file${d.fileCount>1?'s':''}</span>
+      </span>
+      <input class="dlabel" placeholder="optional label…" value="${esc(DIV_LABELS[code]||'')}"
+             onclick="event.stopPropagation()" onchange="saveDivLabel('${code}', this.value.trim()); renderSetup()">
+    </div>`;
+  }).join('');
+  document.getElementById('viewBtn').disabled = !SELECTED_DIV;
+  document.getElementById('setup').style.display = RAW_FILES.length ? 'block' : 'none';
+  document.getElementById('selbar').style.display = 'none';
+  document.getElementById('tabbar').style.display = 'none';
+  document.getElementById('statsOut').innerHTML = '';
+  document.getElementById('out').innerHTML = '';
+  document.getElementById('emp').style.display = RAW_FILES.length ? 'none' : 'block';
+}
+
+function selectDivision(code){
+  SELECTED_DIV = code;
+  renderSetup();
+}
+function backToSetup(){ renderSetup(); }
+
+/* ─── merge selected division across every included week ──── */
+function buildMergedResults(){
+  const active = activeFiles();
+  const wanted = active.filter(f=>!!f.divisions[SELECTED_DIV]);
+
+  const banks={};      // bankKey -> merged bank record
+  const familiesAgg={}; // code -> {name,stubs,amount}
+  const weeks=[];
+  let grandTotal=0, totalScrolls=0;
+
+  for(const f of wanted){
+    const div=f.divisions[SELECTED_DIV];
+    weeks.push({weekEnding:f.weekEnding, procDate:f.procDate, fname:f.fname});
+
+    for(const key of div.order){
+      const bank=div.banks[key];
+      if(!banks[key]) banks[key]={branchCode:bank.branchCode, bankCode:bank.bankCode, name:bank.name, scrolls:[], weekTotals:[]};
+      if(bank.name.length>banks[key].name.length) banks[key].name=bank.name;
+      for(const sc of bank.scrolls){
+        banks[key].scrolls.push(Object.assign({weekEnding:f.weekEnding, fname:f.fname}, sc));
+        grandTotal+=sc.amount; totalScrolls++;
+      }
+      banks[key].weekTotals.push({weekEnding:f.weekEnding, carryForward:bank.carryForward, totals:bank.totals});
+    }
+
+    for(const fam of div.families){
+      if(!familiesAgg[fam.code]) familiesAgg[fam.code]={code:fam.code, name:fam.name, stubs:0, amount:0};
+      familiesAgg[fam.code].stubs += fam.stubs;
+      familiesAgg[fam.code].amount += fam.amount;
+      if(fam.name.length>familiesAgg[fam.code].name.length) familiesAgg[fam.code].name=fam.name;
+    }
+  }
+
+  const dateSet=new Set();
+  for(const b of Object.values(banks)) for(const sc of b.scrolls) dateSet.add(sc.payDate);
+
+  return {
+    divCode:SELECTED_DIV, banks, familiesAgg, weeks,
+    grandTotal, totalScrolls,
+    bankCount:Object.keys(banks).length,
+    dateCount:dateSet.size
+  };
+}
+
+function detectDefaultMonthRange(){
+  const counts={};
+  for(const b of Object.values(RESULTS.banks)){
+    for(const sc of b.scrolls){
+      const ms=parseDMY(sc.payDate);
+      if(!ms) continue;
+      const dt=new Date(ms);
+      const key=dt.getFullYear()+'-'+dt.getMonth();
+      counts[key]=(counts[key]||0)+1;
+    }
+  }
+  let best=null, bestCount=-1;
+  for(const [k,c] of Object.entries(counts)) if(c>bestCount){ bestCount=c; best=k; }
+  if(!best) return null;
+  const [y,m]=best.split('-').map(Number);
+  return { from:new Date(y,m,1), to:new Date(y,m+1,0) };
+}
+
+function showResults(){
+  if(!SELECTED_DIV) return;
+  RESULTS = buildMergedResults();
+  ENTRY_RANGE = detectDefaultMonthRange();
+
+  const active=activeFiles();
+  const excludedCount = RAW_FILES.length - active.length;
+  const skipped = active.length - RESULTS.weeks.length;
+
+  document.getElementById('setup').style.display='none';
+
+  const infoBox=document.getElementById('errs');
+  const notes=[];
+  if(excludedCount>0) notes.push(`<div class="info-box">ℹ ${excludedCount} uploaded file(s) are unchecked (excluded) — use "Change Division" to review them.</div>`);
+  if(skipped>0) notes.push(`<div class="info-box">ℹ ${skipped} of ${active.length} included file(s) don't contain ${esc(divDisplay(SELECTED_DIV))} and are excluded from these results.</div>`);
+  const prior = infoBox.innerHTML.replace(/<div class="info-box">.*?<\/div>/,'');
+  infoBox.innerHTML = notes.join('') + prior;
+
+  document.getElementById('printTitle').textContent = `CP-101 Analyzer — ${divDisplay(SELECTED_DIV)}`;
+  document.getElementById('printSub').innerHTML = `Weekly Cash Collection Book &nbsp;·&nbsp; Printed <span id="printDate"></span>`;
+
+  document.getElementById('selDivTag').textContent = divDisplay(SELECTED_DIV);
+  const weekList = RESULTS.weeks.map(w=>'W/E '+w.weekEnding).join(', ');
+  document.getElementById('selInfo').textContent = RESULTS.weeks.length ? weekList : 'No matching weeks';
+  document.getElementById('selbar').style.display='flex';
+
+  if(RESULTS.weeks.length){
+    document.getElementById('tabbar').style.display='flex';
+    document.getElementById('emp').style.display='none';
+    renderStats();
+    switchTab(ACTIVE_TAB);
+  } else {
+    document.getElementById('tabbar').style.display='none';
+    document.getElementById('statsOut').innerHTML='';
+    document.getElementById('out').innerHTML='';
+    document.getElementById('emp').style.display='block';
+  }
+}
+
+/* ─── stats header ────────────────────────── */
+function renderStats(){
+  const r=RESULTS;
+  const weekRange = r.weeks.length>1
+    ? `${r.weeks.length} weeks included`
+    : `Week ending ${esc(r.weeks[0].weekEnding)}`;
+  document.getElementById('statsOut').innerHTML = `
+  <div class="stats-wrap">
+    <div class="stats-head">
+      <h2>📊 ${esc(divDisplay(r.divCode))}</h2>
+      <div class="shsub">${weekRange}</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val">${fn(r.grandTotal)}</div><div class="stat-lbl">Total Amount</div></div>
+      <div class="stat"><div class="stat-val">${r.bankCount}</div><div class="stat-lbl">Banks</div></div>
+      <div class="stat"><div class="stat-val">${r.dateCount}</div><div class="stat-lbl">Distinct Dates</div></div>
+      <div class="stat"><div class="stat-val">${r.totalScrolls}</div><div class="stat-lbl">Scroll Rows</div></div>
+      <div class="stat"><div class="stat-val">${r.weeks.length}</div><div class="stat-lbl">Week File${r.weeks.length>1?'s':''}</div></div>
+    </div>
+  </div>`;
+}
+
+/* ─── tabs ─────────────────────────────────── */
+function switchTab(t){
+  ACTIVE_TAB = t;
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
+  document.getElementById('searchBox').style.display = (t==='bank' || t==='cp48') ? 'inline-block' : 'none';
+  document.getElementById('expandBtn').style.display = (t==='fam') ? 'none' : 'inline-block';
+  if(t==='cp48') renderEntryTab();
+  else if(t==='date') renderDateTab();
+  else if(t==='bank') renderBankTab();
+  else renderFamiliesTab();
+}
+
+function toggleExpandAll(){
+  EXPAND_ALL = !EXPAND_ALL;
+  document.getElementById('expandBtn').textContent = EXPAND_ALL ? '⤢ Expand All' : '⤡ Collapse All';
+  document.querySelectorAll('#out details').forEach(d=>d.open=EXPAND_ALL);
+}
+
+function onSearch(){ if(ACTIVE_TAB==='bank') renderBankTab(); else if(ACTIVE_TAB==='cp48') renderEntryTab(); }
+
+/* ─── CP-48 Entry tab — the actual point of this app ────────
+   Manual banks (FBL branches, Post Offices) need date-by-date amounts
+   for CP-48 cell entry. Online banks (ABL/HBL/MCB/UBL/BOP ONLINE,
+   NADRA, 1-Link, etc.) only need one combined total for the month.
+   Every bank can be reclassified by hand — the FBL/PPO rule is just
+   a sensible starting default, not a hard rule.
+
+   Dates are filled DENSE (every day in the range, 0 where there was
+   no transaction) so a pasted column lines up row-for-row against a
+   CP-48 sheet that already has one row per calendar day. Dates are
+   written as "06-Apr-2026" everywhere they're copied/exported —
+   unambiguous in any Excel locale, unlike "06/04/2026" which some
+   Excel setups misread as month/day.                                 */
+let ENTRY_TSV_CACHE = {}; // bankKey (or '__online__') -> tab-separated text ready to paste into Excel
+
+function onRangeChange(){
+  const fromEl=document.getElementById('rangeFrom'), toEl=document.getElementById('rangeTo');
+  if(!ENTRY_RANGE) ENTRY_RANGE = {};
+  if(fromEl.value) ENTRY_RANGE.from = isoToDate(fromEl.value);
+  if(toEl.value) ENTRY_RANGE.to = isoToDate(toEl.value);
+  renderEntryTab();
+}
+
+function renderEntryTab(){
+  const el=document.getElementById('out');
+  const q=(document.getElementById('searchBox').value||'').trim().toLowerCase();
+  ENTRY_TSV_CACHE = {};
+
+  if(!ENTRY_RANGE) ENTRY_RANGE = detectDefaultMonthRange();
+  const range = ENTRY_RANGE ? eachDateInRange(ENTRY_RANGE.from, ENTRY_RANGE.to) : [];
+
+  const manual=[], online=[];
+  for(const [bankKey,b] of Object.entries(RESULTS.banks)){
+    if(q && !(b.name.toLowerCase().includes(q) || b.branchCode.includes(q) || b.bankCode.includes(q))) continue;
+    const dateMap={};
+    let total=0;
+    for(const sc of b.scrolls){
+      dateMap[sc.payDate]=(dateMap[sc.payDate]||0)+sc.amount;
+      total+=sc.amount;
+    }
+    const entry={bankKey, branchCode:b.branchCode, bankCode:b.bankCode, name:b.name, dateMap, total};
+    if(bankType(bankKey,b.name)==='manual') manual.push(entry); else online.push(entry);
+  }
+  manual.sort((a,b)=>a.name.localeCompare(b.name));
+  online.sort((a,b)=>a.name.localeCompare(b.name));
+
+  let html='';
+
+  html+=`<div class="rangepicker">
+    <div class="rp-label">📅 Date range for Manual banks (filled with 0 on days with no transaction, so pasted amounts line up with your CP-48 rows)</div>
+    <div class="rp-inputs">
+      <label>From <input type="date" id="rangeFrom" value="${ENTRY_RANGE?dateToIso(ENTRY_RANGE.from):''}" onchange="onRangeChange()"></label>
+      <label>To <input type="date" id="rangeTo" value="${ENTRY_RANGE?dateToIso(ENTRY_RANGE.to):''}" onchange="onRangeChange()"></label>
+      <span class="rp-count">${range.length} day${range.length===1?'':'s'} will be listed per bank</span>
+    </div>
+  </div>`;
+
+  if(q && !manual.length && !online.length){
+    html+='<div class="empty"><div class="ei">🔎</div><div class="et">No banks match your search</div></div>';
+    el.innerHTML=html;
+    return;
+  }
+
+  html+=`<div class="entry-sec-head manual"><h3>🖊 Manual Banks — enter date-by-date into CP-48</h3>
+    <span class="entry-count">${manual.length} bank${manual.length===1?'':'s'}</span></div>`;
+  if(!manual.length){
+    html+=`<div class="entry-empty">No manual banks in this list (or your search/reclassification moved them all to Online).</div>`;
+  }
+  for(const e of manual){
+    const rows = range.map(d=>{
+      const key=fmtDMY(d);
+      return {date:d, dmy:key, amount:e.dateMap[key]||0};
+    });
+    ENTRY_TSV_CACHE['amtonly_'+e.bankKey] = rows.map(r=>r.amount.toFixed(0)).join('\n');
+    ENTRY_TSV_CACHE[e.bankKey] = rows.map(r=>`${fmtExcelSafeDate(r.date)}\t${r.amount.toFixed(0)}`).join('\n');
+    const txCount = Object.keys(e.dateMap).length;
+    html+=`<details class="bankcard entrycard" ${EXPAND_ALL?'open':''}>
+      <summary>
+        <div class="bc-left"><span class="bc-arrow">▶</span>
+          <span class="bc-code">${esc(e.branchCode)} / ${esc(e.bankCode)}</span>
+          <div><div class="bc-name">${esc(e.name)}</div><div class="bc-sub">${txCount} transaction day${txCount===1?'':'s'} of ${rows.length} in range</div></div>
+        </div>
+        <div class="bc-actions">
+          <span class="bc-total">${fn(e.total)}</span>
+          <button class="typebtn" onclick="event.preventDefault();toggleBankType('${e.bankKey}')">↔ Move to Online</button>
+          <button class="copybtn ghost" onclick="event.preventDefault();copyToClipboard(ENTRY_TSV_CACHE['${e.bankKey}'], this)">📋 Copy with Dates</button>
+          <button class="copybtn" onclick="event.preventDefault();copyToClipboard(ENTRY_TSV_CACHE['amtonly_${e.bankKey}'], this)">📋 Copy Amounts Only</button>
+        </div>
+      </summary>
+      <table><thead><tr><th>Pay Date</th><th class="r">Amount</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr${r.amount===0?' class="zerorow"':''}><td>${esc(r.dmy)}</td><td class="r amt">${fn(r.amount)}</td></tr>`).join('')}
+      <tr class="totrow"><td>Total (in range)</td><td class="r">${fn(rows.reduce((s,r)=>s+r.amount,0))}</td></tr>
+      </tbody></table>
+    </details>`;
+  }
+
+  ENTRY_TSV_CACHE['__online__'] = online.map(e=>`${e.name}\t${e.total.toFixed(0)}`).join('\n');
+  html+=`<div class="entry-sec-head online"><h3>💻 Online Banks — one monthly total each</h3>
+    <span class="entry-count">${online.length} bank${online.length===1?'':'s'}</span>
+    ${online.length?`<button class="copybtn" onclick="copyToClipboard(ENTRY_TSV_CACHE['__online__'], this)">📋 Copy All</button>`:''}
+  </div>`;
+  if(!online.length){
+    html+=`<div class="entry-empty">No online banks in this list.</div>`;
+  } else {
+    html+=`<table class="famtable"><thead><tr>
+      <th>Branch / Bank Code</th><th>Bank Name</th><th class="r">Month Total</th><th></th><th></th>
+    </tr></thead><tbody>
+    ${online.map(e=>{
+      ENTRY_TSV_CACHE['single_'+e.bankKey] = e.total.toFixed(0);
+      return `<tr>
+      <td>${esc(e.branchCode)} / ${esc(e.bankCode)}</td>
+      <td>${esc(e.name)}</td>
+      <td class="r">${fn(e.total)}</td>
+      <td><button class="typebtn" onclick="toggleBankType('${e.bankKey}')">↔ Move to Manual</button></td>
+      <td><button class="copybtn" onclick="copyToClipboard(ENTRY_TSV_CACHE['single_${e.bankKey}'], this)">📋 Copy</button></td>
+    </tr>`;
+    }).join('')}
+    </tbody></table>`;
+  }
+
+  el.innerHTML=html;
+}
+
+/* ─── By Date tab ─────────────────────────── */
+function renderDateTab(){
+  const el=document.getElementById('out');
+  const byDate={};
+  for(const b of Object.values(RESULTS.banks)){
+    for(const sc of b.scrolls){
+      if(!byDate[sc.payDate]) byDate[sc.payDate]={payDate:sc.payDate, total:0, rows:[]};
+      byDate[sc.payDate].total += sc.amount;
+      byDate[sc.payDate].rows.push({bankName:b.name, branchCode:b.branchCode, bankCode:b.bankCode, scrollNo:sc.scrollNo, amount:sc.amount, negative:sc.negative, weekEnding:sc.weekEnding});
+    }
+  }
+  const dates=Object.values(byDate).sort((a,b)=>parseDMY(b.payDate)-parseDMY(a.payDate));
+
+  if(!dates.length){ el.innerHTML='<div class="empty"><div class="ei">📭</div><div class="et">No dated transactions found</div></div>'; return; }
+
+  el.innerHTML = dates.map(d=>{
+    const rows = d.rows.slice().sort((a,b)=> a.bankName.localeCompare(b.bankName) || a.scrollNo-b.scrollNo);
+    return `<details class="datecard" ${EXPAND_ALL?'open':''}>
+      <summary>
+        <div class="dc-left"><span class="dc-arrow">▶</span>
+          <div><div class="dc-date">${esc(d.payDate)}</div><div class="dc-sub">${d.rows.length} scroll row${d.rows.length>1?'s':''} across ${new Set(d.rows.map(r=>r.bankCode)).size} bank${new Set(d.rows.map(r=>r.bankCode)).size>1?'s':''}</div></div>
+        </div>
+        <div class="dc-total">${fn(d.total)}</div>
+      </summary>
+      <table><thead><tr>
+        <th>Bank</th><th>Branch / Bank Code</th><th class="r">Scroll No</th><th class="r">Amount</th>
+      </tr></thead><tbody>
+      ${rows.map(r=>`<tr>
+        <td>${esc(r.bankName)}</td>
+        <td>${esc(r.branchCode)} / ${esc(r.bankCode)}</td>
+        <td class="r">${r.scrollNo}</td>
+        <td class="r ${r.negative<0?'neg':''}">${fn(r.amount)}</td>
+      </tr>`).join('')}
+      </tbody></table>
+    </details>`;
+  }).join('');
+}
+
+/* ─── By Bank tab ─────────────────────────── */
+function renderBankTab(){
+  const el=document.getElementById('out');
+  const q=(document.getElementById('searchBox').value||'').trim().toLowerCase();
+  let banks=Object.values(RESULTS.banks);
+  if(q) banks=banks.filter(b=> b.name.toLowerCase().includes(q) || b.branchCode.includes(q) || b.bankCode.includes(q));
+  banks = banks.slice().sort((a,b)=>a.name.localeCompare(b.name));
+
+  if(!banks.length){ el.innerHTML='<div class="empty"><div class="ei">🔎</div><div class="et">No banks match your search</div></div>'; return; }
+
+  el.innerHTML = banks.map(b=>{
+    const total = b.scrolls.reduce((s,sc)=>s+sc.amount,0);
+    const sortedScrolls = b.scrolls.slice().sort((a,b2)=>parseDMY(a.payDate)-parseDMY(b2.payDate) || a.scrollNo-b2.scrollNo);
+    const wt = b.weekTotals[b.weekTotals.length-1] || {};
+    const R = wt.totals && wt.totals.R;
+    const U = wt.totals && wt.totals.U;
+    return `<details class="bankcard" ${EXPAND_ALL?'open':''}>
+      <summary>
+        <div class="bc-left"><span class="bc-arrow">▶</span>
+          <span class="bc-code">${esc(b.branchCode)} / ${esc(b.bankCode)}</span>
+          <div><div class="bc-name">${esc(b.name)}</div><div class="bc-sub">${b.scrolls.length} scroll row${b.scrolls.length>1?'s':''}${b.weekTotals.length>1?' · '+b.weekTotals.length+' weeks':''}</div></div>
+        </div>
+        <div class="bc-total">${fn(total)}</div>
+      </summary>
+      <div class="bc-detail">
+        <div class="rusplit">
+          ${R?`<span class="rutag">R-type total: <b>${fn(R.week)}</b></span>`:''}
+          ${U?`<span class="rutag">U-type total: <b>${fn(U.week)}</b></span>`:''}
+          ${wt.carryForward?`<span class="rutag">Carried from prior week: <b>${fn(wt.carryForward)}</b></span>`:''}
+        </div>
+        <table><thead><tr>
+          <th>Pay Date</th><th class="r">Scroll No</th><th class="r">Amount</th><th class="r">Week Progressive</th><th class="r">Month Progressive</th>${b.weekTotals.length>1?'<th>Week File</th>':''}
+        </tr></thead><tbody>
+        ${sortedScrolls.map(sc=>`<tr>
+          <td>${esc(sc.payDate)}</td>
+          <td class="r">${sc.scrollNo}</td>
+          <td class="amt">${fn(sc.amount)}</td>
+          <td class="r">${fn(sc.week)}</td>
+          <td class="r">${fn(sc.month)}</td>
+          ${b.weekTotals.length>1?`<td>${esc(sc.weekEnding)}</td>`:''}
+        </tr>`).join('')}
+        </tbody></table>
+      </div>
+    </details>`;
+  }).join('');
+}
+
+/* ─── Bank Families tab ───────────────────── */
+function renderFamiliesTab(){
+  const el=document.getElementById('out');
+  const fams=Object.values(RESULTS.familiesAgg).sort((a,b)=>b.amount-a.amount);
+  if(!fams.length){ el.innerHTML='<div class="empty"><div class="ei">📊</div><div class="et">No bank-family summary found in the source file(s)</div></div>'; return; }
+
+  const maxAmt = Math.max(...fams.map(f=>f.amount), 1);
+  const grandStubs = fams.reduce((s,f)=>s+f.stubs,0);
+  const grandAmt = fams.reduce((s,f)=>s+f.amount,0);
+
+  el.innerHTML = `<table class="famtable"><thead><tr>
+    <th>Code</th><th>Bank Family</th><th class="r">Stubs</th><th class="r">Amount</th><th>Share</th>
+  </tr></thead><tbody>
+  ${fams.map(f=>`<tr>
+    <td>${esc(f.code)}</td>
+    <td>${esc(f.name)}</td>
+    <td class="r">${f.stubs.toLocaleString()}</td>
+    <td class="r">${fn(f.amount)}</td>
+    <td><div class="fambar-wrap"><div class="fambar-bg"><div class="fambar-fg" style="width:${(f.amount/maxAmt*100).toFixed(1)}%"></div></div></div></td>
+  </tr>`).join('')}
+  <tr class="grand"><td colspan="2">Grand Total</td><td class="r">${grandStubs.toLocaleString()}</td><td class="r">${fn(grandAmt)}</td><td></td></tr>
+  </tbody></table>`;
+}
+
+/* ─── excel export ────────────────────────── */
+function doExport(){
+  if(!RESULTS || !RESULTS.weeks.length) return;
+  const wb=XLSX.utils.book_new();
+  const r=RESULTS;
+
+  /* ── CP-48 ready sheets: one per manual bank (Date | Amount, exactly
+     what gets typed into that bank's CP-48 sheet), plus one combined
+     Online Banks Summary sheet. Added first since this is the point
+     of the export. Sheet names are deduped/truncated to Excel's 31-
+     char limit. ── */
+  const usedNames=new Set();
+  function sheetName(base){
+    let name=base.replace(/[\\\/\?\*\[\]:]/g,' ').replace(/\s+/g,' ').trim().slice(0,28) || 'Bank';
+    let candidate=name, n=2;
+    while(usedNames.has(candidate.toLowerCase())){ candidate=(name+' '+n).slice(0,31); n++; }
+    usedNames.add(candidate.toLowerCase());
+    return candidate;
+  }
+
+  const manualEntries=[], onlineEntries=[];
+  for(const [bankKey,b] of Object.entries(r.banks)){
+    const dateMap={};
+    let total=0;
+    for(const sc of b.scrolls){ dateMap[sc.payDate]=(dateMap[sc.payDate]||0)+sc.amount; total+=sc.amount; }
+    const entry={bankKey, branchCode:b.branchCode, bankCode:b.bankCode, name:b.name, dateMap, total};
+    if(bankType(bankKey,b.name)==='manual') manualEntries.push(entry); else onlineEntries.push(entry);
+  }
+  manualEntries.sort((a,b)=>a.name.localeCompare(b.name));
+  onlineEntries.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const exportRange = ENTRY_RANGE ? eachDateInRange(ENTRY_RANGE.from, ENTRY_RANGE.to) : [];
+  for(const e of manualEntries){
+    const rows=[[e.name],['Branch '+e.branchCode+' / Bank '+e.bankCode],[''],['Pay Date','Amount']];
+    let rangeTotal=0;
+    for(const d of exportRange){
+      const amt = e.dateMap[fmtDMY(d)] || 0;
+      rangeTotal += amt;
+      rows.push([fmtExcelSafeDate(d), amt]);
+    }
+    rows.push(['Total (in range)', rangeTotal]);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:16},{wch:16}];
+    XLSX.utils.book_append_sheet(wb, ws, sheetName(e.name));
+  }
+
+  {
+    const rows=[['Online Banks — Monthly Totals — '+divDisplay(r.divCode)],[''],
+      ['Branch Code','Bank Code','Bank Name','Month Total']];
+    for(const e of onlineEntries) rows.push([e.branchCode, e.bankCode, e.name, e.total]);
+    rows.push(['','','Grand Total', onlineEntries.reduce((s,e)=>s+e.total,0)]);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:12},{wch:32},{wch:16}];
+    XLSX.utils.book_append_sheet(wb, ws, sheetName('Online Banks Summary'));
+  }
+
+  /* Date-wise sheet */
+  const byDate={};
+  for(const b of Object.values(r.banks)) for(const sc of b.scrolls){
+    if(!byDate[sc.payDate]) byDate[sc.payDate]={total:0,rows:[]};
+    byDate[sc.payDate].total+=sc.amount;
+    byDate[sc.payDate].rows.push([dmyToExcelSafe(sc.payDate), b.name, b.branchCode, b.bankCode, sc.scrollNo, sc.amount, sc.week, sc.month]);
+  }
+  const dateKeys=Object.keys(byDate).sort((a,b)=>parseDMY(a)-parseDMY(b));
+  const dRows=[['CP-101 — '+divDisplay(r.divCode)+' — By Date'],[''],
+    ['Pay Date','Bank Name','Branch Code','Bank Code','Scroll No','Amount','Week Progressive','Month Progressive']];
+  for(const dk of dateKeys){
+    for(const row of byDate[dk].rows) dRows.push(row);
+    dRows.push(['','','','','Date Total', byDate[dk].total]);
+    dRows.push([]);
+  }
+  const dws=XLSX.utils.aoa_to_sheet(dRows);
+  dws['!cols']=[{wch:12},{wch:32},{wch:12},{wch:12},{wch:10},{wch:14},{wch:16},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,dws,'By Date');
+
+  /* Bank-wise sheet */
+  const bRows=[['CP-101 — '+divDisplay(r.divCode)+' — By Bank'],[''],
+    ['Branch Code','Bank Code','Bank Name','Pay Date','Scroll No','Amount','Week Progressive','Month Progressive','Week File']];
+  const banksSorted=Object.values(r.banks).sort((a,b)=>a.name.localeCompare(b.name));
+  for(const b of banksSorted){
+    const sorted=b.scrolls.slice().sort((x,y)=>parseDMY(x.payDate)-parseDMY(y.payDate)||x.scrollNo-y.scrollNo);
+    sorted.forEach((sc,i)=>{
+      bRows.push([i===0?b.branchCode:'', i===0?b.bankCode:'', i===0?b.name:'', dmyToExcelSafe(sc.payDate), sc.scrollNo, sc.amount, sc.week, sc.month, sc.weekEnding]);
+    });
+    const total=b.scrolls.reduce((s,sc)=>s+sc.amount,0);
+    bRows.push(['','','Bank Total','','',total]);
+    bRows.push([]);
+  }
+  const bws=XLSX.utils.aoa_to_sheet(bRows);
+  bws['!cols']=[{wch:12},{wch:12},{wch:32},{wch:12},{wch:10},{wch:14},{wch:16},{wch:16},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,bws,'By Bank');
+
+  /* Bank Families sheet */
+  const fams=Object.values(r.familiesAgg).sort((a,b)=>b.amount-a.amount);
+  const fRows=[['CP-101 — '+divDisplay(r.divCode)+' — Bank Families'],[''],
+    ['Code','Bank Family','Stubs','Amount']];
+  for(const f of fams) fRows.push([f.code,f.name,f.stubs,f.amount]);
+  fRows.push(['','Grand Total', fams.reduce((s,f)=>s+f.stubs,0), fams.reduce((s,f)=>s+f.amount,0)]);
+  const fws=XLSX.utils.aoa_to_sheet(fRows);
+  fws['!cols']=[{wch:8},{wch:32},{wch:12},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,fws,'Bank Families');
+
+  /* Weeks included sheet */
+  const wRows=[['Weeks Included in This Export'],[''],['Week Ending','Processing Date','File']];
+  for(const w of r.weeks) wRows.push([w.weekEnding, w.procDate, w.fname]);
+  const wws=XLSX.utils.aoa_to_sheet(wRows);
+  wws['!cols']=[{wch:14},{wch:14},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,wws,'Weeks Included');
+
+  XLSX.writeFile(wb,'CP101_Div'+r.divCode+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+/* ─── file processing ─────────────────────── */
+async function run(fileList, opts){
+  opts = opts || {};
+  const isFolder = !!opts.isFolder;
+  const files = [...fileList];
+  if(!files.length) return;
+
+  const lb=document.getElementById('lb');
+  lb.style.display='flex';
+  document.getElementById('out').innerHTML='';
+  document.getElementById('errs').innerHTML='';
+  document.getElementById('setup').style.display='none';
+  document.getElementById('selbar').style.display='none';
+  document.getElementById('statsOut').innerHTML='';
+  document.getElementById('tabbar').style.display='none';
+  document.getElementById('emp').style.display='none';
+  RAW_FILES = [];
+  RESULTS = null;
+  SELECTED_DIV = null;
+  EXCLUDED_FILES = new Set();
+
+  let pdfCandidates = files.filter(f=>f.name.toLowerCase().endsWith('.pdf'));
+  const nonPdfCount = files.length - pdfCandidates.length;
+
+  let skippedByName = 0;
+  if(isFolder){
+    const before = pdfCandidates.length;
+    pdfCandidates = pdfCandidates.filter(f=>isCP101Filename(f.name));
+    skippedByName = before - pdfCandidates.length;
+  }
+
+  const errs=[];
+  if(!isFolder && nonPdfCount>0){
+    files.filter(f=>!f.name.toLowerCase().endsWith('.pdf'))
+         .forEach(f=>errs.push({f:f.name, r:'Not a PDF file'}));
+  }
+
+  for(let i=0;i<pdfCandidates.length;i++){
+    const f=pdfCandidates[i];
+    document.getElementById('lmsg').textContent =
+      `Processing ${i+1} of ${pdfCandidates.length}: ${f.name}`;
+    try{
+      const buf=await f.arrayBuffer();
+      const res=await parsePDF(buf,f.name);
+      if(res.ok){ res._id='f'+i+'_'+res.fname; RAW_FILES.push(res); }
+      else errs.push({f:f.name, r:res.reason});
+    }catch(e){ errs.push({f:f.name, r:e.message||'Failed to read PDF'}); }
+  }
+
+  lb.style.display='none';
+
+  let notes='';
+  if(isFolder){
+    notes += `<div class="info-box">ℹ Folder scan: ${files.length} item(s) found, ${nonPdfCount} non-PDF skipped, ${skippedByName} PDF(s) skipped (filename doesn't look like a CP-101), ${pdfCandidates.length} checked as CP-101 candidates.</div>`;
+  }
+  document.getElementById('errs').innerHTML = notes +
+    errs.map(e=>`<div class="err-box">⚠ <strong>${esc(e.f)}</strong>: ${esc(e.r)}</div>`).join('');
+
+  if(RAW_FILES.length){
+    autoResolveDuplicates();
+    renderSetup();
+  } else if(!errs.length && !isFolder){
+    document.getElementById('emp').style.display='block';
+  } else {
+    document.getElementById('emp').style.display = RAW_FILES.length ? 'none' : 'block';
+  }
+}
+
+/* ─── events ──────────────────────────────── */
+const dz=document.getElementById('dz'), fi=document.getElementById('fi'), fd=document.getElementById('fd');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');run(e.dataTransfer.files,{isFolder:false})});
+fi.addEventListener('change',e=>{run(e.target.files,{isFolder:false});e.target.value='';});
+fd.addEventListener('change',e=>{run(e.target.files,{isFolder:true});e.target.value='';});
+
+/* ─── print support ──────────────────────────
+   Force every collapsible section open for print/PDF export, then
+   restore the user's on-screen expand/collapse state afterwards.     */
+let _preprintExpand=null;
+window.addEventListener('beforeprint', ()=>{
+  const pd=document.getElementById('printDate');
+  if(pd) pd.textContent=new Date().toLocaleString();
+  if(!EXPAND_ALL){ _preprintExpand=false; document.querySelectorAll('#out details').forEach(d=>d.open=true); }
+});
+window.addEventListener('afterprint', ()=>{
+  if(_preprintExpand===false){
+    document.querySelectorAll('#out details').forEach(d=>d.open=EXPAND_ALL);
+    _preprintExpand=null;
+  }
+});
+</script>
+</body>
+</html>

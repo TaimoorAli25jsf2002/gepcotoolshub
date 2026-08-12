@@ -1,5 +1,167 @@
+// import { useMemo, useState } from "react";
+// import { Search, Moon, Sun, Wrench, ArrowUpRight } from "lucide-react";
+// import apps from "./data/apps";
+// import AppCard from "./components/AppCard";
+
+// export default function App() {
+//   const [query, setQuery] = useState("");
+//   const [category, setCategory] = useState("All");
+//   const [dark, setDark] = useState(false);
+
+//   const categories = ["All", ...new Set(apps.map((app) => app.category))];
+
+//   const filteredApps = useMemo(() => {
+//     const q = query.trim().toLowerCase();
+
+//     return apps.filter((app) => {
+//       const matchesCategory =
+//         category === "All" || app.category === category;
+
+//       const matchesSearch =
+//         !q ||
+//         [app.name, app.description, app.category, ...(app.tags || [])]
+//           .join(" ")
+//           .toLowerCase()
+//           .includes(q);
+
+//       return matchesCategory && matchesSearch;
+//     });
+//   }, [query, category]);
+
+//   return (
+//     <div className={dark ? "app dark" : "app"}>
+//       <header className="header">
+//         <div className="header-inner">
+//           <div className="brand">
+//             <div className="brand-icon">
+//               <Wrench size={22} />
+//             </div>
+//             <div>
+//               <h1>GEPCO Tools Hub</h1>
+//               {/* <p>Revenue & office utility tools</p> */}
+//             </div>
+//           </div>
+
+//           <button
+//             className="theme-button"
+//             onClick={() => setDark((value) => !value)}
+//             title="Toggle theme"
+//             aria-label="Toggle theme"
+//           >
+//             {dark ? <Sun size={25} /> : <Moon size={25} />}
+//           </button>
+//         </div>
+//       </header>
+
+//       <main className="container">
+//         <section className="hero">
+//           <div>
+//             <span className="eyebrow">UTILITY DASHBOARD</span>
+//             <h2>All tools, in one place.</h2>
+//             <p>
+//               GEPCO Revenue Office Tools Built by Taimoor Ali.
+//             </p>
+//           </div>
+
+//           <div className="tool-count">
+//             <strong>{apps.length}</strong>
+//             <span>tools</span>
+//           </div>
+//         </section>
+
+//         <section className="controls">
+//           <div className="search-box">
+//             <Search size={19} />
+//             <input
+//               type="search"
+//               placeholder="Search tools..."
+//               value={query}
+//               onChange={(event) => setQuery(event.target.value)}
+//             />
+//           </div>
+
+//           <div className="categories">
+//             {categories.map((item) => (
+//               <button
+//                 key={item}
+//                 className={category === item ? "category active" : "category"}
+//                 onClick={() => setCategory(item)}
+//               >
+//                 {item}
+//               </button>
+//             ))}
+//           </div>
+//         </section>
+
+//         {filteredApps.length > 0 ? (
+//           <section className="grid">
+//             {filteredApps.map((app) => (
+//               <AppCard key={app.id} app={app} />
+//             ))}
+//           </section>
+//         ) : (
+//           <section className="empty">
+//             <Search size={34} />
+//             <h3>No tools found</h3>
+//             <p>Try another search or category.</p>
+//           </section>
+//         )}
+
+// <footer className="hub-footer">
+//   <div className="footer-inner">
+
+//     <div className="footer-brand">
+//       <div className="footer-logo">⚡</div>
+//       <div>
+//         <strong>GEPCO Tools Hub</strong>
+//         <p>Office productivity & utility tools</p>
+//       </div>
+//     </div>
+
+//     <div className="footer-links">
+//       <div className="footer-column">
+//         <h4>My Projects</h4>
+
+//         <a
+//           href="https://tmern.vercel.app/"
+//           target="_blank"
+//           rel="noopener noreferrer"
+//         >
+//           MERN Portfolio ↗
+//         </a>
+
+//         <a
+//           href="https://aiacademyt.vercel.app/"
+//           target="_blank"
+//           rel="noopener noreferrer"
+//         >
+//           AI Academy ↗
+//         </a>
+
+//         </div>
+//       </div>
+
+     
+
+//   </div>
+
+//   <div className="footer-bottom">
+//     <span>© {new Date().getFullYear()} GEPCO Tools Hub</span>
+//     <span>Built for productivity</span>
+//   </div>
+// </footer>
+
+
+//       </main>
+//     </div>
+//   );
+// }
+
+
+
+
 import { useMemo, useState } from "react";
-import { Search, Moon, Sun, Wrench, ArrowUpRight } from "lucide-react";
+import { Search, Moon, Sun, Wrench } from "lucide-react";
 import apps from "./data/apps";
 import AppCard from "./components/AppCard";
 
@@ -30,15 +192,17 @@ export default function App() {
 
   return (
     <div className={dark ? "app dark" : "app"}>
+
+      {/* ---------- Header ---------- */}
       <header className="header">
         <div className="header-inner">
           <div className="brand">
             <div className="brand-icon">
               <Wrench size={22} />
             </div>
+
             <div>
               <h1>GEPCO Tools Hub</h1>
-              {/* <p>Revenue & office utility tools</p> */}
             </div>
           </div>
 
@@ -53,11 +217,15 @@ export default function App() {
         </div>
       </header>
 
+      {/* ---------- Main ---------- */}
       <main className="container">
+
         <section className="hero">
           <div>
             <span className="eyebrow">UTILITY DASHBOARD</span>
+
             <h2>All tools, in one place.</h2>
+
             <p>
               GEPCO Revenue Office Tools Built by Taimoor Ali.
             </p>
@@ -69,9 +237,12 @@ export default function App() {
           </div>
         </section>
 
+        {/* ---------- Search & Categories ---------- */}
         <section className="controls">
+
           <div className="search-box">
             <Search size={19} />
+
             <input
               type="search"
               placeholder="Search tools..."
@@ -84,15 +255,21 @@ export default function App() {
             {categories.map((item) => (
               <button
                 key={item}
-                className={category === item ? "category active" : "category"}
+                className={
+                  category === item
+                    ? "category active"
+                    : "category"
+                }
                 onClick={() => setCategory(item)}
               >
                 {item}
               </button>
             ))}
           </div>
+
         </section>
 
+        {/* ---------- Tools ---------- */}
         {filteredApps.length > 0 ? (
           <section className="grid">
             {filteredApps.map((app) => (
@@ -102,17 +279,90 @@ export default function App() {
         ) : (
           <section className="empty">
             <Search size={34} />
+
             <h3>No tools found</h3>
-            <p>Try another search or category.</p>
+
+            <p>
+              Try another search or category.
+            </p>
           </section>
         )}
 
-        <footer>
-          <span>GEPCO Tools Hub</span>
-          <span>•</span>
-          <span>Tools for GEPCO Revenue Office</span>
+        {/* ---------- Footer ---------- */}
+        <footer className="hub-footer">
+
+          <div className="footer-inner">
+
+            <div className="footer-brand">
+
+              <div className="footer-logo">
+                ⚡
+              </div>
+
+              <div>
+                <strong>GEPCO Tools Hub</strong>
+
+                <p>
+                  Office productivity & utility tools
+                </p>
+              </div>
+
+            </div>
+
+
+            <div className="footer-links">
+
+              <div className="footer-column">
+
+                <h4>My Projects</h4>
+
+                <a
+                  href="https://tmern.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  MERN Portfolio ↗
+                </a>
+
+                <a
+                  href="https://aiacademyt.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  AI Academy ↗
+                </a>
+
+                <a
+                  href="https://github.com/TaimoorAli25jsf2002"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  GitHub ↗
+                </a>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div className="footer-bottom">
+
+            <span>
+              © {new Date().getFullYear()} GEPCO Tools Hub
+            </span>
+
+            <span>
+              Built for productivity
+            </span>
+
+          </div>
+
         </footer>
+
       </main>
+
     </div>
   );
 }

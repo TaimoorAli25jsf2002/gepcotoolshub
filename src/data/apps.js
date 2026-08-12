@@ -43,7 +43,7 @@ const apps = [
     description: "Analyze CP-101 collection PDFs and prepare data for reconciliation.",
     category: "Revenue",
     icon: "📄",
-    path: "/apps/cp101/",
+    path: "/apps/cp101-analyzer/index.html",
     tags: ["cp101", "pdf", "collection"]
   },
 
