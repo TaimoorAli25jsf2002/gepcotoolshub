@@ -153,43 +153,6 @@
   .two-col{display:grid; grid-template-columns:1.2fr 1fr; gap:22px;}
   @media (max-width:880px){.two-col{grid-template-columns:1fr;}}
 
-  /* ---------- GROUPED-BY-DATE ---------- */
-  .group-actions{display:flex; gap:8px; flex-wrap:wrap;}
-  .group-list{border:1px solid var(--rule);}
-  .group-block{border-bottom:1px solid var(--rule);}
-  .group-block:last-child{border-bottom:none;}
-  .group-block summary{
-    cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center;
-    gap:14px; padding:14px 16px; background:var(--paper-deep); flex-wrap:wrap;
-    transition:background .15s; user-select:none;
-  }
-  .group-block summary:hover{background:#e9e3d0;}
-  .group-block summary::-webkit-details-marker{display:none;}
-  .group-block summary .gleft{display:flex; align-items:center; gap:14px; min-width:0;}
-  .group-block .arrow{
-    display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
-    width:28px; height:28px; border:1.5px solid var(--gold); border-radius:50%;
-    color:var(--gold); font-size:13px; background:#fffdf7;
-    transition:transform .18s ease, background .15s, color .15s;
-  }
-  .group-block[open] .arrow{transform:rotate(90deg); background:var(--gold); color:#fffdf7;}
-  .group-block summary .gdate{font-family:var(--serif); font-weight:600; font-size:16px; color:var(--ink);}
-  .group-block summary .gmeta{display:flex; gap:16px; align-items:center; font-size:11.5px; color:#6b6354;}
-  .group-block summary .gmeta .gv{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ledger-deep);}
-  .group-table{width:100%; border-collapse:collapse;}
-  .group-table thead th{
-    text-align:left; padding:7px 14px 7px 62px; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
-    color:#8a8270; border-bottom:1px solid var(--rule); font-weight:700; background:#fbf9f2;
-  }
-  .group-table thead th.amt, .group-table thead th.idx{padding-left:14px;}
-  .group-table thead th.idx{width:34px;}
-  .group-table td{padding:7px 14px 7px 62px; border-bottom:1px dashed var(--rule); font-size:12.5px;}
-  .group-table tr:nth-child(even) td{background:#faf8f1;}
-  .group-table tr:last-child td{border-bottom:none;}
-  .group-table td.idx{color:#a39c89; width:34px; padding-left:14px;}
-  .group-table td.time{font-variant-numeric:tabular-nums; color:#5b5446;}
-  .group-table td.amt{text-align:right; font-variant-numeric:tabular-nums; padding-right:14px;}
-
   .sheet-head-row{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px;}
   .empty-note{text-align:center; color:#8a8270; padding:34px 10px; font-size:12.5px;}
 
@@ -209,15 +172,11 @@
     .sheet::before{display:none;}
     .table-wrap{max-height:none; overflow:visible; border:none;}
     footer{display:block !important; border-top:1px solid #999; margin-top:18px;}
-    .two-col{display:block;}
-    #resultsArea .sheet{display:none !important;}
-    body.printing-present #resultsArea .present-sheet{display:block !important;}
-    body.printing-missing #resultsArea .missing-sheet{display:block !important;}
-    body.printing-grouped #resultsArea .grouped-sheet{display:block !important;}
+    #resultsArea > .sheet{display:none !important;}
+    body.printing-present .present-sheet{display:block !important;}
+    body.printing-missing .missing-sheet{display:block !important;}
     body.printing-present .print-title-present{display:block !important;}
     body.printing-missing .print-title-missing{display:block !important;}
-    body.printing-grouped .print-title-grouped{display:block !important;}
-    .group-block{display:block !important;}
   }
   .print-title{display:none; font-family:var(--serif); font-size:18px; font-weight:700; margin:6px 0 16px;}
 </style>
@@ -280,39 +239,18 @@
       </div>
     </div>
 
-    <div class="sheet grouped-sheet">
-      <div class="sheet-head">
-        <div>
-          <div class="tag">Step 03</div>
-          <h2>Transactions Grouped by Date</h2>
-        </div>
-      </div>
-      <div class="sheet-body">
-        <div class="print-title print-title-grouped">Transactions Grouped by Date</div>
-        <div class="sheet-head-row no-print">
-          <div class="note">Every individual payment, arranged under its calendar date and sorted by time paid — earliest first.</div>
-          <div class="group-actions">
-            <button class="ghost" id="expandAllBtn" disabled>Expand All</button>
-            <button class="ghost" id="collapseAllBtn" disabled>Collapse All</button>
-            <button class="ghost" id="printGroupedBtn" disabled>Print This List</button>
-          </div>
-        </div>
-        <div class="group-list" id="groupList"></div>
-      </div>
-    </div>
-
     <div class="two-col">
       <div class="sheet present-sheet">
         <div class="sheet-head">
           <div>
-            <div class="tag">Step 04</div>
-            <h2>Combined Daily Collection</h2>
+            <div class="tag">Step 03</div>
+            <h2>Dates Present</h2>
           </div>
         </div>
         <div class="sheet-body">
-          <div class="print-title print-title-present">Combined Daily Collection</div>
+          <div class="print-title print-title-present">Dates Present in Statement</div>
           <div class="sheet-head-row no-print">
-            <div class="note">One row per calendar date, sorted in order, with transaction count and combined amount total.</div>
+            <div class="note">One row per calendar date, sorted in order, with transaction count and amount total.</div>
             <button class="ghost" id="printPresentBtn" disabled>Print This List</button>
           </div>
           <div class="table-wrap">
@@ -327,7 +265,7 @@
       <div class="sheet missing-sheet">
         <div class="sheet-head">
           <div>
-            <div class="tag">Step 05</div>
+            <div class="tag">Step 04</div>
             <h2>Missing Dates</h2>
           </div>
         </div>
@@ -365,9 +303,6 @@ const statusEl = document.getElementById('status');
 const resultsArea = document.getElementById('resultsArea');
 const printPresentBtn = document.getElementById('printPresentBtn');
 const printMissingBtn = document.getElementById('printMissingBtn');
-const printGroupedBtn = document.getElementById('printGroupedBtn');
-const expandAllBtn = document.getElementById('expandAllBtn');
-const collapseAllBtn = document.getElementById('collapseAllBtn');
 
 let selectedFile = null;
 
@@ -381,7 +316,6 @@ fileInput.addEventListener('change', () => {
 
 const datePattern = /^\d{2}-[A-Z]{3}-\d{2}$/;
 const amountPattern = /^[\d,]+\.\d{2}$/;
-const timeOnlyPattern = /^\d{1,2}:\d{2}:\d{2}$/;
 const monthMap = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
 
 function parseDate(str) {
@@ -397,29 +331,12 @@ function fmtDate(d) {
 function fmtMoney(n) {
   return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
-// Converts "hh:mm:ss AM/PM" into seconds-since-midnight so payments within a
-// date can be sorted earliest-first. Returns null for anything unparseable
-// (kept out of the ordering rather than guessed at).
-function timeToSeconds(t) {
-  if (!t) return null;
-  const m = t.match(/^(\d{1,2}):(\d{2}):(\d{2})\s?(AM|PM)$/i);
-  if (!m) return null;
-  let h = parseInt(m[1], 10);
-  const mi = parseInt(m[2], 10), se = parseInt(m[3], 10);
-  const ap = m[4].toUpperCase();
-  if (ap === 'PM' && h !== 12) h += 12;
-  if (ap === 'AM' && h === 12) h = 0;
-  return h * 3600 + mi * 60 + se;
-}
 
 processBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
   processBtn.disabled = true;
   printPresentBtn.disabled = true;
   printMissingBtn.disabled = true;
-  printGroupedBtn.disabled = true;
-  expandAllBtn.disabled = true;
-  collapseAllBtn.disabled = true;
   resultsArea.style.display = 'none';
   statusEl.classList.remove('err');
   statusEl.textContent = 'Reading PDF…';
@@ -430,7 +347,6 @@ processBtn.addEventListener('click', async () => {
 
     let allDates = [];
     let allAmounts = [];
-    let allTimes = [];
     let statementTotal = null;
     let totalLabelSeen = false;
 
@@ -468,16 +384,6 @@ processBtn.addEventListener('click', async () => {
       });
       let pageAmounts = pageAmountsAll;
 
-      // "Time Stamp" values are split across two adjacent tokens in the PDF's
-      // text stream — e.g. "02:28:59" then "PM" as a separate item — so they
-      // need to be recombined rather than matched as a single string.
-      const pageTimes = [];
-      for (let i = 0; i < items.length - 1; i++) {
-        if (timeOnlyPattern.test(items[i]) && (items[i + 1] === 'AM' || items[i + 1] === 'PM')) {
-          pageTimes.push(items[i] + ' ' + items[i + 1]);
-        }
-      }
-
       const hasTotalLabel = items.some(s => /^total$/i.test(s));
       if (hasTotalLabel) totalLabelSeen = true;
 
@@ -505,12 +411,6 @@ processBtn.addEventListener('click', async () => {
         // so the discrepancy is visible rather than silently wrong.
         allAmounts = allAmounts.concat(new Array(pageDates.length).fill(null));
       }
-
-      if (pageTimes.length === pageDates.length) {
-        allTimes = allTimes.concat(pageTimes);
-      } else {
-        allTimes = allTimes.concat(new Array(pageDates.length).fill(null));
-      }
     }
 
     if (allDates.length === 0) {
@@ -522,28 +422,13 @@ processBtn.addEventListener('click', async () => {
 
     const counts = {};
     const sums = {};
-    const groups = {}; // date key -> ordered list of {time, amount} (amount null if unreadable)
     allDates.forEach((ds, i) => {
       const key = fmtDate(parseDate(ds));
       counts[key] = (counts[key] || 0) + 1;
-      const raw = allAmounts[i] !== null && allAmounts[i] !== undefined
+      const amt = allAmounts[i] !== null && allAmounts[i] !== undefined
         ? parseFloat(allAmounts[i].replace(/,/g, ''))
-        : null;
-      const amt = raw !== null && !isNaN(raw) ? raw : null;
-      sums[key] = (sums[key] || 0) + (amt || 0);
-      (groups[key] = groups[key] || []).push({ time: allTimes[i] || null, amount: amt });
-    });
-    // Earliest payment first, latest last. Entries with no readable time
-    // (shouldn't normally happen, but a page-level mismatch can produce one)
-    // are pushed to the end rather than guessed at.
-    Object.values(groups).forEach(list => {
-      list.sort((a, b) => {
-        const ta = timeToSeconds(a.time), tb = timeToSeconds(b.time);
-        if (ta === null && tb === null) return 0;
-        if (ta === null) return 1;
-        if (tb === null) return -1;
-        return ta - tb;
-      });
+        : 0;
+      sums[key] = (sums[key] || 0) + (isNaN(amt) ? 0 : amt);
     });
 
     const sortedKeys = Object.keys(counts).sort((a,b) => parseDate(a) - parseDate(b));
@@ -593,38 +478,6 @@ processBtn.addEventListener('click', async () => {
       dateBody.appendChild(tr);
     });
 
-    // Grouped-by-date detail: every individual payment, listed under its
-    // date, sorted earliest-to-latest by time paid.
-    const groupList = document.getElementById('groupList');
-    groupList.innerHTML = '';
-    sortedKeys.forEach((key) => {
-      const entries = groups[key];
-      const details = document.createElement('details');
-      details.className = 'group-block';
-
-      const summary = document.createElement('summary');
-      summary.innerHTML = `<span class="gleft"><span class="arrow">▸</span><span class="gdate">${key}</span></span>
-        <span class="gmeta"><span>${entries.length} payment${entries.length === 1 ? '' : 's'}</span>
-        <span class="gv">${fmtMoney(sums[key])}</span></span>`;
-      details.appendChild(summary);
-
-      const table = document.createElement('table');
-      table.className = 'group-table';
-      table.innerHTML = '<thead><tr><th class="idx">#</th><th>Time Paid</th><th class="amt">Amount</th></tr></thead>';
-      const tbody = document.createElement('tbody');
-      entries.forEach((entry, i) => {
-        const tr = document.createElement('tr');
-        const shownAmt = entry.amount !== null ? fmtMoney(entry.amount) : '—';
-        const shownTime = entry.time || '—';
-        tr.innerHTML = `<td class="idx">${i+1}</td><td class="time">${shownTime}</td><td class="amt">${shownAmt}</td>`;
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      details.appendChild(table);
-
-      groupList.appendChild(details);
-    });
-
     const missBody = document.getElementById('missingTableBody');
     missBody.innerHTML = '';
     if (missingDates.length === 0) {
@@ -642,9 +495,6 @@ processBtn.addEventListener('click', async () => {
     statusEl.textContent = `Done — analyzed ${pdf.numPages} pages, ${allDates.length} transactions across ${sortedKeys.length} dates.`;
     printPresentBtn.disabled = false;
     printMissingBtn.disabled = missingDates.length === 0;
-    printGroupedBtn.disabled = false;
-    expandAllBtn.disabled = false;
-    collapseAllBtn.disabled = false;
 
   } catch (err) {
     console.error(err);
@@ -663,33 +513,8 @@ printMissingBtn.addEventListener('click', () => {
   document.body.classList.add('printing-missing');
   window.print();
 });
-
-expandAllBtn.addEventListener('click', () => {
-  document.querySelectorAll('#groupList details').forEach(d => { d.open = true; });
-});
-collapseAllBtn.addEventListener('click', () => {
-  document.querySelectorAll('#groupList details').forEach(d => { d.open = false; });
-});
-
-// Printing needs every date block expanded, but that shouldn't disturb
-// whatever the person had open/closed on screen — so remember each block's
-// state, force everything open for the print snapshot, then put it back.
-let groupedOpenStateBeforePrint = null;
-printGroupedBtn.addEventListener('click', () => {
-  const detailsEls = document.querySelectorAll('#groupList details');
-  groupedOpenStateBeforePrint = Array.from(detailsEls).map(d => d.open);
-  detailsEls.forEach(d => { d.open = true; });
-  document.body.classList.add('printing-grouped');
-  window.print();
-});
 window.addEventListener('afterprint', () => {
-  document.body.classList.remove('printing-present', 'printing-missing', 'printing-grouped');
-  if (groupedOpenStateBeforePrint) {
-    document.querySelectorAll('#groupList details').forEach((d, i) => {
-      d.open = groupedOpenStateBeforePrint[i];
-    });
-    groupedOpenStateBeforePrint = null;
-  }
+  document.body.classList.remove('printing-present', 'printing-missing');
 });
 </script>
 

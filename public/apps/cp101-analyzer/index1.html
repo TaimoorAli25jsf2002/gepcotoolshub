@@ -158,9 +158,6 @@ h1{font-size:21px;font-weight:700;color:#0b5d4f;margin-bottom:4px}
 .rp-count{font-size:12px;color:#888;background:#f1f6f4;padding:6px 12px;border-radius:14px}
 .zerorow td{color:#b7bfbc}
 .totrow td{font-weight:700;background:#f5faf8;border-top:2px solid #dbe6e3}
-.otherhead td{font-size:11px;color:#8a5a00;background:#fff8e1;padding:6px 10px;font-weight:600}
-.otherrow td{background:#fffdf5}
-.otherrow td:first-child{color:#8a5a00;font-weight:600}
 .rutag{font-size:12px;padding:7px 13px;border-radius:7px;background:#f1f6f4;color:#333}
 .rutag b{color:#0b5d4f}
 .bankcard table{width:100%;border-collapse:collapse}
@@ -666,10 +663,6 @@ function buildMergedResults(){
 }
 
 function detectDefaultMonthRange(){
-  // the single calendar month with the most transactions — the default
-  // range stays bounded to one month for every bank. A stray date from a
-  // different month never expands this range; it's shown separately, only
-  // for the specific bank that has it (see renderEntryTab).
   const counts={};
   for(const b of Object.values(RESULTS.banks)){
     for(const sc of b.scrolls){
@@ -837,39 +830,21 @@ function renderEntryTab(){
     html+=`<div class="entry-empty">No manual banks in this list (or your search/reclassification moved them all to Online).</div>`;
   }
   for(const e of manual){
-    const rangeFromMs = ENTRY_RANGE ? ENTRY_RANGE.from.getTime() : null;
-    const rangeToMs = ENTRY_RANGE ? ENTRY_RANGE.to.getTime() : null;
-
     const rows = range.map(d=>{
       const key=fmtDMY(d);
-      return {date:d, dmy:key, amount:e.dateMap[key]||0, other:false};
+      return {date:d, dmy:key, amount:e.dateMap[key]||0};
     });
-
-    // dates outside this bank's month — shown as their own real dated rows
-    // at the bottom of THIS bank's table only, never affecting other banks
-    // or stretching the shared calendar above.
-    const otherRows=[];
-    if(rangeFromMs!==null){
-      for(const [dateStr,amt] of Object.entries(e.dateMap)){
-        const ms=parseDMY(dateStr);
-        if(ms===0 || ms<rangeFromMs || ms>rangeToMs) otherRows.push({date:new Date(ms), dmy:dateStr, amount:amt, other:true});
-      }
-      otherRows.sort((a,b)=>parseDMY(a.dmy)-parseDMY(b.dmy));
-    }
-
-    const allRows = rows.concat(otherRows);
-    const grandTotal = allRows.reduce((s,r)=>s+r.amount,0);
-    ENTRY_TSV_CACHE['amtonly_'+e.bankKey] = allRows.map(r=>r.amount.toFixed(0)).join('\n');
-    ENTRY_TSV_CACHE[e.bankKey] = allRows.map(r=>`${fmtExcelSafeDate(r.date)}\t${r.amount.toFixed(0)}`).join('\n');
+    ENTRY_TSV_CACHE['amtonly_'+e.bankKey] = rows.map(r=>r.amount.toFixed(0)).join('\n');
+    ENTRY_TSV_CACHE[e.bankKey] = rows.map(r=>`${fmtExcelSafeDate(r.date)}\t${r.amount.toFixed(0)}`).join('\n');
     const txCount = Object.keys(e.dateMap).length;
     html+=`<details class="bankcard entrycard" ${EXPAND_ALL?'open':''}>
       <summary>
         <div class="bc-left"><span class="bc-arrow">▶</span>
           <span class="bc-code">${esc(e.branchCode)} / ${esc(e.bankCode)}</span>
-          <div><div class="bc-name">${esc(e.name)}</div><div class="bc-sub">${txCount} transaction day${txCount===1?'':'s'}${otherRows.length?`, ${otherRows.length} outside this range`:''}</div></div>
+          <div><div class="bc-name">${esc(e.name)}</div><div class="bc-sub">${txCount} transaction day${txCount===1?'':'s'} of ${rows.length} in range</div></div>
         </div>
         <div class="bc-actions">
-          <span class="bc-total">${fn(grandTotal)}</span>
+          <span class="bc-total">${fn(e.total)}</span>
           <button class="typebtn" onclick="event.preventDefault();toggleBankType('${e.bankKey}')">↔ Move to Online</button>
           <button class="copybtn ghost" onclick="event.preventDefault();copyToClipboard(ENTRY_TSV_CACHE['${e.bankKey}'], this)">📋 Copy with Dates</button>
           <button class="copybtn" onclick="event.preventDefault();copyToClipboard(ENTRY_TSV_CACHE['amtonly_${e.bankKey}'], this)">📋 Copy Amounts Only</button>
@@ -877,9 +852,7 @@ function renderEntryTab(){
       </summary>
       <table><thead><tr><th>Pay Date</th><th class="r">Amount</th></tr></thead><tbody>
       ${rows.map(r=>`<tr${r.amount===0?' class="zerorow"':''}><td>${esc(r.dmy)}</td><td class="r amt">${fn(r.amount)}</td></tr>`).join('')}
-      ${otherRows.length?`<tr class="otherhead"><td colspan="2">Outside this range — shown separately, not part of the dense day-by-day list above</td></tr>`:''}
-      ${otherRows.map(r=>`<tr class="otherrow"><td>${esc(r.dmy)}</td><td class="r amt">${fn(r.amount)}</td></tr>`).join('')}
-      <tr class="totrow"><td>Total</td><td class="r">${fn(grandTotal)}</td></tr>
+      <tr class="totrow"><td>Total (in range)</td><td class="r">${fn(rows.reduce((s,r)=>s+r.amount,0))}</td></tr>
       </tbody></table>
     </details>`;
   }

@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CP-48 Maker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --ink:#12241f; --teal-900:#073d33; --teal-800:#0a4b40; --teal-700:#0b5d4f; --teal-600:#137964;
+  --teal-100:#e6f2ee; --teal-50:#f4f9f7;
+  --gold:#a9781f; --gold-100:#faf3e2;
+  --slate-700:#3c4c47; --slate-500:#657870; --slate-300:#a9bab3;
+  --border:#dde6e2; --border-soft:#eaf1ee;
+  --bg:#eef3f0;
+  --danger:#b3261e; --danger-bg:#fbeaea; --danger-border:#f0c2bd;
+  --warn:#8a5a00; --warn-bg:#fef6e0; --warn-border:#f2d98a;
+  --good:#1c7a45; --good-bg:#e6f4ea;
+  --shadow-sm:0 1px 2px rgba(15,45,38,.06), 0 1px 1px rgba(15,45,38,.04);
+  --shadow-md:0 4px 14px rgba(15,45,38,.08), 0 1px 3px rgba(15,45,38,.06);
+  --shadow-lg:0 12px 32px rgba(15,45,38,.14), 0 2px 8px rgba(15,45,38,.08);
+  --radius:12px;
+  --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-doc:Georgia,"Times New Roman",Cambria,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-ui);background:
+     radial-gradient(1100px 480px at 15% -10%, #e3f0ea 0%, transparent 60%),
+     radial-gradient(900px 420px at 105% 0%, #eef6f1 0%, transparent 55%),
+     var(--bg);
+     color:var(--ink);min-height:100vh;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1020px;margin:0 auto;padding:32px 18px 40px}
+h1{font-size:23px;font-weight:800;color:var(--teal-900);margin-bottom:4px;letter-spacing:-.01em}
+.sub{font-size:13.5px;color:var(--slate-500);margin-bottom:26px}
+/* horizontal progress stepper */
+.stepper{display:flex;align-items:flex-start;justify-content:center;margin-bottom:26px;flex-wrap:wrap;gap:0;
+          background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px 14px;box-shadow:var(--shadow-sm)}
+.stepitem{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:not-allowed;opacity:.38;transition:opacity .18s}
+.stepitem.reachable{cursor:pointer;opacity:1}
+.stepitem.reachable:hover .stepcircle{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.stepcircle{width:32px;height:32px;border-radius:50%;background:var(--teal-100);color:var(--teal-700);font-size:13px;font-weight:800;
+            display:flex;align-items:center;justify-content:center;transition:all .18s;border:1.5px solid transparent}
+.stepitem.current .stepcircle{background:var(--teal-700);color:#fff;box-shadow:0 0 0 5px var(--teal-100)}
+.stepitem.done .stepcircle{background:#fff;color:var(--teal-700);border-color:var(--teal-700)}
+.stepitem.done .stepcircle::before{content:'✓'}
+.steplabel{font-size:10.5px;color:var(--slate-500);font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+.stepitem.current .steplabel{color:var(--teal-800)}
+.stepline{width:38px;height:1.5px;background:var(--border);margin:16px 8px 0;align-self:flex-start}
+@media (max-width:700px){
+  .stepper{display:none}
+}
+/* step cards */
+.step{background:#fff;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;
+      box-shadow:var(--shadow-sm);transition:box-shadow .2s}
+.step.expanded{box-shadow:var(--shadow-md)}
+.step[data-hidden="true"]{display:none}
+.step-summary{display:none;align-items:center;gap:12px;padding:15px 22px;cursor:pointer;background:#fff}
+.step-summary:hover{background:var(--teal-50)}
+.step-summary-icon{width:24px;height:24px;border-radius:50%;background:var(--teal-700);color:#fff;font-size:12px;font-weight:700;
+                    display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:var(--shadow-sm)}
+.step-summary-text{flex:1;font-size:13.5px;color:var(--ink);font-weight:500}
+.step-summary-edit{font-size:11.5px;color:var(--teal-700);font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+                    padding:5px 12px;border:1px solid var(--teal-700);border-radius:20px;white-space:nowrap;transition:all .15s}
+.step-summary-edit:hover{background:var(--teal-700);color:#fff}
+.step-full{padding:22px 24px 24px;border-top:3px solid var(--teal-700)}
+.step.collapsed .step-summary{display:flex}
+.step.collapsed .step-full{display:none}
+.step.expanded .step-summary{display:none}
+.step.expanded .step-full{display:block}
+.step-head{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.step h2{font-size:16px;color:var(--teal-900);font-weight:700;letter-spacing:-.005em}
+.step-hint{font-size:12.5px;color:var(--slate-500);margin:2px 0 16px 0;line-height:1.6}
+.step-body{margin-left:0}
+/* upload bits (shared look) */
+.dz{border:1.5px dashed var(--slate-300);border-radius:10px;padding:24px 18px;text-align:center;
+    cursor:pointer;background:var(--teal-50);transition:all .18s;margin-bottom:10px}
+.dz:hover,.dz.drag{border-color:var(--teal-700);background:var(--teal-100)}
+.dz-icon{font-size:28px;margin-bottom:6px;opacity:.85}
+.dz-title{font-size:14px;font-weight:600;color:var(--teal-800);margin-bottom:3px}
+.dz-hint{font-size:11.5px;color:var(--slate-500)}
+.upload-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.ubtn{background:#fff;color:var(--teal-800);border:1px solid var(--border);padding:9px 16px;border-radius:8px;
+      font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .15s}
+.ubtn:hover{background:var(--teal-50);border-color:var(--teal-600);transform:translateY(-1px)}
+.load-bar{display:none;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);
+          border-radius:8px;padding:12px 15px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.spin{width:16px;height:16px;flex-shrink:0;border:2.5px solid var(--border);border-top-color:var(--teal-700);
+      border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:13px;color:var(--slate-500)}
+.err-box{background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:8px;padding:10px 14px;
+         margin-bottom:7px;font-size:13px;color:var(--danger)}
+.info-box{background:var(--teal-50);border:1px solid var(--border);border-radius:8px;padding:10px 14px;
+         margin-bottom:7px;font-size:13px;color:var(--teal-800)}
+.warn-box{background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:8px;padding:10px 14px;
+         margin-bottom:7px;font-size:13px;color:var(--warn)}
+.filelist{display:flex;flex-direction:column;gap:6px;margin-bottom:6px;max-height:220px;overflow-y:auto}
+.filerow{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;
+         padding:9px 12px;font-size:13px;transition:background .12s}
+.filerow:hover{background:var(--teal-50)}
+.filerow.dup{border-color:var(--gold);background:var(--gold-100)}
+.filerow.off{opacity:.5}
+.filerow input{width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--teal-700)}
+.frname{flex:1;word-break:break-all;color:var(--ink)}
+.frstat{font-size:11px;color:var(--slate-500);white-space:nowrap}
+.fdup-tag{font-size:10px;font-weight:700;background:var(--gold);color:#fff;padding:2px 9px;border-radius:10px;white-space:nowrap;letter-spacing:.02em}
+/* division + month pickers */
+.picker-row{display:flex;gap:26px;flex-wrap:wrap;margin-bottom:6px}
+.picker-col{flex:1;min-width:220px}
+.picker-label{font-size:11.5px;font-weight:700;color:var(--teal-800);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
+.divlist{display:flex;flex-direction:column;gap:7px;max-height:220px;overflow-y:auto}
+.divopt{border:1px solid var(--border);border-radius:9px;padding:10px 13px;font-size:13px;cursor:pointer;
+        display:flex;align-items:center;gap:10px;transition:all .12s;flex-wrap:wrap}
+.divopt:hover{background:var(--teal-50);border-color:var(--teal-600)}
+.divopt.sel{border-color:var(--teal-700);background:var(--teal-50);box-shadow:0 0 0 1px var(--teal-700) inset}
+.divopt .dcode{font-weight:700;color:var(--teal-800)}
+.mstat2{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap;margin-left:auto}
+.mstat2.mgood{background:var(--good-bg);color:var(--good)}
+.mstat2.mwarn{background:var(--warn-bg);color:var(--warn)}
+.mstat2.mbad{background:var(--danger-bg);color:var(--danger)}
+.hardwarn{background:var(--danger-bg);border:1.5px solid var(--danger);border-radius:9px;padding:15px 17px;margin-bottom:12px;font-size:13.5px;color:#7a2020}
+.hardwarn b{display:block;margin-bottom:4px;font-size:14px;color:var(--danger)}
+.monthinput{padding:9px 13px;border:1px solid var(--border);border-radius:8px;font-size:14px;width:100%;max-width:220px;
+            font-family:var(--font-ui);color:var(--ink)}
+.monthinput:focus{outline:none;border-color:var(--teal-700);box-shadow:0 0 0 3px var(--teal-100)}
+.gobtn{background:var(--teal-700);color:#fff;border:none;padding:11px 26px;border-radius:8px;
+       font-size:13.5px;font-weight:700;cursor:pointer;margin-top:12px;box-shadow:var(--shadow-sm);transition:all .15s}
+.gobtn:hover{background:var(--teal-900);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.gobtn:disabled{background:var(--slate-300);cursor:not-allowed;transform:none;box-shadow:none}
+.obsec{margin-top:24px;padding-top:20px;border-top:1px solid var(--border-soft)}
+.dz.small{padding:14px 16px;margin-bottom:8px}
+.dz.small .dz-title{font-size:13px;margin-bottom:0}
+.obtotal{font-size:11px;color:var(--teal-800);font-weight:700;background:var(--teal-100);padding:2px 8px;border-radius:8px;margin-left:6px}
+/* match table */
+.matchtable{width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.matchtable th{padding:10px 12px;text-align:left;font-size:10.5px;font-weight:700;color:var(--teal-800);
+   background:var(--teal-50);text-transform:uppercase;letter-spacing:.04em;border-bottom:1.5px solid var(--border)}
+.matchtable th.r{text-align:right}
+.matchtable td{padding:9px 12px;font-size:13.5px;border-bottom:1px solid var(--border-soft);color:var(--ink);vertical-align:middle}
+.matchtable tr:last-child td{border-bottom:none}
+.matchtable tr:hover td{background:var(--teal-50)}
+.matchtable td.r{text-align:right;font-weight:600;color:var(--teal-800)}
+.mstat{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap}
+.mstat.ok{background:var(--good-bg);color:var(--good)}
+.mstat.miss{background:var(--danger-bg);color:var(--danger)}
+.typebtn{background:#fff;color:var(--slate-500);border:1px solid var(--border);padding:5px 11px;border-radius:6px;
+         font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s}
+.typebtn:hover{background:var(--teal-50);color:var(--teal-800);border-color:var(--teal-600)}
+.obinput{width:100px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;text-align:right;
+         font-family:var(--font-ui)}
+.obinput:focus{outline:none;border-color:var(--teal-700);box-shadow:0 0 0 3px var(--teal-100)}
+.sheetname{font-size:12px;color:var(--slate-500)}
+.unmatched-box{background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:9px;padding:13px 15px;margin-bottom:10px;font-size:13px;color:#7a2020}
+.unmatched-box ul{margin:8px 0 0 20px}
+.zeroopt{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--slate-700);margin:12px 0}
+.zeroopt input{accent-color:var(--teal-700)}
+/* generate step */
+.genrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.xbtn{background:var(--teal-700);color:#fff;border:none;padding:12px 24px;border-radius:9px;
+      font-size:14px;font-weight:700;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .15s}
+.xbtn:hover{background:var(--teal-900);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.xbtn.secondary{background:#fff;color:var(--teal-800);border:1.5px solid var(--teal-700);box-shadow:none}
+.xbtn.secondary:hover{background:var(--teal-50)}
+/* print preview — styled to resemble an actual printed official form */
+.printarea{display:none}
+.pf-page{background:#fff;border:1px solid #999;padding:0;margin:0 auto 28px;max-width:760px;font-size:13px;
+         font-family:var(--font-doc);color:#1a1a1a;box-shadow:var(--shadow-lg)}
+.pf-inner{border:1px solid #999;margin:10px;padding:22px 28px 28px}
+.pf-co{text-align:center;font-weight:700;font-size:16px;margin-bottom:2px;letter-spacing:.02em}
+.pf-title{text-align:center;font-weight:700;font-size:13.5px;margin-top:10px;letter-spacing:.06em}
+.pf-rule{border:none;border-top:2px solid #1a1a1a;border-bottom:1px solid #1a1a1a;height:3px;margin:6px 0 12px}
+.pf-sub{text-align:center;font-size:12px;margin-bottom:2px;font-style:italic}
+.pf-meta{display:flex;justify-content:space-between;font-size:11.5px;margin:14px 0 16px;flex-wrap:wrap;gap:6px;
+         padding:8px 10px;background:#fafafa;border:1px solid #e2e2e2;border-radius:4px}
+.pf-meta span b{font-weight:700}
+.pf-particulars{width:100%;border-collapse:collapse;margin-bottom:14px}
+.pf-particulars td{padding:6px 4px;font-size:12.5px;border-bottom:1px solid #ddd}
+.pf-particulars tr:last-child td{border-bottom:2px solid #1a1a1a;font-weight:700;padding-top:8px}
+.pf-particulars td.amt{text-align:right;width:140px;font-variant-numeric:tabular-nums}
+.pf-datetable{width:100%;border-collapse:collapse;border:1px solid #999}
+.pf-datetable th{padding:6px 8px;font-size:11px;text-align:left;background:#f0f0f0;border:1px solid #999;letter-spacing:.02em}
+.pf-datetable th.r,.pf-datetable td.r{text-align:right;font-variant-numeric:tabular-nums}
+.pf-datetable td{padding:5px 8px;font-size:12px;border:1px solid #ddd}
+.pf-total{font-weight:700;background:#f4f4f4}
+.pf-other-head td{font-size:10.5px;color:#8a5a00;background:#fff8e1;padding:5px 8px;font-weight:700}
+.pf-other td:first-child{color:#8a5a00;font-weight:600}
+.pf-total td{border-top:2px solid #1a1a1a !important}
+.pf-sig{display:flex;justify-content:space-between;margin-top:40px;font-size:11.5px;text-align:center}
+.pf-sig div{width:32%}
+.pf-sig .line{border-top:1px solid #1a1a1a;margin-top:40px;padding-top:5px}
+/* footer */
+.footer{text-align:center;padding:26px 10px 8px;font-size:12px;color:var(--slate-500)}
+.footer b{color:var(--slate-700)}
+@media print{
+  body{background:#fff}
+  .wrap{max-width:100%;padding:0}
+  .stepper, .step, .footer{display:none !important}
+  .printarea{display:block !important}
+  .pf-page{border:none;box-shadow:none;page-break-after:always;max-width:100%}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <h1>CP-48 Maker</h1>
+  <p class="sub">Turns your CP-101 weekly PDFs into a filled CP-48 workbook, using your own template &nbsp;·&nbsp; Works offline</p>
+
+  <!-- STEP 1 -->
+  <div class="stepper" id="stepper">
+    <div class="stepitem" data-step="1" onclick="goToStep(1)">
+      <div class="stepcircle">1</div><div class="steplabel">Template</div>
+    </div>
+    <div class="stepline"></div>
+    <div class="stepitem" data-step="2" onclick="goToStep(2)">
+      <div class="stepcircle">2</div><div class="steplabel">CP-101 Files</div>
+    </div>
+    <div class="stepline"></div>
+    <div class="stepitem" data-step="3" onclick="goToStep(3)">
+      <div class="stepcircle">3</div><div class="steplabel">Division &amp; Month</div>
+    </div>
+    <div class="stepline"></div>
+    <div class="stepitem" data-step="4" onclick="goToStep(4)">
+      <div class="stepcircle">4</div><div class="steplabel">Review</div>
+    </div>
+    <div class="stepline"></div>
+    <div class="stepitem" data-step="5" onclick="goToStep(5)">
+      <div class="stepcircle">5</div><div class="steplabel">Generate</div>
+    </div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step" id="step1" data-step="1">
+    <div class="step-summary" id="step1-summary" onclick="goToStep(1)">
+      <span class="step-summary-icon">✓</span>
+      <span class="step-summary-text" id="step1-summary-text"></span>
+      <span class="step-summary-edit">Edit</span>
+    </div>
+    <div class="step-full" id="step1-full">
+      <div class="step-head"><h2>1. Upload your CP-48 template</h2></div>
+      <div class="step-hint">Your existing .xls or .xlsx CP-48 workbook — one sheet per bank. We only fill designated cells; every formula and signature block stays exactly as-is.</div>
+      <div class="step-body">
+        <div class="dz" id="dzTpl" onclick="document.getElementById('fiTpl').click()">
+          <div class="dz-icon">📘</div>
+          <div class="dz-title">Drop your CP-48 file here or click to browse</div>
+          <div class="dz-hint">.xls or .xlsx</div>
+          <input type="file" id="fiTpl" accept=".xls,.xlsx" style="display:none">
+        </div>
+        <div id="tplStatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step" id="step2" data-step="2">
+    <div class="step-summary" id="step2-summary" onclick="goToStep(2)">
+      <span class="step-summary-icon">✓</span>
+      <span class="step-summary-text" id="step2-summary-text"></span>
+      <span class="step-summary-edit">Edit</span>
+    </div>
+    <div class="step-full" id="step2-full">
+      <div class="step-head"><h2>2. Upload this month's CP-101 weekly PDFs</h2></div>
+      <div class="step-hint">Single file, multiple files, or an entire folder — usually 4-5 weekly files per month</div>
+      <div class="step-body">
+        <div class="dz" id="dzPdf" onclick="document.getElementById('fiPdf').click()">
+          <div class="dz-icon">📂</div>
+          <div class="dz-title">Drop CP-101 PDFs here or click to browse</div>
+          <div class="dz-hint">Works offline after first load</div>
+          <input type="file" id="fiPdf" accept=".pdf" multiple style="display:none">
+        </div>
+        <div class="upload-btns">
+          <button class="ubtn" onclick="document.getElementById('fiPdf').click()">📄 Choose Files</button>
+          <button class="ubtn" onclick="document.getElementById('fdPdf').click()">📁 Choose Folder</button>
+          <input type="file" id="fdPdf" webkitdirectory directory multiple style="display:none">
+        </div>
+        <div class="load-bar" id="lb"><div class="spin"></div><span class="load-txt" id="lmsg">Processing…</span></div>
+        <div id="pdfErrs"></div>
+        <div class="filelist" id="filelist"></div>
+        <button class="gobtn" id="toStep3Btn" onclick="advanceTo(3)" style="display:none">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step" id="step3" data-step="3">
+    <div class="step-summary" id="step3-summary" onclick="goToStep(3)">
+      <span class="step-summary-icon">✓</span>
+      <span class="step-summary-text" id="step3-summary-text"></span>
+      <span class="step-summary-edit">Edit</span>
+    </div>
+    <div class="step-full" id="step3-full">
+      <div class="step-head"><h2>3. Choose division &amp; month</h2></div>
+      <div class="step-hint">CP-101 doesn't print division names, only codes — the match percentage below tells you which one is right</div>
+      <div class="step-body">
+        <div class="picker-row">
+          <div class="picker-col">
+            <div class="picker-label">Division</div>
+            <div class="divlist" id="divlist"></div>
+          </div>
+          <div class="picker-col">
+            <div class="picker-label">Target Month</div>
+            <input type="month" class="monthinput" id="monthInput" onchange="onMonthChange()">
+            <div class="step-hint" style="margin-left:0;margin-top:8px">Auto-detected from your CP-101 dates — every day of this month will appear on manual banks' sheets</div>
+          </div>
+        </div>
+
+        <div class="obsec">
+          <div class="picker-label">Opening Balances (optional)</div>
+          <div class="step-hint" style="margin-left:0">CP-101 has no concept of "brought forward from last month" — that has to come from somewhere else. Upload last month's completed CP-48 and I'll carry each bank's Closing Balance forward automatically as this month's Opening Balance. Skip this and every bank defaults to whatever's already in your template (usually 0) — you can still edit each one by hand in the next step either way.</div>
+          <div class="dz small" id="dzPrior" onclick="document.getElementById('fiPrior').click()">
+            <div class="dz-title">📘 Drop last month's completed CP-48 here, or click to browse</div>
+            <input type="file" id="fiPrior" accept=".xls,.xlsx" style="display:none">
+          </div>
+          <div id="priorStatus"></div>
+        </div>
+
+        <button class="gobtn" id="matchBtn" onclick="buildMatches()" disabled>Match Banks →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step" id="step4" data-step="4">
+    <div class="step-summary" id="step4-summary" onclick="goToStep(4)">
+      <span class="step-summary-icon">✓</span>
+      <span class="step-summary-text" id="step4-summary-text"></span>
+      <span class="step-summary-edit">Edit</span>
+    </div>
+    <div class="step-full" id="step4-full">
+      <div class="step-head"><h2>4. Review the match</h2></div>
+      <div class="step-hint">Matched by bank code against your template's "MIS Branch Code" — check the type (Manual/Online) and Opening Balance are right before generating</div>
+      <div class="step-body" id="matchBody"></div>
+      <button class="gobtn" id="toStep5Btn" onclick="advanceTo(5)" style="display:none">Continue to Generate →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step" id="step5" data-step="5">
+    <div class="step-summary" id="step5-summary" onclick="goToStep(5)">
+      <span class="step-summary-icon">✓</span>
+      <span class="step-summary-text" id="step5-summary-text"></span>
+      <span class="step-summary-edit">Edit</span>
+    </div>
+    <div class="step-full" id="step5-full">
+      <div class="step-head"><h2>5. Generate</h2></div>
+      <div class="step-hint">Both use the same data — pick whichever fits your day. For guaranteed exact formatting, open the downloaded file in LibreOffice Calc and print from there; Print Preview is a quick in-browser approximation.</div>
+      <div class="step-body">
+        <div class="genrow">
+          <button class="xbtn" onclick="downloadWorkbook()">⬇ Download Filled CP-48 (.xlsx)</button>
+          <button class="xbtn secondary" onclick="showPrintPreview()">🖨 Print Preview</button>
+        </div>
+        <div id="genStatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="printarea" id="printarea"></div>
+  <div class="footer">Developed by <b>Taimoor Ali</b></div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ─── helpers ─────────────────────────────── */
+function pn(s){ return parseFloat(String(s||'0').replace(/,/g,''))||0; }
+function fn(n){
+  n = Number(n||0);
+  if(Math.abs(n - Math.round(n)) < 0.005) return Math.round(n).toLocaleString('en-PK');
+  return n.toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function parseDMY(s){
+  const m=/(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s||'');
+  if(!m) return 0;
+  return new Date(+m[3], +m[2]-1, +m[1]).getTime();
+}
+function isCP101Filename(name){ return /cp[\s\-_]?101/i.test(name); }
+
+let BANK_TYPE_OVERRIDE = {};
+try{ BANK_TYPE_OVERRIDE = JSON.parse(localStorage.getItem('cp101_bank_type')||'{}'); }catch(e){ BANK_TYPE_OVERRIDE={}; }
+function saveBankType(key, type){
+  BANK_TYPE_OVERRIDE[key]=type;
+  try{ localStorage.setItem('cp101_bank_type', JSON.stringify(BANK_TYPE_OVERRIDE)); }catch(e){}
+}
+function isManualByName(name){
+  return /^FBL\b/i.test(name) || /^PP[OC]\b/i.test(name);
+}
+function bankType(divCode, bankKey, name){
+  const ovKey = divCode+'|'+bankKey;
+  if(BANK_TYPE_OVERRIDE[ovKey]) return BANK_TYPE_OVERRIDE[ovKey];
+  return isManualByName(name) ? 'manual' : 'online';
+}
+
+/* ─── pdf.js → array of line-strings per page ─ */
+async function pdfToLines(buf){
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  const pages = [];
+  const Y_TOL = 3;
+  for(let p=1;p<=pdf.numPages;p++){
+    const pg = await pdf.getPage(p);
+    const tc = await pg.getTextContent();
+    const items = tc.items.map(it=>({x:it.transform[4], y:it.transform[5], s:it.str}))
+                           .filter(it=>it.s && it.s.trim().length>0);
+    items.sort((a,b)=> (b.y-a.y) || (a.x-b.x));
+    const rows = [];
+    let cluster = [];
+    let clusterY = null;
+    for(const it of items){
+      if(clusterY===null || Math.abs(it.y-clusterY) <= Y_TOL){
+        cluster.push(it);
+        clusterY = cluster.reduce((s,c)=>s+c.y,0)/cluster.length;
+      } else {
+        rows.push(cluster);
+        cluster=[it];
+        clusterY=it.y;
+      }
+    }
+    if(cluster.length) rows.push(cluster);
+    const lines = rows.map(row=>
+      row.slice().sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ').replace(/\s+/g,' ').trim()
+    ).filter(l=>l.length>0);
+    pages.push(lines);
+  }
+  return pages;
+}
+
+/* ─── parse one CP-101 weekly PDF — ALL divisions ──
+   Validated against the PDF's own printed Div Total AND the bank-
+   family summary total for every division — both match exactly.      */
+async function parsePDF(buf, fname){
+  const pages = await pdfToLines(buf);
+
+  const RE_CP101   = /\bCP-101\b/;
+  const RE_PROC    = /PROCESSING DATE\s+([\d\/]+)/;
+  const RE_DIVHDR  = /BANK DIVISION\s+(\d+)\s+W\/E\s+([\d\/]+)\s+Page No\.\s+(\d+)/;
+  const RE_CARRY   = /^Total for the last week\s+(-?[\d,]+\.?\d*)/;
+  const RE_BANKHDR = /^(\d{5})\s+(\d{5})\s+(.+)$/;
+  const RE_DATEROW = /^(\d{2}\/\d{2}\/\d{4})\s+(.+)$/;
+  const RE_BTOT_RU = /^Bank Total\((R|U)\)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)$/;
+  const RE_BTOT    = /^Bank Total\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)$/;
+  const RE_DTOT_RU = /^Div Total\((R|U)\)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)$/;
+  const RE_DTOT    = /^Div Total\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)\s+(-?[\d,]+\.?\d*)$/;
+  const RE_FAMILY  = /^(\d{1,2})\s+([A-Z].+?)\s+(\d+)\s+([\d,]+\.?\d*)$/;
+  const RE_DIVFAM_TOTAL = /^Divisional Totals\s+(\d+)\s+([\d,]+\.?\d*)/;
+
+  let procDate='', weekEnding='', sawCP101=false;
+  let curDivCode=null, curBankKey=null, pendingCarry=null;
+  const divisions = {};
+
+  for(const lines of pages){
+    for(const line of lines){
+      if(!sawCP101 && RE_CP101.test(line)) sawCP101=true;
+      if(!procDate){ const m=RE_PROC.exec(line); if(m) procDate=m[1]; }
+
+      const dm = RE_DIVHDR.exec(line);
+      if(dm){
+        const code=dm[1], we=dm[2];
+        if(!weekEnding) weekEnding=we;
+        if(code!==curDivCode){ curDivCode=code; curBankKey=null; pendingCarry=null; }
+        if(!divisions[code]) divisions[code]={weekEnding:we, banks:{}, order:[], families:[], familiesTotal:null, totals:{R:null,U:null,combined:null}};
+        continue;
+      }
+      if(!curDivCode) continue;
+      const div = divisions[curDivCode];
+
+      const cm = RE_CARRY.exec(line);
+      if(cm){ pendingCarry=pn(cm[1]); continue; }
+
+      const bm = RE_BANKHDR.exec(line);
+      if(bm){
+        const branchCode=bm[1], bankCode=bm[2], name=bm[3].trim();
+        curBankKey = branchCode+'-'+bankCode;
+        if(!div.banks[curBankKey]){
+          div.banks[curBankKey]={branchCode,bankCode,name,carryForward:pendingCarry||0,scrolls:[],totals:{R:null,U:null,combined:null}};
+          div.order.push(curBankKey);
+        }
+        pendingCarry=null;
+        continue;
+      }
+
+      const rm = RE_DATEROW.exec(line);
+      if(rm && curBankKey && div.banks[curBankKey]){
+        const payDate=rm[1];
+        const toks=rm[2].trim().split(/\s+/);
+        if(toks.length>=3 && /^\d+$/.test(toks[0])){
+          const scrollNo=parseInt(toks[0],10);
+          const negative=pn(toks[toks.length-1]);
+          const mid=toks.slice(1, toks.length-1);
+          const amount=pn(mid[0]);
+          div.banks[curBankKey].scrolls.push({payDate,scrollNo,amount});
+          continue;
+        }
+      }
+
+      const brm = RE_BTOT_RU.exec(line);
+      if(brm){ continue; }
+      const bt = RE_BTOT.exec(line);
+      if(bt){ continue; }
+      const drm = RE_DTOT_RU.exec(line);
+      if(drm){ div.totals[drm[1]]={week:pn(drm[2]),month:pn(drm[5])}; continue; }
+      const dt = RE_DTOT.exec(line);
+      if(dt){ div.totals.combined={week:pn(dt[1]),month:pn(dt[4]),negative:pn(dt[5])}; continue; }
+      const fm = RE_FAMILY.exec(line);
+      if(fm){ continue; }
+      const dftm = RE_DIVFAM_TOTAL.exec(line);
+      if(dftm){ continue; }
+    }
+  }
+
+  if(!sawCP101) return {ok:false, reason:'Not a CP-101 form (CP-101 marker not found)'};
+  if(!Object.keys(divisions).length)
+    return {ok:false, reason:'No division/bank data found in this PDF'};
+
+  return {ok:true, fname, procDate, weekEnding, divisions};
+}
+
+/* ══════════════════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════════════════ */
+let TEMPLATE_WB = null;       // parsed SheetJS workbook — used for READING only (sheet names, MIS codes)
+let TEMPLATE_BYTES = null;    // raw ArrayBuffer of the uploaded template — used for WRITING
+let TEMPLATE_FORMAT = null;   // 'xlsx' | 'xls'
+let TEMPLATE_NAME = '';
+let CODE_TO_SHEET = {};       // bankCode -> sheet name (from "MIS Branch Code: NNNNN" at G5)
+let RAW_FILES = [];           // parsed CP-101 files
+let EXCLUDED_FILES = new Set();
+let ALL_DIVS = {};
+let SELECTED_DIV = null;
+let TARGET_YEAR = null, TARGET_MONTH = null; // MONTH is 1-12
+let MATCHES = null;           // built in step 4
+let PRIOR_CLOSING = {};       // sheetName -> last month's Closing Balance (H18), if the user provided one
+
+/* ─── xlsx surgical XML editing ──────────────────────────
+   SheetJS's free build doesn't capture per-cell styling (fonts,
+   borders, fills) when reading .xls, and doesn't reliably round-trip
+   it when writing .xlsx either — a workbook cloned through it loses
+   its original look. Real fix: never touch the file's XML except the
+   handful of <c> (cell) nodes we're actually filling in. Everything
+   else — styles.xml, merges, column widths, fonts — passes through
+   completely untouched, byte for byte. Validated against the user's
+   real template: 0 of 480 checked cells had their style index (s=)
+   changed, and styles.xml was byte-identical before/after.            */
+function excelSerial(y,m,d){
+  return Math.round((Date.UTC(y,m-1,d) - Date.UTC(1899,11,30)) / 86400000);
+}
+const SML_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+function findCellNode(doc, ref){
+  const cells = doc.getElementsByTagName('c');
+  for(let i=0;i<cells.length;i++){
+    if(cells[i].getAttribute('r')===ref) return cells[i];
+  }
+  return null;
+}
+function setNumericCellNode(doc, ref, value){
+  const c = findCellNode(doc, ref);
+  if(!c) return false;
+  while(c.firstChild) c.removeChild(c.firstChild);
+  c.removeAttribute('t');
+  // must use createElementNS matching the parent's namespace — a plain
+  // createElement() here produces a namespace-less <v>, which serializes
+  // as <v xmlns="">, silently detaching it from the spreadsheet namespace.
+  // Excel/LibreOffice/openpyxl are namespace-aware and then read the cell
+  // as empty even though the text is technically right there in the XML.
+  const ns = c.namespaceURI || SML_NS;
+  const v = doc.createElementNS(ns, 'v');
+  v.appendChild(doc.createTextNode(String(value)));
+  c.appendChild(v);
+  return true;
+}
+function setStringCellNode(doc, ref, text){
+  const c = findCellNode(doc, ref);
+  if(!c) return false;
+  while(c.firstChild) c.removeChild(c.firstChild);
+  c.setAttribute('t','inlineStr');
+  const ns = c.namespaceURI || SML_NS;
+  const is = doc.createElementNS(ns, 'is');
+  const t = doc.createElementNS(ns, 't');
+  t.appendChild(doc.createTextNode(text));
+  is.appendChild(t);
+  c.appendChild(is);
+  return true;
+}
+function clearCellValueNode(doc, ref){
+  const c = findCellNode(doc, ref);
+  if(!c) return false;
+  while(c.firstChild) c.removeChild(c.firstChild);
+  c.removeAttribute('t');
+  return true;
+}
+/* robust sheetName -> internal xl/worksheets/sheetN.xml path, via a
+   real parse of workbook.xml + workbook.xml.rels (not string-order
+   guessing, which breaks on files not saved by the same tool).        */
+async function mapSheetPaths(zip){
+  const wbXml = await zip.file('xl/workbook.xml').async('string');
+  const relsXml = await zip.file('xl/_rels/workbook.xml.rels').async('string');
+  const wbDoc = new DOMParser().parseFromString(wbXml, 'text/xml');
+  const relsDoc = new DOMParser().parseFromString(relsXml, 'text/xml');
+  const relTargets = {};
+  const rels = relsDoc.getElementsByTagName('Relationship');
+  for(let i=0;i<rels.length;i++) relTargets[rels[i].getAttribute('Id')] = rels[i].getAttribute('Target');
+  const sheetEls = wbDoc.getElementsByTagName('sheet');
+  const pathMap = {};
+  for(let i=0;i<sheetEls.length;i++){
+    const name = sheetEls[i].getAttribute('name');
+    const rid = sheetEls[i].getAttribute('r:id') || sheetEls[i].getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');
+    let target = relTargets[rid];
+    if(!target) continue;
+    if(target.startsWith('/')) target = target.slice(1);
+    else if(!target.startsWith('xl/')) target = 'xl/'+target;
+    pathMap[name] = target;
+  }
+  return pathMap;
+}
+function detectFileFormat(buf){
+  const bytes = new Uint8Array(buf.slice(0,4));
+  if(bytes[0]===0x50 && bytes[1]===0x4B) return 'xlsx';
+  if(bytes[0]===0xD0 && bytes[1]===0xCF) return 'xls';
+  return 'unknown';
+}
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+/* ══════════════════════════════════════════════════════════
+   STEP 1 — template upload
+   ══════════════════════════════════════════════════════════ */
+const dzTpl=document.getElementById('dzTpl'), fiTpl=document.getElementById('fiTpl');
+dzTpl.addEventListener('dragover',e=>{e.preventDefault();dzTpl.classList.add('drag')});
+dzTpl.addEventListener('dragleave',()=>dzTpl.classList.remove('drag'));
+dzTpl.addEventListener('drop',e=>{e.preventDefault();dzTpl.classList.remove('drag'); if(e.dataTransfer.files[0]) loadTemplate(e.dataTransfer.files[0]); });
+fiTpl.addEventListener('change',e=>{ if(e.target.files[0]) loadTemplate(e.target.files[0]); e.target.value=''; });
+
+const dzPrior=document.getElementById('dzPrior'), fiPrior=document.getElementById('fiPrior');
+dzPrior.addEventListener('dragover',e=>{e.preventDefault();dzPrior.classList.add('drag')});
+dzPrior.addEventListener('dragleave',()=>dzPrior.classList.remove('drag'));
+dzPrior.addEventListener('drop',e=>{e.preventDefault();dzPrior.classList.remove('drag'); if(e.dataTransfer.files[0]) loadPriorMonth(e.dataTransfer.files[0]); });
+fiPrior.addEventListener('change',e=>{ if(e.target.files[0]) loadPriorMonth(e.target.files[0]); e.target.value=''; });
+
+async function loadPriorMonth(file){
+  const statusEl=document.getElementById('priorStatus');
+  statusEl.innerHTML = '<div class="info-box">Reading last month\'s workbook…</div>';
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, {type:'array'});
+    PRIOR_CLOSING = {};
+    let found = 0;
+    for(const name of wb.SheetNames){
+      const ws = wb.Sheets[name];
+      const cell = ws['H18'];
+      if(cell && typeof cell.v === 'number'){ PRIOR_CLOSING[name] = cell.v; found++; }
+    }
+    if(!found){
+      statusEl.innerHTML = '<div class="warn-box">⚠ Couldn\'t find a Closing Balance (H18) on any sheet in this file — is it a completed CP-48 from the same template? Opening Balances will fall back to your blank template\'s values.</div>';
+      return;
+    }
+    statusEl.innerHTML = `<div class="info-box">✓ <strong>${esc(file.name)}</strong> — found a Closing Balance on ${found} sheet${found>1?'s':''}. These will be carried forward as Opening Balances automatically (still editable per bank in the next step).</div>`;
+    if(MATCHES) buildMatches(); // refresh if the review table is already showing
+  }catch(e){
+    statusEl.innerHTML = `<div class="err-box">⚠ Couldn't read that file: ${esc(e.message||e)}</div>`;
+  }
+}
+
+async function loadTemplate(file){
+  const statusEl=document.getElementById('tplStatus');
+  statusEl.innerHTML = '<div class="info-box">Reading workbook…</div>';
+  try{
+    const buf = await file.arrayBuffer();
+    const format = detectFileFormat(buf);
+    if(format==='unknown'){
+      statusEl.innerHTML = '<div class="err-box">⚠ This doesn\'t look like a valid .xls or .xlsx file.</div>';
+      return;
+    }
+    const wb = XLSX.read(buf, {type:'array'});
+    const codeToSheet = {};
+    for(const name of wb.SheetNames){
+      const ws = wb.Sheets[name];
+      const cell = ws['G5'];
+      if(cell && typeof cell.v === 'string'){
+        const m = /MIS Branch Code:\s*(\d+)/.exec(cell.v);
+        if(m) codeToSheet[m[1]] = name;
+      }
+    }
+    if(!Object.keys(codeToSheet).length){
+      statusEl.innerHTML = '<div class="err-box">⚠ No "MIS Branch Code" cells found (expected at G5 on each bank sheet). This may not be a CP-48 workbook in the format I recognize.</div>';
+      return;
+    }
+    TEMPLATE_WB = wb;
+    TEMPLATE_BYTES = buf;
+    TEMPLATE_FORMAT = format;
+    TEMPLATE_NAME = file.name;
+    CODE_TO_SHEET = codeToSheet;
+
+    let html = `<div class="info-box">✓ <strong>${esc(file.name)}</strong> — ${wb.SheetNames.length} sheets, ${Object.keys(codeToSheet).length} bank sheets with a recognized MIS Branch Code.</div>`;
+    if(format==='xls'){
+      html += `<div class="warn-box">⚠ This is a legacy .xls file. I can still fill it in, but the older format doesn't let me guarantee your exact fonts/borders survive the round-trip.
+      For guaranteed pixel-identical formatting, open this in LibreOffice Calc once and use <strong>File → Save As → Excel 2007-365 (.xlsx)</strong>, then upload that version instead — everything else about this tool works the same either way.</div>`;
+    }
+    statusEl.innerHTML = html;
+    setStepSummary(1, `${file.name} — ${wb.SheetNames.length} sheets, ${Object.keys(codeToSheet).length} bank sheets recognized`);
+    advanceTo(2);
+  }catch(e){
+    statusEl.innerHTML = `<div class="err-box">⚠ Couldn't read that file: ${esc(e.message||e)}</div>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   STEP 2 — CP-101 upload (mirrors CP101 Analyzer's flow)
+   ══════════════════════════════════════════════════════════ */
+function activeFiles(){ return RAW_FILES.filter(f=>!EXCLUDED_FILES.has(f._id)); }
+function fileCompleteness(f){
+  let n=0;
+  for(const div of Object.values(f.divisions)) for(const bank of Object.values(div.banks)) n+=bank.scrolls.length;
+  return n;
+}
+function computeDuplicateGroups(){
+  const groups={};
+  for(const f of RAW_FILES){ const key=f.weekEnding||'?'; (groups[key]=groups[key]||[]).push(f); }
+  return Object.values(groups).filter(g=>g.length>1);
+}
+function autoResolveDuplicates(){
+  for(const g of computeDuplicateGroups()){
+    const sorted=g.slice().sort((a,b)=>fileCompleteness(b)-fileCompleteness(a));
+    for(let i=1;i<sorted.length;i++) EXCLUDED_FILES.add(sorted[i]._id);
+  }
+}
+function toggleFileInclusion(id){
+  if(EXCLUDED_FILES.has(id)) EXCLUDED_FILES.delete(id); else EXCLUDED_FILES.add(id);
+  renderFileChecklist();
+  rebuildDivisionIndex();
+  renderDivList();
+}
+function renderFileChecklist(){
+  const box=document.getElementById('filelist');
+  const dupGroups=computeDuplicateGroups();
+  const dupIds=new Set();
+  dupGroups.forEach(g=>g.forEach(f=>dupIds.add(f._id)));
+  let html='';
+  if(dupGroups.length){
+    html+=`<div class="warn-box">⚠ ${dupGroups.length} week-ending date${dupGroups.length>1?'s have':' has'} more than one file — kept the most complete one checked below, unchecked the rest. Review if that's wrong.</div>`;
+  }
+  html += RAW_FILES.map(f=>{
+    const excluded=EXCLUDED_FILES.has(f._id);
+    const isDup=dupIds.has(f._id);
+    const score=fileCompleteness(f);
+    return `<label class="filerow${isDup?' dup':''}${excluded?' off':''}">
+      <input type="checkbox" ${excluded?'':'checked'} onchange="toggleFileInclusion('${f._id}')">
+      <span class="frname">${esc(f.fname)}</span>
+      <span class="frstat">W/E ${esc(f.weekEnding)} · ${score} rows</span>
+      ${isDup?'<span class="fdup-tag">DUPLICATE WEEK</span>':''}
+    </label>`;
+  }).join('');
+  box.innerHTML = html;
+}
+
+async function runPdf(fileList, opts){
+  opts=opts||{};
+  const isFolder=!!opts.isFolder;
+  const files=[...fileList];
+  if(!files.length) return;
+
+  const lb=document.getElementById('lb');
+  lb.style.display='flex';
+  document.getElementById('pdfErrs').innerHTML='';
+  document.getElementById('toStep3Btn').style.display='none';
+  RAW_FILES=[]; EXCLUDED_FILES=new Set(); SELECTED_DIV=null; MATCHES=null;
+
+  let pdfCandidates=files.filter(f=>f.name.toLowerCase().endsWith('.pdf'));
+  const nonPdfCount=files.length-pdfCandidates.length;
+  let skippedByName=0;
+  if(isFolder){
+    const before=pdfCandidates.length;
+    pdfCandidates=pdfCandidates.filter(f=>isCP101Filename(f.name));
+    skippedByName=before-pdfCandidates.length;
+  }
+  const errs=[];
+  if(!isFolder && nonPdfCount>0){
+    files.filter(f=>!f.name.toLowerCase().endsWith('.pdf')).forEach(f=>errs.push({f:f.name,r:'Not a PDF file'}));
+  }
+  for(let i=0;i<pdfCandidates.length;i++){
+    const f=pdfCandidates[i];
+    document.getElementById('lmsg').textContent=`Processing ${i+1} of ${pdfCandidates.length}: ${f.name}`;
+    try{
+      const buf=await f.arrayBuffer();
+      const res=await parsePDF(buf,f.name);
+      if(res.ok){ res._id='f'+i+'_'+res.fname; RAW_FILES.push(res); }
+      else errs.push({f:f.name,r:res.reason});
+    }catch(e){ errs.push({f:f.name,r:e.message||'Failed to read PDF'}); }
+  }
+  lb.style.display='none';
+
+  let notes='';
+  if(isFolder) notes+=`<div class="info-box">ℹ Folder scan: ${files.length} item(s), ${nonPdfCount} non-PDF skipped, ${skippedByName} skipped (filename not CP-101-like), ${pdfCandidates.length} checked.</div>`;
+  document.getElementById('pdfErrs').innerHTML = notes + errs.map(e=>`<div class="err-box">⚠ <strong>${esc(e.f)}</strong>: ${esc(e.r)}</div>`).join('');
+
+  if(RAW_FILES.length){
+    autoResolveDuplicates();
+    renderFileChecklist();
+    rebuildDivisionIndex();
+    renderDivList();
+    const dupCount = computeDuplicateGroups().length;
+    setStepSummary(2, `${RAW_FILES.length} file${RAW_FILES.length>1?'s':''} loaded${dupCount?`, ${dupCount} duplicate week${dupCount>1?'s':''} auto-resolved`:''}`);
+    document.getElementById('toStep3Btn').style.display='inline-block';
+  }
+}
+const dzPdf=document.getElementById('dzPdf'), fiPdf=document.getElementById('fiPdf'), fdPdf=document.getElementById('fdPdf');
+dzPdf.addEventListener('dragover',e=>{e.preventDefault();dzPdf.classList.add('drag')});
+dzPdf.addEventListener('dragleave',()=>dzPdf.classList.remove('drag'));
+dzPdf.addEventListener('drop',e=>{e.preventDefault();dzPdf.classList.remove('drag');runPdf(e.dataTransfer.files,{isFolder:false})});
+fiPdf.addEventListener('change',e=>{runPdf(e.target.files,{isFolder:false});e.target.value='';});
+fdPdf.addEventListener('change',e=>{runPdf(e.target.files,{isFolder:true});e.target.value='';});
+
+/* ══════════════════════════════════════════════════════════
+   STEP 3 — division + month
+   ══════════════════════════════════════════════════════════ */
+function rebuildDivisionIndex(){
+  ALL_DIVS={};
+  for(const f of activeFiles()){
+    for(const code of Object.keys(f.divisions)){
+      if(!ALL_DIVS[code]) ALL_DIVS[code]={fileCount:0};
+      ALL_DIVS[code].fileCount++;
+    }
+  }
+}
+function divisionMatchStats(code){
+  const seen=new Set();
+  let matched=0;
+  for(const f of activeFiles()){
+    const div=f.divisions[code];
+    if(!div) continue;
+    for(const key of div.order){
+      const bankCode = div.banks[key].bankCode;
+      if(seen.has(bankCode)) continue;
+      seen.add(bankCode);
+      if(CODE_TO_SHEET[bankCode]) matched++;
+    }
+  }
+  return {total:seen.size, matched};
+}
+function renderDivList(){
+  const codes=Object.keys(ALL_DIVS).sort();
+  let bestCode=null, bestRatio=-1;
+  const stats={};
+  for(const code of codes){
+    stats[code]=divisionMatchStats(code);
+    const ratio = stats[code].total ? stats[code].matched/stats[code].total : 0;
+    if(ratio>bestRatio){ bestRatio=ratio; bestCode=code; }
+  }
+  if(!SELECTED_DIV && bestCode) SELECTED_DIV=bestCode;
+
+  document.getElementById('divlist').innerHTML=codes.map(code=>{
+    const sel=SELECTED_DIV===code?' sel':'';
+    const st=stats[code];
+    const ratio = st.total ? st.matched/st.total : 0;
+    const cls = ratio>=0.8 ? 'mgood' : ratio>=0.3 ? 'mwarn' : 'mbad';
+    return `<div class="divopt${sel}" onclick="selectDivision('${code}')">
+      <span class="dcode">${esc(code)}</span>
+      <span>${ALL_DIVS[code].fileCount} file${ALL_DIVS[code].fileCount>1?'s':''}</span>
+      <span class="mstat2 ${cls}">${st.matched}/${st.total} banks match your CP-48 file</span>
+    </div>`;
+  }).join('');
+
+  if(SELECTED_DIV){
+    if(!document.getElementById('monthInput').value) autoDetectMonth();
+    document.getElementById('matchBtn').disabled=false;
+  }
+}
+function selectDivision(code){
+  SELECTED_DIV=code;
+  renderDivList();
+  if(!document.getElementById('monthInput').value) autoDetectMonth();
+  document.getElementById('matchBtn').disabled=false;
+}
+function autoDetectMonth(){
+  const counts={};
+  for(const f of activeFiles()){
+    const div=f.divisions[SELECTED_DIV];
+    if(!div) continue;
+    for(const bank of Object.values(div.banks)) for(const sc of bank.scrolls){
+      const ms=parseDMY(sc.payDate); if(!ms) continue;
+      const d=new Date(ms);
+      const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      counts[key]=(counts[key]||0)+1;
+    }
+  }
+  let best=null,bestC=-1;
+  for(const [k,c] of Object.entries(counts)) if(c>bestC){bestC=c;best=k;}
+  if(best) document.getElementById('monthInput').value=best;
+  onMonthChange();
+}
+function onMonthChange(){
+  const v=document.getElementById('monthInput').value;
+  if(!v) return;
+  const [y,m]=v.split('-').map(Number);
+  TARGET_YEAR=y; TARGET_MONTH=m;
+}
+
+/* ══════════════════════════════════════════════════════════
+   STEP 4 — match CP-101 banks to CP-48 sheets
+   ══════════════════════════════════════════════════════════ */
+function buildMatches(){
+  if(!SELECTED_DIV || !TARGET_YEAR || !TARGET_MONTH) return;
+  const daysInMonth = new Date(TARGET_YEAR, TARGET_MONTH, 0).getDate();
+
+  // A scroll dated outside the target month/year (late-arriving collections
+  // spanning a week that crosses a month/year boundary — common in these
+  // reports) keeps its own real date. The template's Total formula covers
+  // B14:B48, not just the 31 date rows (B14:B44) — rows 45-48 are already
+  // summed but otherwise unused, so out-of-month dates go there with their
+  // real date, right after the current month's dates and before the Total.
+  function inTargetMonth(dateStr){
+    const ms = parseDMY(dateStr);
+    if(!ms) return true;
+    const d = new Date(ms);
+    return d.getFullYear()===TARGET_YEAR && (d.getMonth()+1)===TARGET_MONTH;
+  }
+
+  const bankAgg={}; // bankKey -> {branchCode,bankCode,name,dateMap,total,other:[{date,amount}]}
+  for(const f of activeFiles()){
+    const div=f.divisions[SELECTED_DIV];
+    if(!div) continue;
+    for(const key of div.order){
+      const b=div.banks[key];
+      if(!bankAgg[key]) bankAgg[key]={branchCode:b.branchCode,bankCode:b.bankCode,name:b.name,dateMap:{},total:0,other:[]};
+      if(b.name.length>bankAgg[key].name.length) bankAgg[key].name=b.name;
+      for(const sc of b.scrolls){
+        if(inTargetMonth(sc.payDate)){
+          bankAgg[key].dateMap[sc.payDate]=(bankAgg[key].dateMap[sc.payDate]||0)+sc.amount;
+        } else {
+          bankAgg[key].other.push({date:sc.payDate, amount:sc.amount});
+        }
+        bankAgg[key].total+=sc.amount;
+      }
+    }
+  }
+
+  const OTHER_ROW_SLOTS = 4; // rows 45-48
+  const rows=[];
+  for(const [bankKey,b] of Object.entries(bankAgg)){
+    const sheetName = CODE_TO_SHEET[b.bankCode] || null;
+    const type = bankType(SELECTED_DIV, bankKey, b.name);
+    const openingBalance = readOpeningBalance(sheetName);
+    // merge same-date entries, sort chronologically, then collapse down to
+    // the available slots if there happen to be more than 4 distinct dates
+    const merged={};
+    for(const o of b.other) merged[o.date]=(merged[o.date]||0)+o.amount;
+    let otherList = Object.entries(merged).map(([date,amount])=>({date,amount})).sort((a,c)=>parseDMY(a.date)-parseDMY(c.date));
+    let otherOverflowed=false;
+    if(otherList.length>OTHER_ROW_SLOTS){
+      const overflow = otherList.slice(OTHER_ROW_SLOTS-1).reduce((s,o)=>s+o.amount,0);
+      const overflowDates = otherList.slice(OTHER_ROW_SLOTS-1).map(o=>o.date);
+      otherList = otherList.slice(0,OTHER_ROW_SLOTS-1).concat([{date:overflowDates[overflowDates.length-1], amount:overflow, combined:overflowDates}]);
+      otherOverflowed=true;
+    }
+    rows.push({bankKey, branchCode:b.branchCode, bankCode:b.bankCode, name:b.name, dateMap:b.dateMap, total:b.total, sheetName, type, openingBalance, other:otherList, otherOverflowed});
+  }
+  rows.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const matchedCodes = new Set(rows.filter(r=>r.sheetName).map(r=>r.bankCode));
+  const unmatchedTemplateSheets = Object.entries(CODE_TO_SHEET)
+    .filter(([code])=>!matchedCodes.has(code))
+    .map(([code,sheet])=>({code,sheet}));
+
+  const matchRatio = rows.length ? matchedCodes.size/rows.length : 0;
+  // if almost nothing matched, this is very likely the wrong division/template pairing —
+  // don't default to zeroing out someone else's entire workbook over that mistake
+  MATCHES = {rows, unmatchedTemplateSheets, daysInMonth, zeroOutUnmatched: matchRatio>=0.3};
+  renderMatchBody();
+  const matchedCount = rows.filter(r=>r.sheetName).length;
+  setStepSummary(3, `Division ${SELECTED_DIV} · ${String(TARGET_MONTH).padStart(2,'0')}-${TARGET_YEAR} · ${matchedCount}/${rows.length} banks matched`);
+  advanceTo(4);
+}
+
+/* Opening Balance for a sheet: prefer last month's carried-forward Closing
+   Balance if the user supplied one, else whatever's currently sitting in
+   the template's own H9 (usually 0 on a blank template) — always editable
+   afterward regardless of where it came from. */
+function readOpeningBalance(sheetName){
+  if(!sheetName) return 0;
+  if(sheetName in PRIOR_CLOSING) return PRIOR_CLOSING[sheetName];
+  const ws = TEMPLATE_WB && TEMPLATE_WB.Sheets[sheetName];
+  const cell = ws && ws['H9'];
+  return (cell && typeof cell.v==='number') ? cell.v : 0;
+}
+
+function toggleMatchType(bankKey){
+  const row = MATCHES.rows.find(r=>r.bankKey===bankKey);
+  if(!row) return;
+  const cur = bankType(SELECTED_DIV, bankKey, row.name);
+  saveBankType(SELECTED_DIV+'|'+bankKey, cur==='manual'?'online':'manual');
+  row.type = bankType(SELECTED_DIV, bankKey, row.name);
+  renderMatchBody();
+}
+
+function renderMatchBody(){
+  const el=document.getElementById('matchBody');
+  const matched = MATCHES.rows.filter(r=>r.sheetName);
+  const missing = MATCHES.rows.filter(r=>!r.sheetName);
+  const matchRatio = MATCHES.rows.length ? matched.length/MATCHES.rows.length : 0;
+
+  let html='';
+  if(matched.length===0){
+    html+=`<div class="hardwarn"><b>⚠ Zero banks matched — this is almost certainly the wrong division for this CP-48 file.</b>
+      None of the ${MATCHES.rows.length} banks in Division ${esc(SELECTED_DIV)} have a matching "MIS Branch Code" in your uploaded template.
+      Go back to Step 3 and check the match percentage shown next to each division — pick the one with the highest match instead.</div>`;
+  } else if(matchRatio<0.3){
+    html+=`<div class="hardwarn"><b>⚠ Only ${matched.length} of ${MATCHES.rows.length} banks matched (${Math.round(matchRatio*100)}%).</b>
+      Double-check you picked the right division in Step 3 before generating — a low match rate usually means a division/template mismatch, not missing bank sheets.</div>`;
+  }
+
+  const withOther = MATCHES.rows.filter(r=>r.other.length);
+  if(withOther.length){
+    html+=`<div class="warn-box"><b style="display:block;margin-bottom:4px">📥 ${withOther.length} bank${withOther.length>1?'s have':' has'} scrolls dated outside ${String(TARGET_MONTH).padStart(2,'0')}-${TARGET_YEAR}</b>
+      Placed on their own real dates in extra rows right after this month's dates and before the Total — not moved to a different day. Your template's Total formula already covers these rows, so nothing needs to change there.
+      <ul style="margin:8px 0 0 20px">${withOther.map(r=>`<li>${esc(r.name)}: ${r.other.map(d=>`${esc(d.date)} (${fn(d.amount)})`).join(', ')}${r.otherOverflowed?' — more than 4 extra dates, the earliest were combined onto one row':''}</li>`).join('')}</ul></div>`;
+  }
+
+  if(missing.length){
+    html+=`<div class="unmatched-box">⚠ ${missing.length} bank${missing.length>1?'s':''} from your CP-101 have no matching sheet in your CP-48 file (no sheet with this MIS Branch Code) — these can't be filled automatically, add a sheet for them if needed:
+      <ul>${missing.map(r=>`<li>${esc(r.bankCode)} — ${esc(r.name)} (${fn(r.total)})</li>`).join('')}</ul>
+    </div>`;
+  }
+
+  html+=`<table class="matchtable"><thead><tr>
+    <th>Bank</th><th>Code</th><th>CP-48 Sheet</th><th>Type</th><th class="r">Opening Balance</th><th class="r">Month Total</th><th class="r">= Total (1+2)</th><th></th>
+  </tr></thead><tbody>`;
+  for(const r of matched){
+    html+=`<tr>
+      <td>${esc(r.name)}</td>
+      <td class="sheetname">${esc(r.bankCode)}</td>
+      <td><span class="mstat ok">✓ ${esc(r.sheetName)}</span></td>
+      <td>${r.type==='manual'?'🖊 Manual (date-wise)':'💻 Online (total only)'}</td>
+      <td class="r"><input type="number" class="obinput" value="${r.openingBalance}" step="0.01" oninput="updateOpeningBalance('${r.bankKey}', this.value)"></td>
+      <td class="r">${fn(r.total)}</td>
+      <td class="r"><span id="tot-${r.bankKey}">${fn(r.openingBalance + r.total)}</span></td>
+      <td><button class="typebtn" onclick="toggleMatchType('${r.bankKey}')">↔ Switch</button></td>
+    </tr>`;
+  }
+  html+=`</tbody></table>`;
+
+  if(MATCHES.unmatchedTemplateSheets.length){
+    html+=`<label class="zeroopt"><input type="checkbox" id="zeroOutChk" ${MATCHES.zeroOutUnmatched?'checked':''} onchange="MATCHES.zeroOutUnmatched=this.checked">
+      Zero out the ${MATCHES.unmatchedTemplateSheets.length} CP-48 sheet(s) with no data this month (${MATCHES.unmatchedTemplateSheets.map(u=>esc(u.sheet)).join(', ')})</label>`;
+  }
+
+  el.innerHTML=html;
+  if(matched.length){
+    document.getElementById('toStep5Btn').style.display='inline-block';
+  }
+}
+
+function updateOpeningBalance(bankKey, value){
+  const row = MATCHES.rows.find(r=>r.bankKey===bankKey);
+  if(!row) return;
+  row.openingBalance = parseFloat(value)||0;
+  const totEl = document.getElementById('tot-'+bankKey);
+  if(totEl) totEl.textContent = fn(row.openingBalance + row.total);
+}
+
+/* ══════════════════════════════════════════════════════════
+   STEP 5 — generate
+   ══════════════════════════════════════════════════════════ */
+
+/* xlsx path: surgical XML edit, preserves 100% of original styling */
+async function buildFilledZip(){
+  const zip = await JSZip.loadAsync(TEMPLATE_BYTES);
+  const pathMap = await mapSheetPaths(zip);
+  const Y=TARGET_YEAR, M=TARGET_MONTH, daysInMonth=MATCHES.daysInMonth;
+  const monthLabel = `FOR THE MONTH OF ${String(M).padStart(2,'0')}-${Y}`;
+
+  async function fillSheet(sheetName, type, total, dateMap, opening, other){
+    const path = pathMap[sheetName];
+    if(!path) return false;
+    const xml = await zip.file(path).async('string');
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    other = other || [];
+    const otherSum = other.reduce((s,o)=>s+o.amount,0);
+    const currentMonthTotal = total - otherSum;
+
+    setStringCellNode(doc, 'C6', monthLabel);
+    setNumericCellNode(doc, 'H9', opening);
+    setNumericCellNode(doc, 'H10', total);
+    setNumericCellNode(doc, 'H11', opening+total);
+
+    if(type==='manual'){
+      for(let day=1;day<=31;day++){
+        const row=13+day;
+        if(day<=daysInMonth){
+          const key=String(day).padStart(2,'0')+'/'+String(M).padStart(2,'0')+'/'+Y;
+          setNumericCellNode(doc, 'A'+row, excelSerial(Y,M,day));
+          setNumericCellNode(doc, 'B'+row, dateMap[key]||0);
+        } else {
+          clearCellValueNode(doc, 'A'+row);
+          clearCellValueNode(doc, 'B'+row);
+        }
+      }
+    } else {
+      setNumericCellNode(doc, 'A14', excelSerial(Y,M,daysInMonth));
+      setNumericCellNode(doc, 'B14', currentMonthTotal);
+      for(let day=2;day<=31;day++){
+        const row=13+day;
+        clearCellValueNode(doc, 'A'+row);
+        clearCellValueNode(doc, 'B'+row);
+      }
+    }
+
+    // rows 45-48: the template's own Total formula already reads B14:B48,
+    // so anything placed here on its real date is included automatically —
+    // no formula changes needed.
+    for(let i=0;i<4;i++){
+      const row=45+i;
+      const o=other[i];
+      if(o){
+        const ms=parseDMY(o.date);
+        const od=new Date(ms);
+        setNumericCellNode(doc, 'A'+row, excelSerial(od.getFullYear(), od.getMonth()+1, od.getDate()));
+        setNumericCellNode(doc, 'B'+row, o.amount);
+      } else {
+        clearCellValueNode(doc, 'A'+row);
+        clearCellValueNode(doc, 'B'+row);
+      }
+    }
+
+    zip.file(path, new XMLSerializer().serializeToString(doc));
+    return true;
+  }
+
+  for(const r of MATCHES.rows){
+    if(!r.sheetName) continue;
+    await fillSheet(r.sheetName, r.type, r.total, r.dateMap, r.openingBalance, r.other);
+  }
+  if(MATCHES.zeroOutUnmatched){
+    for(const u of MATCHES.unmatchedTemplateSheets) await fillSheet(u.sheet, 'manual', 0, {}, 0, []);
+  }
+  return zip;
+}
+
+/* xls fallback: lossy on styling, but at least gets the numbers right */
+function buildFilledWorkbookLossy(){
+  const wb = XLSX.read(TEMPLATE_BYTES, {type:'array', cellDates:true, cellStyles:true, cellNF:true});
+  const Y=TARGET_YEAR, M=TARGET_MONTH, daysInMonth=MATCHES.daysInMonth;
+  const monthLabel = `FOR THE MONTH OF ${String(M).padStart(2,'0')}-${Y}`;
+
+  function setCell(ws, ref, value, type){ if(!ws[ref]) ws[ref]={}; ws[ref].t=type; ws[ref].v=value; delete ws[ref].w; }
+  function clearCell(ws, ref){ delete ws[ref]; }
+
+  function fillSheet(sheetName, type, total, dateMap, opening, other){
+    const ws = wb.Sheets[sheetName];
+    if(!ws) return;
+    other = other || [];
+    const otherSum = other.reduce((s,o)=>s+o.amount,0);
+    const currentMonthTotal = total - otherSum;
+    setCell(ws,'C6', monthLabel, 's');
+    setCell(ws,'H9', opening, 'n');
+    setCell(ws,'H10', total, 'n');
+    setCell(ws,'H11', opening+total, 'n');
+    if(type==='manual'){
+      for(let day=1;day<=31;day++){
+        const row=13+day;
+        if(day<=daysInMonth){
+          const key=String(day).padStart(2,'0')+'/'+String(M).padStart(2,'0')+'/'+Y;
+          setCell(ws,'A'+row, new Date(Date.UTC(Y,M-1,day)), 'd');
+          setCell(ws,'B'+row, dateMap[key]||0, 'n');
+        } else { clearCell(ws,'A'+row); clearCell(ws,'B'+row); }
+      }
+    } else {
+      setCell(ws,'A14', new Date(Date.UTC(Y,M-1,daysInMonth)), 'd');
+      setCell(ws,'B14', currentMonthTotal, 'n');
+      for(let day=2;day<=31;day++){ const row=13+day; clearCell(ws,'A'+row); clearCell(ws,'B'+row); }
+    }
+    for(let i=0;i<4;i++){
+      const row=45+i;
+      const o=other[i];
+      if(o){
+        const ms=parseDMY(o.date);
+        const od=new Date(ms);
+        setCell(ws,'A'+row, new Date(Date.UTC(od.getFullYear(),od.getMonth(),od.getDate())), 'd');
+        setCell(ws,'B'+row, o.amount, 'n');
+      } else { clearCell(ws,'A'+row); clearCell(ws,'B'+row); }
+    }
+  }
+  for(const r of MATCHES.rows){ if(r.sheetName) fillSheet(r.sheetName, r.type, r.total, r.dateMap, r.openingBalance, r.other); }
+  if(MATCHES.zeroOutUnmatched){ for(const u of MATCHES.unmatchedTemplateSheets) fillSheet(u.sheet,'manual',0,{},0,[]); }
+  return wb;
+}
+
+async function downloadWorkbook(){
+  if(!MATCHES){ return; }
+  const statusEl=document.getElementById('genStatus');
+  statusEl.innerHTML = '<div class="info-box">Generating…</div>';
+  try{
+    const fname = `CP48_Div${SELECTED_DIV}_${TARGET_YEAR}-${String(TARGET_MONTH).padStart(2,'0')}.xlsx`;
+    if(TEMPLATE_FORMAT==='xlsx'){
+      const zip = await buildFilledZip();
+      const blob = await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      downloadBlob(blob, fname);
+      statusEl.innerHTML = `<div class="info-box">✓ Downloaded <strong>${esc(fname)}</strong> — every formula and every bit of your original formatting is untouched; only the cells listed above were filled in. Formulas (Net Remittance, Closing Balance, and the Abstract sheet's totals) recalculate automatically when you open it.</div>`;
+      setStepSummary(5, `Generated ${fname}`);
+    } else {
+      const wb = buildFilledWorkbookLossy();
+      XLSX.writeFile(wb, fname);
+      statusEl.innerHTML = `<div class="warn-box">✓ Downloaded <strong>${esc(fname)}</strong>. Since this came from a legacy .xls file, some fonts/borders may not have carried over exactly — check it, and if the formatting looks off, convert your template to .xlsx first (see the note in Step 1) and regenerate.</div>`;
+    }
+  }catch(e){
+    statusEl.innerHTML = `<div class="err-box">⚠ Couldn't generate the file: ${esc(e.message||e)}</div>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Print preview — no Excel required
+   ══════════════════════════════════════════════════════════ */
+function showPrintPreview(){
+  if(!MATCHES) return;
+  const el=document.getElementById('printarea');
+  const monthLabel = `FOR THE MONTH OF ${String(TARGET_MONTH).padStart(2,'0')}-${TARGET_YEAR}`;
+  const daysInMonth = MATCHES.daysInMonth;
+  const matched = MATCHES.rows.filter(r=>r.sheetName);
+  const anySheet = matched.length ? TEMPLATE_WB.Sheets[matched[0].sheetName] : null;
+  const companyName = (anySheet && anySheet['B1'] && anySheet['B1'].v) || '';
+
+  let html='';
+  for(const r of matched){
+    let dateRowsHtml='';
+    let rangeTotal=0;
+    if(r.type==='manual'){
+      for(let day=1;day<=daysInMonth;day++){
+        const key=String(day).padStart(2,'0')+'/'+String(TARGET_MONTH).padStart(2,'0')+'/'+TARGET_YEAR;
+        const amt=r.dateMap[key]||0;
+        rangeTotal+=amt;
+        dateRowsHtml+=`<tr><td>${key}</td><td class="r">${fn(amt)}</td></tr>`;
+      }
+    } else {
+      const otherSum=(r.other||[]).reduce((s,o)=>s+o.amount,0);
+      const currentMonthTotal=r.total-otherSum;
+      rangeTotal+=currentMonthTotal;
+      const key=String(daysInMonth).padStart(2,'0')+'/'+String(TARGET_MONTH).padStart(2,'0')+'/'+TARGET_YEAR;
+      dateRowsHtml=`<tr><td>${key}</td><td class="r">${fn(currentMonthTotal)}</td></tr>`;
+    }
+    if(r.other && r.other.length){
+      dateRowsHtml+=`<tr class="pf-other-head"><td colspan="2">Other dates (outside ${String(TARGET_MONTH).padStart(2,'0')}-${TARGET_YEAR})</td></tr>`;
+      for(const o of r.other){
+        rangeTotal+=o.amount;
+        dateRowsHtml+=`<tr class="pf-other"><td>${esc(o.date)}</td><td class="r">${fn(o.amount)}</td></tr>`;
+      }
+    }
+
+    html+=`<div class="pf-page"><div class="pf-inner">
+      ${companyName?`<div class="pf-co">${esc(companyName)}</div>`:''}
+      <div class="pf-title">CP FORM 48 — BANK RECONCILIATION STATEMENT</div>
+      <hr class="pf-rule">
+      <div class="pf-sub">${esc(monthLabel)}</div>
+      <div class="pf-meta">
+        <span><b>MIS Branch Code:</b> ${esc(r.bankCode)}</span>
+        <span><b>Branch Name:</b> ${esc(r.name)}</span>
+        <span><b>CP-48 Sheet:</b> ${esc(r.sheetName)}</span>
+      </div>
+      <table class="pf-particulars">
+        <tr><td>1. Opening Balance brought forward from last month</td><td class="amt">${fn(r.openingBalance)}</td></tr>
+        <tr><td>2. Add total of scrolls received as per cash book this month</td><td class="amt">${fn(r.total)}</td></tr>
+        <tr><td>3. Total (1+2)</td><td class="amt">${fn(r.openingBalance + r.total)}</td></tr>
+      </table>
+      <table class="pf-datetable">
+        <thead><tr><th>Date</th><th class="r">Amount</th></tr></thead>
+        <tbody>${dateRowsHtml}
+        <tr class="pf-total"><td>Total</td><td class="r">${fn(rangeTotal)}</td></tr>
+        </tbody>
+      </table>
+      <div class="pf-sig">
+        <div><div class="line">Commercial Assistant</div></div>
+        <div><div class="line">Divisional Accounts Officer</div></div>
+        <div><div class="line">Assistant Manager (CS)</div></div>
+      </div>
+    </div></div>`;
+  }
+  el.innerHTML=html;
+  window.print();
+}
+
+/* ══════════════════════════════════════════════════════════
+   step UI — horizontal stepper + collapsible cards.
+   A step becomes reachable once the previous one completes; visiting
+   an earlier, already-completed step re-expands it for editing
+   without losing progress on the later ones.
+   ══════════════════════════════════════════════════════════ */
+let CURRENT_STEP = 1;
+let MAX_REACHED_STEP = 1;
+
+function setStepSummary(n, text){
+  document.getElementById('step'+n+'-summary-text').textContent = text;
+}
+function advanceTo(n){
+  MAX_REACHED_STEP = Math.max(MAX_REACHED_STEP, n);
+  goToStep(n);
+}
+function goToStep(n){
+  if(n > MAX_REACHED_STEP) return;
+  CURRENT_STEP = n;
+  renderStepper();
+}
+function renderStepper(){
+  for(let i=1;i<=5;i++){
+    const stepEl = document.getElementById('step'+i);
+    const reachable = i <= MAX_REACHED_STEP;
+    stepEl.setAttribute('data-hidden', reachable ? 'false' : 'true');
+    stepEl.classList.toggle('expanded', i===CURRENT_STEP);
+    stepEl.classList.toggle('collapsed', reachable && i!==CURRENT_STEP);
+  }
+  document.querySelectorAll('.stepitem').forEach(el=>{
+    const n = +el.dataset.step;
+    el.classList.toggle('reachable', n<=MAX_REACHED_STEP);
+    el.classList.toggle('current', n===CURRENT_STEP);
+    el.classList.toggle('done', n<MAX_REACHED_STEP || (n<=MAX_REACHED_STEP && n<CURRENT_STEP));
+  });
+}
+renderStepper();
+</script>
+</body>
+
+</html>

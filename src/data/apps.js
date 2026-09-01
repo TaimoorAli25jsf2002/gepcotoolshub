@@ -86,6 +86,16 @@ const apps = [
     path: "/apps/bank-analyzer/index.html",
     tags: ["bank", "statement", "pdf", "transactions"]
   },
+  ,
+  {
+    id: "cp48-maker",
+    name: "CP-48(Collection)",
+    description: "Generate prefilled CP-48 from CP-101 and last month CP-48.",
+    category: "Banking",
+    icon: "🏦",
+    path: "/apps/cp48-maker/index.html",
+    tags: ["cp-48", "collection", "remittance", "excel", "monthly"]
+  },
   // {
   //   id: "example-tool",
   //   name: "Example Tool",
