@@ -161,7 +161,7 @@
 
 
 import { useMemo, useState } from "react";
-import { Search, Moon, Sun, Wrench } from "lucide-react";
+import { Search, Moon, Sun, Wrench, ArrowUpRight } from "lucide-react";
 import apps from "./data/apps";
 import AppCard from "./components/AppCard";
 
@@ -289,22 +289,94 @@ export default function App() {
         )}
 
         {/* ---------- Footer ---------- */}
+       
+<footer className="hub-footer">
 
-        <footer className="site-footer">
-          <span>© {new Date().getFullYear()} Taimoor Ali</span>
+  <div className="footer-main">
 
-          <nav className="footer-links" aria-label="Links">
-            <a href="https://tmern.vercel.app/" target="_blank" rel="noopener noreferrer">
-              MERN Portfolio
-            </a>
-            <a href="https://aiacademyt.vercel.app/" target="_blank" rel="noopener noreferrer">
-              AI Academy
-            </a>
-            <a href="https://github.com/TaimoorAli25jsf2002" target="_blank" rel="noopener noreferrer">
-              GitHub
-            </a>
-          </nav>
-        </footer>
+    <div className="footer-identity">
+      <div className="footer-mark">
+        <Wrench size={18} />
+      </div>
+
+      <div>
+        <div className="footer-title">
+          GEPCO Tools Hub
+        </div>
+
+        <div className="footer-description">
+          A collection of lightweight tools built to simplify
+          everyday Revenue Office work.
+        </div>
+      </div>
+    </div>
+
+
+    <div className="footer-projects">
+
+      <div className="footer-label">
+        OTHER PROJECTS
+      </div>
+
+      <div className="project-list">
+
+        <a
+          href="https://tmern.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="project-link"
+        >
+          <span>MERN Portfolio</span>
+          <ArrowUpRight size={14} />
+        </a>
+
+        <a
+          href="https://aiacademyt.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="project-link"
+        >
+          <span>AI Academy</span>
+          <ArrowUpRight size={14} />
+        </a>
+
+        <a
+          href="https://github.com/TaimoorAli25jsf2002"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="project-link"
+        >
+          <span>GitHub</span>
+          <ArrowUpRight size={14} />
+        </a>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div className="footer-bottom">
+
+    <span>
+      © {new Date().getFullYear()} Taimoor Ali
+    </span>
+
+    <span className="footer-status">
+      <span className="status-dot"></span>
+      Built with React
+    </span>
+
+    <span>
+      GEPCO Tools Hub
+    </span>
+
+  </div>
+
+</footer>
+
+
 
       </main>
 
