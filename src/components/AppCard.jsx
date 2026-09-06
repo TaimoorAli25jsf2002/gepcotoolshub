@@ -1,15 +1,19 @@
 import { ArrowUpRight } from "lucide-react";
 
 export default function AppCard({ app }) {
-const openApp = () => {
-  const path = app.path.replace(/^\/+/, "");
-  window.location.href = `${import.meta.env.BASE_URL}${path}`;
-};
+  const Icon = app.icon;
+
+  const openApp = () => {
+    const path = app.path.replace(/^\/+/, "");
+    window.location.href = `${import.meta.env.BASE_URL}${path}`;
+  };
 
   return (
     <article className="card">
       <div className="card-top">
-        <div className="app-icon">{app.icon}</div>
+        <div className="app-icon">
+          <Icon size={22} />
+        </div>
         <span className="category-label">{app.category}</span>
       </div>
 

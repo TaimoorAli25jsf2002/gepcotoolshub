@@ -160,40 +160,10 @@
 
 
 
-import { useEffect, useMemo, useState } from "react";
-import { Search, Moon, Sun, Zap } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Search, Moon, Sun, Wrench } from "lucide-react";
 import apps from "./data/apps";
 import AppCard from "./components/AppCard";
-
-function useCountUp(target, duration = 700) {
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    if (prefersReducedMotion) {
-      setValue(target);
-      return;
-    }
-
-    let frame;
-    let start = null;
-
-    const step = (timestamp) => {
-      if (start === null) start = timestamp;
-      const progress = Math.min((timestamp - start) / duration, 1);
-      setValue(Math.round(progress * target));
-      if (progress < 1) frame = requestAnimationFrame(step);
-    };
-
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [target, duration]);
-
-  return value;
-}
 
 export default function App() {
   const [query, setQuery] = useState("");
@@ -201,8 +171,6 @@ export default function App() {
   const [dark, setDark] = useState(false);
 
   const categories = ["All", ...new Set(apps.map((app) => app.category))];
-  const toolCount = useCountUp(apps.length);
-  const categoryCount = useCountUp(categories.length - 1);
 
   const filteredApps = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -230,7 +198,7 @@ export default function App() {
         <div className="header-inner">
           <div className="brand">
             <div className="brand-icon">
-              <Zap size={20} fill="currentColor" />
+              <Wrench size={22} />
             </div>
 
             <div>
@@ -244,11 +212,7 @@ export default function App() {
             title="Toggle theme"
             aria-label="Toggle theme"
           >
-            {dark ? (
-              <Sun key="sun" size={19} />
-            ) : (
-              <Moon key="moon" size={19} />
-            )}
+            {dark ? <Sun size={25} /> : <Moon size={25} />}
           </button>
         </div>
       </header>
@@ -257,24 +221,19 @@ export default function App() {
       <main className="container">
 
         <section className="hero">
-          <div className="hero-copy">
+          <div>
+            <span className="eyebrow">UTILITY DASHBOARD</span>
+
             <h2>All tools, in one place.</h2>
 
             <p>
-              GEPCO Revenue Office tools, built by Taimoor Ali.
+              GEPCO Revenue Office Tools Built by Taimoor Ali.
             </p>
           </div>
 
-          <div className="meter">
-            <div className="meter-cell">
-              <span className="meter-value">{toolCount}</span>
-              <span className="meter-label">tools</span>
-            </div>
-
-            <div className="meter-cell">
-              <span className="meter-value">{categoryCount}</span>
-              <span className="meter-label">categories</span>
-            </div>
+          <div className="tool-count">
+            <strong>{apps.length}</strong>
+            <span>tools</span>
           </div>
         </section>
 
