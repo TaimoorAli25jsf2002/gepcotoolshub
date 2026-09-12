@@ -6,201 +6,277 @@
 <title>CP-101 Analyzer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+:root{
+  /* ── deep utility green + brass, on warm paper — an "official register" palette ── */
+  --ink:#1c231d; --green-950:#0e2117; --green-900:#123822; --green-800:#1a4d2e; --green-700:#1f6d42; --green-600:#2c8354;
+  --green-100:#dcecdf; --green-50:#f0f6f1;
+  --brass:#a8792e; --brass-dark:#8a611f; --brass-100:#f6ecd9;
+  --blue-700:#1d4ed8;
+  --slate-700:#3c4238; --slate-600:#585f53; --slate-500:#767d6f; --slate-300:#c9c3af;
+  --border:#ddd6c2; --border-soft:#e9e4d4;
+  --bg:#f2efe6; --surface:#fffdf8;
+  --danger:#9c2b21; --danger-bg:#faece9; --danger-border:#e6c3ba;
+  --warn:#8a611f; --warn-bg:#f8f0dd; --warn-border:#e6d4a4;
+  --good:#1a6b43; --good-bg:#e7f2ea;
+  --grad-brand: linear-gradient(120deg,#123822 0%,#1f6d42 100%);
+  --shadow-xs:0 1px 2px rgba(28,35,29,.06);
+  --shadow-sm:0 1px 2px rgba(28,35,29,.05),0 3px 8px rgba(28,35,29,.05);
+  --shadow-md:0 8px 20px -6px rgba(14,33,23,.16),0 2px 6px rgba(14,33,23,.06);
+  --shadow-lg:0 20px 48px -16px rgba(14,33,23,.26),0 6px 16px rgba(14,33,23,.08);
+  --radius:10px;--radius-sm:8px;
+  --font-ui:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-display:'Source Serif 4','Georgia',serif;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#f1f4f3;color:#1a1a1a;min-height:100vh;font-size:15px;line-height:1.5}
-.wrap{max-width:980px;margin:0 auto;padding:24px 16px}
-h1{font-size:21px;font-weight:700;color:#0b5d4f;margin-bottom:4px}
-.sub{font-size:13px;color:#666;margin-bottom:20px}
+html{-webkit-tap-highlight-color:transparent}
+::selection{background:var(--green-100);color:var(--green-900)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--slate-300);border-radius:20px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:var(--slate-500)}
+body{font-family:var(--font-ui);background:var(--bg);
+     color:var(--ink);min-height:100vh;font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased;
+     text-rendering:optimizeLegibility;position:relative;isolation:isolate}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(28,35,29,.028) 1px, transparent 1px);
+  background-size: 100% 34px;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 56px}
+.letterhead{background:var(--grad-brand);margin:0 -20px 28px;padding:22px 20px;position:relative;
+  box-shadow:var(--shadow-lg)}
+.letterhead::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;
+  background:linear-gradient(90deg,var(--brass),#d9b46a 45%,var(--brass) 100%)}
+.letterhead-inner{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.lh-mark{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--brass-100)}
+.lh-mark svg{width:22px;height:22px}
+.lh-text{color:#fff}
+.lh-org{font-family:var(--font-display);font-size:21px;font-weight:700;letter-spacing:-.005em;line-height:1.2}
+.lh-app{font-size:12.5px;color:rgba(255,255,255,.75);margin-top:3px;letter-spacing:.01em}
+.lh-badge{margin-left:auto;font-size:10.5px;font-weight:600;letter-spacing:.06em;color:#fff;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);padding:5px 12px;border-radius:20px;white-space:nowrap}
+svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2px}
+/* header */
+h1{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--green-900);letter-spacing:-.005em;line-height:1.25}
+.sub{font-size:13px;color:var(--slate-500);margin:4px 0 26px}
 /* drop zone */
-.dz{border:2px dashed #a7c9c1;border-radius:10px;padding:28px 20px;text-align:center;
-    cursor:pointer;background:#fff;transition:all .2s;margin-bottom:10px}
-.dz:hover,.dz.drag{border-color:#0b5d4f;background:#eaf5f2}
-.dz-icon{font-size:36px;margin-bottom:8px}
-.dz-title{font-size:15px;font-weight:600;color:#0b5d4f;margin-bottom:4px}
-.dz-hint{font-size:12px;color:#888}
-.upload-btns{display:flex;gap:8px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
-.ubtn{background:#fff;color:#0b5d4f;border:1px solid #bcdad3;padding:9px 18px;border-radius:6px;
-      font-size:13px;font-weight:600;cursor:pointer}
-.ubtn:hover{background:#eaf5f2}
+.dz{border:1.5px dashed var(--slate-300);border-radius:var(--radius);padding:34px 20px;text-align:center;
+    cursor:pointer;background:var(--surface);transition:border-color .15s,box-shadow .15s;margin-bottom:12px;
+    box-shadow:var(--shadow-xs);position:relative}
+.dz:hover,.dz.drag{border-color:var(--green-600);background:var(--green-50);box-shadow:var(--shadow-sm)}
+.dz-icon{color:var(--green-700);margin-bottom:12px;opacity:.95;display:flex;justify-content:center}
+.dz-icon svg{width:26px;height:26px;padding:12px;box-sizing:content-box;background:var(--green-50);border-radius:14px;border:1px solid var(--border-soft)}
+.dz-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--green-800);margin-bottom:5px;letter-spacing:-.005em}
+.dz-hint{font-size:12px;color:var(--slate-500)}
+.upload-btns{display:flex;gap:10px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+.ubtn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);color:var(--green-800);border:1px solid var(--border);padding:10px 17px;border-radius:10px;
+      font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-xs);transition:all .15s}
+.ubtn:hover{background:var(--green-50);border-color:var(--green-600);box-shadow:var(--shadow-sm);transform:translateY(-1px)}
+.ubtn svg{color:var(--green-700)}
 /* loading */
-.load-bar{display:none;align-items:center;gap:10px;background:#fff;border:1px solid #e0e0e0;
-          border-radius:8px;padding:13px 16px;margin-bottom:12px}
-.spin{width:18px;height:18px;flex-shrink:0;border:3px solid #e0e0e0;border-top-color:#0b5d4f;
+.load-bar{display:none;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);
+          border-radius:var(--radius-sm);padding:14px 18px;margin-bottom:12px;box-shadow:var(--shadow-sm)}
+.spin{width:16px;height:16px;flex-shrink:0;border:2px solid var(--green-100);border-top-color:var(--green-700);
       border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.load-txt{font-size:13px;color:#555}
+.load-txt{font-size:13px;color:var(--slate-500)}
 /* error / info */
-.err-box{background:#fff0f0;border:1px solid #ffb3b3;border-radius:8px;padding:9px 14px;
-         margin-bottom:7px;font-size:13px;color:#c0392b}
-.info-box{background:#eaf5f2;border:1px solid #a7cec3;border-radius:8px;padding:9px 14px;
-         margin-bottom:7px;font-size:13px;color:#0b5d4f}
+.err-box,.info-box,.warn-box{display:flex;align-items:flex-start;gap:9px;border-radius:var(--radius-sm);padding:11px 15px;
+         margin-bottom:8px;font-size:13px;line-height:1.5;box-shadow:var(--shadow-xs)}
+.err-box svg,.info-box svg,.warn-box svg{margin-top:2px;flex-shrink:0}
+.err-box{background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--danger)}
+.info-box{background:var(--green-50);border:1px solid var(--border);color:var(--green-800)}
+.warn-box{background:var(--warn-bg);border:1px solid var(--warn-border);color:var(--warn)}
 /* setup */
-.setup{background:#fff;border:1px solid #dbe6e3;border-radius:10px;padding:18px 18px 20px;margin-bottom:16px}
-.setup h2{font-size:15px;color:#0b5d4f;margin-bottom:2px}
-.setup .shint{font-size:12px;color:#888;margin-bottom:12px}
-.filelist{display:flex;flex-direction:column;gap:6px;margin-bottom:20px;max-height:260px;overflow-y:auto}
-.dupwarn{background:#fff8e1;border:1px solid #f9d879;border-radius:8px;padding:11px 14px;
-         font-size:12.5px;color:#7a5000;margin-bottom:10px;line-height:1.5}
-.filerow{display:flex;align-items:center;gap:10px;border:1px solid #dbe6e3;border-radius:8px;
-         padding:9px 12px;font-size:13px;cursor:pointer}
-.filerow:hover{background:#f5faf8}
-.filerow.dup{border-color:#f0b429;background:#fffbf0}
+.setup{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:26px 26px 28px;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+.setup h2{font-family:var(--font-display);font-size:14.5px;color:var(--green-900);margin-bottom:4px;font-weight:700;letter-spacing:-.01em}
+.setup .shint{font-size:12.5px;color:var(--slate-500);margin-bottom:15px}
+.filelist{display:flex;flex-direction:column;gap:7px;margin-bottom:24px;max-height:260px;overflow-y:auto;padding-right:2px}
+.dupwarn{display:flex;align-items:flex-start;gap:9px;background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:var(--radius-sm);padding:12px 15px;
+         font-size:12.5px;color:var(--warn);margin-bottom:10px;line-height:1.5}
+.dupwarn svg{margin-top:2px;flex-shrink:0}
+.filerow{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:var(--radius-sm);
+         padding:10px 13px;font-size:13px;cursor:pointer;transition:all .12s;background:var(--surface)}
+.filerow:hover{background:var(--green-50);border-color:var(--green-600)}
+.filerow.dup{border-color:var(--brass);background:var(--brass-100)}
 .filerow.off{opacity:.5}
-.filerow input{width:16px;height:16px;flex-shrink:0;cursor:pointer}
-.frname{flex:1;word-break:break-all;color:#333}
-.frdate{font-size:12px;color:#666;white-space:nowrap}
-.frstat{font-size:11px;color:#888;white-space:nowrap}
-.fdup-tag{font-size:10px;font-weight:700;background:#f0b429;color:#5a3d00;padding:2px 8px;border-radius:10px;white-space:nowrap}
-.divlist{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;max-height:300px;overflow-y:auto}
-.divopt{display:flex;align-items:center;gap:10px;border:1px solid #dbe6e3;border-radius:8px;
-        padding:10px 12px;font-size:13px}
-.divopt:hover{background:#f5faf8}
-.divopt.sel{border-color:#0b5d4f;background:#eaf5f2}
+.filerow input{width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--green-700)}
+.frname{flex:1;word-break:break-all;color:var(--ink)}
+.frdate{font-size:12px;color:var(--slate-500);white-space:nowrap;font-variant-numeric:tabular-nums}
+.frstat{font-size:11px;color:var(--slate-500);white-space:nowrap}
+.fdup-tag{font-size:10px;font-weight:700;background:var(--brass);color:#fff;padding:2px 9px;border-radius:10px;white-space:nowrap;letter-spacing:.03em}
+.divlist{display:flex;flex-direction:column;gap:7px;margin-bottom:22px;max-height:300px;overflow-y:auto;padding-right:2px}
+.divopt{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:var(--radius-sm);
+        padding:11px 13px;font-size:13px;transition:all .12s;background:var(--surface)}
+.divopt:hover{background:var(--green-50);border-color:var(--green-600)}
+.divopt.sel{border-color:var(--green-700);background:var(--green-50);box-shadow:0 0 0 1px var(--green-700) inset}
 .divopt .dclick{display:flex;align-items:center;gap:10px;cursor:pointer;flex:1}
-.divopt .dcode{font-weight:700;color:#0b5d4f;min-width:48px}
-.divopt .dcount{font-size:11px;color:#888;white-space:nowrap}
-.divopt .dlabel{border:1px solid #cfe0da;border-radius:5px;padding:5px 8px;font-size:12px;width:170px;color:#333}
-.divopt .dlabel:focus{outline:none;border-color:#0b5d4f}
-.xbtn{background:#0b5d4f;color:#fff;border:none;padding:8px 20px;border-radius:6px;
-      font-size:13px;font-weight:600;cursor:pointer}
-.xbtn:hover{background:#08473d}
-.xbtn:disabled{background:#a9c2bd;cursor:not-allowed}
+.divopt .dcode{font-weight:700;color:var(--green-800);min-width:48px}
+.divopt .dcount{font-size:11px;color:var(--slate-500);white-space:nowrap}
+.divopt .dlabel{border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;width:170px;color:var(--ink);font-family:var(--font-ui);background:var(--surface)}
+.divopt .dlabel:focus{outline:none;border-color:var(--green-700);box-shadow:0 0 0 3px var(--green-100)}
+.xbtn{display:inline-flex;align-items:center;gap:7px;justify-content:center;background:var(--grad-brand);color:#fff;border:none;padding:11px 22px;border-radius:11px;
+      font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 6px 16px -4px rgba(12,74,67,.45);transition:all .15s;letter-spacing:.01em}
+.xbtn:hover{filter:brightness(1.08);box-shadow:0 8px 20px -4px rgba(12,74,67,.55);transform:translateY(-1px)}
+.xbtn:disabled{background:var(--slate-300);cursor:not-allowed;box-shadow:none;filter:none;transform:none}
 /* selbar */
 .selbar{position:sticky;top:10px;z-index:30;display:none;align-items:center;justify-content:space-between;
-        background:#eaf5f2;border:1px solid #a7cec3;border-radius:10px;padding:12px 16px;margin-bottom:14px;
-        gap:12px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(11,93,79,.12)}
+        background:rgba(255,255,255,.86);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;margin-bottom:18px;
+        gap:12px;flex-wrap:wrap;box-shadow:var(--shadow-md);backdrop-filter:blur(10px) saturate(1.4)}
 .selbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.selbar-tag{background:#0b5d4f;color:#fff;font-size:13px;font-weight:700;padding:6px 13px;border-radius:6px;white-space:nowrap}
-.selbar-info{font-size:13px;color:#2b4842;font-weight:500}
-.changebtn{background:#fff;color:#0b5d4f;border:2px solid #0b5d4f;padding:10px 20px;border-radius:8px;
-           font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
-.changebtn:hover{background:#0b5d4f;color:#fff}
+.selbar-tag{background:var(--grad-brand);color:#fff;font-size:12.5px;font-weight:700;padding:6px 13px;border-radius:8px;white-space:nowrap;letter-spacing:.02em}
+.selbar-info{font-size:13px;color:var(--slate-700);font-weight:500}
+.changebtn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);color:var(--green-800);border:1px solid var(--border);padding:10px 19px;border-radius:10px;
+           font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+.changebtn:hover{background:var(--green-700);color:#fff;border-color:var(--green-700)}
 /* stats */
-.stats-wrap{background:#fff;border:1px solid #dbe6e3;border-radius:10px;margin-bottom:16px;overflow:hidden;
-            box-shadow:0 1px 4px rgba(0,0,0,.05)}
-.stats-head{background:linear-gradient(135deg,#0b5d4f,#127a68);color:#fff;padding:14px 18px}
-.stats-head h2{font-size:15px}
-.stats-head .shsub{font-size:12px;opacity:.88;margin-top:2px}
+.stats-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:18px;overflow:hidden;
+            box-shadow:var(--shadow-md)}
+.stats-head{background:var(--grad-brand);color:#fff;padding:19px 24px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;position:relative}
+.stats-head h2{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:-.01em}
+.stats-head .shsub{font-size:12px;opacity:.78}
 .stats-row{display:flex;flex-wrap:wrap}
-.stat{flex:1;min-width:110px;padding:13px 12px;text-align:center;border-right:1px solid #eef3f1;border-top:1px solid #eef3f1}
+.stat{flex:1;min-width:110px;padding:18px 12px;text-align:center;border-right:1px solid var(--border-soft);border-top:1px solid var(--border-soft);transition:background .15s}
+.stat:hover{background:var(--green-50)}
 .stat:last-child{border-right:none}
-.stat-val{font-size:22px;font-weight:700;color:#0b5d4f}
-.stat-lbl{font-size:11.5px;color:#888;text-transform:uppercase;letter-spacing:.03em;margin-top:4px}
+.stat-val{font-family:var(--font-display);font-size:23px;font-weight:700;color:var(--green-800);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.stat-lbl{font-size:10.5px;color:var(--slate-500);text-transform:uppercase;letter-spacing:.07em;margin-top:6px;font-weight:600}
 /* tabs */
-.tabbar{display:none;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-.tabs-left{display:flex;gap:6px;flex-wrap:wrap}
-.tabbtn{background:#fff;color:#0b5d4f;border:1px solid #bcdad3;padding:9px 18px;border-radius:7px;
-        font-size:13px;font-weight:600;cursor:pointer}
-.tabbtn.on{background:#0b5d4f;color:#fff;border-color:#0b5d4f}
-.toolbtns{display:flex;gap:8px;flex-wrap:wrap}
-.sbtn{background:#fff;color:#0b5d4f;border:1px solid #bcdad3;padding:8px 16px;border-radius:6px;
-      font-size:13px;font-weight:600;cursor:pointer}
-.sbtn:hover{background:#eaf5f2}
-.searchbox{padding:9px 13px;border:1px solid #cfe0da;border-radius:7px;font-size:13px;width:230px;max-width:100%}
-.searchbox:focus{outline:none;border-color:#0b5d4f}
+.tabbar{display:none;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.tabs-left{display:flex;gap:6px;flex-wrap:wrap;background:var(--surface);padding:5px;border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow-xs)}
+.tabbtn{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--slate-600);border:1px solid transparent;padding:9px 15px;border-radius:8px;
+        font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.tabbtn:hover{color:var(--green-800);background:var(--green-50)}
+.tabbtn.on{background:var(--grad-brand);color:#fff;border-color:transparent;box-shadow:0 4px 10px -2px rgba(12,74,67,.4)}
+.toolbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sbtn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);color:var(--green-800);border:1px solid var(--border);padding:9px 16px;border-radius:9px;
+      font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.sbtn:hover{background:var(--green-50);border-color:var(--green-600);box-shadow:var(--shadow-xs)}
+.searchbox{padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;width:230px;max-width:100%;font-family:var(--font-ui);background:var(--surface);transition:all .15s}
+.searchbox:focus{outline:none;border-color:var(--green-700);box-shadow:0 0 0 3px var(--green-100)}
 /* date explorer */
-.datecard{background:#fff;border:1px solid #dbe6e3;border-radius:10px;margin-bottom:10px;overflow:hidden}
-.datecard summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;
-                  justify-content:space-between;gap:10px;flex-wrap:wrap;background:#f7fbfa}
+.datecard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow-xs);transition:box-shadow .15s,border-color .15s}
+.datecard[open]{box-shadow:var(--shadow-md);border-color:var(--green-600)}
+.datecard summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:center;
+                  justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface)}
 .datecard summary::-webkit-details-marker{display:none}
-.datecard summary:hover{background:#eef7f4}
-.dc-left{display:flex;align-items:center;gap:10px}
-.dc-arrow{font-size:11px;color:#0b5d4f;transition:transform .15s}
-.datecard[open] .dc-arrow{transform:rotate(90deg)}
-.dc-date{font-size:16px;font-weight:700;color:#0b5d4f}
-.dc-sub{font-size:11.5px;color:#888}
-.dc-total{font-size:18px;font-weight:700;color:#0b5d4f}
+.datecard summary:hover{background:var(--green-50)}
+.dc-left{display:flex;align-items:center;gap:12px}
+.dc-arrow{color:var(--slate-500);transition:transform .15s;display:inline-flex}
+.datecard[open] .dc-arrow{transform:rotate(90deg);color:var(--green-700)}
+.dc-date{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--green-900);font-variant-numeric:tabular-nums}
+.dc-sub{font-size:11.5px;color:var(--slate-500);margin-top:1px}
+.dc-total{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--green-800);font-variant-numeric:tabular-nums}
 .datecard table{width:100%;border-collapse:collapse}
-.datecard th{padding:11px 16px;text-align:left;font-size:12px;font-weight:700;color:#0b5d4f;
-   border-top:1px solid #eef3f1;text-transform:uppercase;letter-spacing:.03em}
+.datecard th{padding:11px 20px;text-align:left;font-size:10.5px;font-weight:700;color:var(--slate-600);
+   border-top:1px solid var(--border-soft);text-transform:uppercase;letter-spacing:.06em;background:var(--green-50)}
 .datecard th.r{text-align:right}
-.datecard td{padding:10px 16px;font-size:14.5px;border-top:1px solid #f3f6f5;color:#333}
-.datecard td.r{text-align:right;font-weight:600;color:#0b5d4f}
-.datecard tr:hover td{background:#fafcfb}
+.datecard td{padding:10px 20px;font-size:13.5px;border-top:1px solid var(--border-soft);color:var(--ink)}
+.datecard td.r{text-align:right;font-weight:600;color:var(--green-800);font-variant-numeric:tabular-nums}
+.datecard tr:hover td{background:var(--green-50)}
 /* bank explorer */
-.bankcard{background:#fff;border:1px solid #dbe6e3;border-radius:10px;margin-bottom:10px;overflow:hidden}
-.bankcard summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;
-                   justify-content:space-between;gap:10px;flex-wrap:wrap;background:#f7fbfa}
+.bankcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow-xs);transition:box-shadow .15s,border-color .15s}
+.bankcard[open]{box-shadow:var(--shadow-md);border-color:var(--green-600)}
+.bankcard summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:center;
+                   justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface)}
 .bankcard summary::-webkit-details-marker{display:none}
-.bankcard summary:hover{background:#eef7f4}
-.bc-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.bc-arrow{font-size:11px;color:#0b5d4f;transition:transform .15s}
-.bankcard[open] .bc-arrow{transform:rotate(90deg)}
-.bc-code{font-size:11px;font-weight:700;color:#fff;background:#0b5d4f;padding:3px 9px;border-radius:5px;white-space:nowrap}
-.bc-name{font-size:16px;font-weight:700;color:#1a1a1a}
-.bc-sub{font-size:11.5px;color:#888}
-.bc-total{font-size:18px;font-weight:700;color:#0b5d4f}
-.bc-detail{padding:12px 16px;border-top:1px solid #eef3f1}
+.bankcard summary:hover{background:var(--green-50)}
+.bc-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bc-arrow{color:var(--slate-500);transition:transform .15s;display:inline-flex}
+.bankcard[open] .bc-arrow{transform:rotate(90deg);color:var(--green-700)}
+.bc-code{font-size:10.5px;font-weight:700;color:#fff;background:var(--grad-brand);padding:4px 10px;border-radius:7px;white-space:nowrap;letter-spacing:.03em}
+.bc-name{font-size:15px;font-weight:700;color:var(--ink)}
+.bc-sub{font-size:11.5px;color:var(--slate-500);margin-top:1px}
+.bc-total{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--green-800);font-variant-numeric:tabular-nums}
+.bc-detail{padding:16px 20px;border-top:1px solid var(--border-soft)}
 .rusplit{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 /* CP-48 entry tab */
-.entry-sec-head{display:flex;align-items:center;gap:10px;margin:18px 0 10px;flex-wrap:wrap}
+.entry-sec-head{display:flex;align-items:center;gap:10px;margin:24px 0 11px;flex-wrap:wrap}
 .entry-sec-head:first-child{margin-top:0}
-.entry-sec-head h3{font-size:16px;color:#0b5d4f}
-.entry-sec-head.online h3{color:#155a8a}
-.entry-count{font-size:11px;color:#888;background:#eef3f1;padding:3px 10px;border-radius:10px}
-.entry-empty{font-size:13px;color:#888;padding:14px;background:#fff;border:1px dashed #cfe0da;border-radius:8px;margin-bottom:12px}
+.entry-sec-head h3{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:14.5px;color:var(--green-800);font-weight:700;letter-spacing:-.005em}
+.entry-sec-head.online h3{color:var(--blue-700)}
+.entry-count{font-size:11px;color:var(--slate-600);background:var(--green-100);padding:3px 11px;border-radius:10px;font-weight:600}
+.entry-empty{font-size:13px;color:var(--slate-500);padding:15px;background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius-sm);margin-bottom:12px}
 .bc-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.typebtn{background:#fff;color:#666;border:1px solid #ddd;padding:6px 11px;border-radius:6px;
-         font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}
-.typebtn:hover{background:#f5f5f5;border-color:#bbb}
-.copybtn{background:#0b5d4f;color:#fff;border:none;padding:7px 13px;border-radius:6px;
-         font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
-.copybtn:hover{background:#08473d}
-.copybtn.copied{background:#2e7d32}
-.copybtn.ghost{background:#fff;color:#0b5d4f;border:1px solid #0b5d4f}
-.copybtn.ghost:hover{background:#eaf5f2}
-.rangepicker{background:#fff;border:1px solid #dbe6e3;border-radius:10px;padding:14px 16px;margin-bottom:16px}
-.rp-label{font-size:13px;color:#555;margin-bottom:10px;line-height:1.5}
+.typebtn{display:inline-flex;align-items:center;gap:5px;background:var(--surface);color:var(--slate-500);border:1px solid var(--border);padding:6px 12px;border-radius:8px;
+         font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s}
+.typebtn:hover{background:var(--green-50);color:var(--green-800);border-color:var(--green-600)}
+.copybtn{display:inline-flex;align-items:center;gap:6px;background:var(--grad-brand);color:#fff;border:none;padding:8px 14px;border-radius:8px;
+         font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+.copybtn:hover{filter:brightness(1.08)}
+.copybtn.copied{background:var(--good)}
+.copybtn.ghost{background:var(--surface);color:var(--green-800);border:1px solid var(--green-700)}
+.copybtn.ghost:hover{background:var(--green-50)}
+.rangepicker{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:17px 20px;margin-bottom:18px;box-shadow:var(--shadow-xs)}
+.rp-modes{display:flex;gap:8px;margin-bottom:13px}
+.modebtn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);color:var(--green-800);border:1px solid var(--border);padding:8px 16px;border-radius:9px;
+         font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
+.modebtn:hover{border-color:var(--green-600)}
+.modebtn.on{background:var(--grad-brand);color:#fff;border-color:transparent}
+.rp-label{font-size:13px;color:var(--slate-700);margin-bottom:11px;line-height:1.5}
 .rp-inputs{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.rp-inputs label{font-size:13px;color:#333;display:flex;align-items:center;gap:6px}
-.rp-inputs input[type=date]{padding:7px 9px;border:1px solid #cfe0da;border-radius:6px;font-size:13px}
-.rp-count{font-size:12px;color:#888;background:#f1f6f4;padding:6px 12px;border-radius:14px}
-.zerorow td{color:#b7bfbc}
-.totrow td{font-weight:700;background:#f5faf8;border-top:2px solid #dbe6e3}
-.otherhead td{font-size:11px;color:#8a5a00;background:#fff8e1;padding:6px 10px;font-weight:600}
-.otherrow td{background:#fffdf5}
-.otherrow td:first-child{color:#8a5a00;font-weight:600}
-.rutag{font-size:12px;padding:7px 13px;border-radius:7px;background:#f1f6f4;color:#333}
-.rutag b{color:#0b5d4f}
+.rp-inputs label{font-size:13px;color:var(--ink);display:flex;align-items:center;gap:6px}
+.rp-inputs input[type=date]{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font-ui)}
+.rp-count{font-size:12px;color:var(--green-800);background:var(--green-100);padding:6px 13px;border-radius:14px;font-weight:600}
+.rowchk{text-align:center}
+.rowchk input{cursor:pointer;accent-color:var(--green-700)}
+.zerorow td{color:var(--slate-300)}
+.excludedrow td{opacity:.4;text-decoration:line-through}
+.excludedrow .rowchk{opacity:1;text-decoration:none}
+.totrow td{font-weight:700;background:var(--green-50);border-top:2px solid var(--border)}
+.otherhead td{font-size:11px;color:var(--warn);background:var(--warn-bg);padding:7px 11px;font-weight:600}
+.otherrow td{background:#fdfaf2}
+.otherrow td:nth-child(2){color:var(--warn);font-weight:600}
+.rutag{font-size:12px;padding:7px 14px;border-radius:9px;background:var(--green-50);color:var(--slate-700);border:1px solid var(--border-soft)}
+.rutag b{color:var(--green-800)}
 .bankcard table{width:100%;border-collapse:collapse}
-.bankcard th{padding:10px 10px;text-align:left;font-size:12px;font-weight:700;color:#0b5d4f;
-   border-bottom:1px solid #eef3f1;text-transform:uppercase;letter-spacing:.03em}
+.bankcard th{padding:10px 10px;text-align:left;font-size:10.5px;font-weight:700;color:var(--slate-600);
+   border-bottom:1px solid var(--border-soft);text-transform:uppercase;letter-spacing:.06em}
 .bankcard th.r{text-align:right}
-.bankcard td{padding:9px 10px;font-size:14.5px;border-bottom:1px solid #f6f8f7;color:#333}
+.bankcard td{padding:9px 10px;font-size:13.5px;border-bottom:1px solid var(--border-soft);color:var(--ink)}
 .bankcard td.r{text-align:right}
-.bankcard td.amt{text-align:right;font-weight:600;color:#0b5d4f}
-.neg{color:#c62828;font-weight:700}
+.bankcard td.amt{text-align:right;font-weight:600;color:var(--green-800);font-variant-numeric:tabular-nums}
+.neg{color:var(--danger);font-weight:700}
 /* families */
-.famtable{width:100%;border-collapse:collapse;background:#fff;border:1px solid #dbe6e3;border-radius:10px;overflow:hidden}
-.famtable th{padding:12px 16px;text-align:left;font-size:12.5px;font-weight:700;color:#0b5d4f;
-   background:#f7fbfa;text-transform:uppercase;letter-spacing:.03em;border-bottom:2px solid #dbe6e3}
+.famtable{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
+.famtable th{padding:13px 20px;text-align:left;font-size:10.5px;font-weight:700;color:var(--slate-600);
+   background:var(--green-50);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
 .famtable th.r{text-align:right}
-.famtable td{padding:11px 16px;font-size:14.5px;border-bottom:1px solid #f0f4f2;color:#333}
-.famtable td.r{text-align:right;font-weight:600;color:#0b5d4f}
-.famtable tr.grand td{background:#0b5d4f;color:#fff;font-weight:700;border-bottom:none}
+.famtable td{padding:12px 20px;font-size:13.5px;border-bottom:1px solid var(--border-soft);color:var(--ink)}
+.famtable td.r{text-align:right;font-weight:600;color:var(--green-800);font-variant-numeric:tabular-nums}
+.famtable tr:hover td{background:var(--green-50)}
+.famtable tr.grand td{background:var(--grad-brand);color:#fff;font-weight:700;border-bottom:none}
 .famtable tr.grand td.r{color:#fff}
 .fambar-wrap{width:140px}
-.fambar-bg{background:#eef3f1;border-radius:4px;height:8px;overflow:hidden}
-.fambar-fg{background:#0b5d4f;height:8px;border-radius:4px}
+.fambar-bg{background:var(--border-soft);border-radius:5px;height:7px;overflow:hidden}
+.fambar-fg{background:var(--grad-brand);height:7px;border-radius:5px}
 /* empty */
-.empty{text-align:center;padding:50px 20px;background:#fff;border-radius:10px;border:1px dashed #ccc}
-.ei{font-size:48px;margin-bottom:12px}
-.et{font-size:16px;font-weight:600;color:#555;margin-bottom:6px}
-.eh{font-size:13px;color:#888}
+.empty{text-align:center;padding:60px 20px;background:var(--surface);border-radius:var(--radius);border:1.5px dashed var(--slate-300)}
+.ei{display:flex;justify-content:center;margin-bottom:16px;color:var(--green-700)}
+.ei svg{width:40px;height:40px;padding:14px;box-sizing:content-box;background:var(--green-50);border-radius:18px}
+.et{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--slate-700);margin-bottom:6px}
+.eh{font-size:13px;color:var(--slate-500)}
 /* footer */
-.footer{text-align:center;padding:22px 10px 8px;font-size:12px;color:#8a93a3}
-.footer b{color:#5a6478}
+.footer{text-align:center;padding:34px 10px 10px;margin-top:14px;border-top:1px solid var(--border-soft)}
+.footer-brand{font-size:12.5px;color:var(--slate-500)}
+.footer-brand b{color:var(--green-800);font-weight:700}
+.footer-tag{font-size:11px;color:var(--slate-300);margin-top:4px;letter-spacing:.03em}
 .print-head{display:none}
 @media print{
   body{background:#fff}
+  body::before{display:none}
   .wrap{max-width:100%;padding:0}
   .dz,.upload-btns,.load-bar,#errs,.setup,.selbar,.tabbar,.searchbox{display:none !important}
   .empty{display:none !important}
   .print-head{display:block;text-align:center;margin-bottom:14px}
   .print-head h1{font-size:18px;color:#000;margin-bottom:2px}
   .print-head .sub{color:#444;font-size:11px}
-  h1.screen-only,p.sub.screen-only{display:none}
+  .letterhead,.sub.screen-only{display:none}
   .stats-head{background:#eee !important;color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .datecard,.bankcard{page-break-inside:avoid;box-shadow:none;border:1px solid #999}
   .datecard summary,.bankcard summary{background:#eee !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -213,23 +289,30 @@ h1{font-size:21px;font-weight:700;color:#0b5d4f;margin-bottom:4px}
 </style>
 </head>
 <body>
-<div class="wrap">
   <div class="print-head">
-    <h1 id="printTitle">CP-101 Analyzer</h1>
+    <h1 id="printTitle">CP-101 Analyzer — Cash Collection Book</h1>
     <div class="sub" id="printSub">Printed <span id="printDate"></span></div>
   </div>
-  <h1 class="screen-only">CP-101 Analyzer</h1>
-  <p class="sub screen-only">Weekly Cash Collection Book by Bank Branches — explore by date, by bank, or by bank family &nbsp;·&nbsp; Works offline</p>
-
+  <header class="letterhead screen-only">
+    <div class="letterhead-inner">
+      <div class="lh-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg></div>
+      <div class="lh-text">
+        <div class="lh-org">CP-101 Analyzer</div>
+        <div class="lh-app">Turns weekly bank-scroll PDFs into reconciled totals, ready for CP-48 entry</div>
+      </div>
+      <span class="lh-badge">Offline &amp; Private</span>
+    </div>
+  </header>
+<div class="wrap">
   <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
-    <div class="dz-icon">📂</div>
+    <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
     <div class="dz-title">Drop CP-101 PDFs here or click to browse</div>
     <div class="dz-hint">Single week or multiple weeks · Works offline after first load</div>
     <input type="file" id="fi" accept=".pdf" multiple style="display:none">
   </div>
   <div class="upload-btns">
-    <button class="ubtn" onclick="document.getElementById('fi').click()">📄 Choose Files</button>
-    <button class="ubtn" onclick="document.getElementById('fd').click()">📁 Choose Folder</button>
+    <button class="ubtn" onclick="document.getElementById('fi').click()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Choose Files</button>
+    <button class="ubtn" onclick="document.getElementById('fd').click()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Choose Folder</button>
     <input type="file" id="fd" webkitdirectory directory multiple style="display:none">
   </div>
 
@@ -254,36 +337,60 @@ h1{font-size:21px;font-weight:700;color:#0b5d4f;margin-bottom:4px}
       <span class="selbar-tag" id="selDivTag"></span>
       <span class="selbar-info" id="selInfo"></span>
     </div>
-    <button class="changebtn" onclick="backToSetup()">⇄ Change Division</button>
+    <button class="changebtn" onclick="backToSetup()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M21 7H8"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13"/></svg> Change Division</button>
   </div>
 
   <div id="statsOut"></div>
 
   <div class="tabbar" id="tabbar">
     <div class="tabs-left">
-      <button class="tabbtn" data-t="cp48" onclick="switchTab('cp48')">📋 CP-48 Entry</button>
-      <button class="tabbtn" data-t="date" onclick="switchTab('date')">📅 By Date</button>
-      <button class="tabbtn" data-t="bank" onclick="switchTab('bank')">🏦 By Bank</button>
-      <button class="tabbtn" data-t="fam" onclick="switchTab('fam')">📊 Bank Families</button>
+      <button class="tabbtn" data-t="cp48" onclick="switchTab('cp48')"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1H8V4a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 12h6M9 16h6M9 8h2"/></svg> CP-48 Entry</button>
+      <button class="tabbtn" data-t="date" onclick="switchTab('date')"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> By Date</button>
+      <button class="tabbtn" data-t="bank" onclick="switchTab('bank')"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-6h6v6"/></svg> By Bank</button>
+      <button class="tabbtn" data-t="fam" onclick="switchTab('fam')"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg> Bank Families</button>
     </div>
     <div class="toolbtns">
       <input type="text" class="searchbox" id="searchBox" placeholder="Search bank name or code…" oninput="onSearch()" style="display:none">
-      <button class="sbtn" id="expandBtn" onclick="toggleExpandAll()">⤢ Expand All</button>
-      <button class="sbtn" onclick="window.print()">🖨 Print / Save as PDF</button>
-      <button class="xbtn" onclick="doExport()">⬇ Export to Excel</button>
+      <button class="sbtn" id="expandBtn" onclick="toggleExpandAll()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg> Expand All</button>
+      <button class="sbtn" onclick="window.print()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1"/><path d="M6 17h12v5H6z"/></svg> Print / Save as PDF</button>
+      <button class="xbtn" onclick="doExport()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 18v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></svg> Export to Excel</button>
     </div>
   </div>
 
   <div id="out"></div>
   <div class="empty" id="emp">
-    <div class="ei">📄</div>
+    <div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
     <div class="et">No files yet</div>
     <div class="eh">Upload one or more CP-101 weekly PDFs (single files, multiple files, or an entire folder) to get started</div>
   </div>
-  <div class="footer">Developed by <b>Taimoor Ali</b></div>
+  <div class="footer">
+    <div class="footer-brand"><b>Developed By Taimoor Ali</b> 
+      <!-- &nbsp;·&nbsp; Bank scroll reconciliation, CP-48 prep &amp; Excel export &nbsp;·&nbsp; by Taimoor Ali -->
+    </div>
+    <div class="footer-tag">Everything runs locally in this browser tab — no file or figure is ever uploaded anywhere</div>
+  </div>
 </div>
 
 <script>
+/* ─── small inline icon set (replaces emoji, offline-safe, no external deps) ── */
+const ICO = {
+  warn:   '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
+  info:   '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  error:  '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>',
+  search: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  inbox:  '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.4 5.3 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.4-6.7A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.8 1.3Z"/></svg>',
+  chart:  '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>',
+  calendar:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+  pin:    '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 3h6l1 6 2 2v2H6v-2l2-2z"/></svg>',
+  pencil: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  laptop: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M2 20h20"/></svg>',
+  copy:   '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  check:  '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  swap:   '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M21 7H8"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13"/></svg>',
+  undo:   '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-6.7L3 9"/></svg>',
+  arrow:  '<svg class="dc-arrow-svg" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'
+};
+
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
@@ -295,7 +402,26 @@ let DIV_LABELS = {};       // code -> user label (persisted to localStorage)
 let RESULTS = null;        // merged multi-week data for the selected division
 let ACTIVE_TAB = 'cp48';
 let ENTRY_RANGE = null; // {from:Date, to:Date} — the dense day-by-day range for CP-48 entry (user-adjustable)
+let ENTRY_MODE = 'full'; // 'full' (zero-filled calendar month) | 'sparse' (only dates actually in the PDF)
+let EXCLUDED_DATES = {}; // bankKey -> Set of "DD/MM/YYYY" strings the user has unchecked out of the copy/paste list
 let EXPAND_ALL = true;
+/* CARD_OPEN remembers the open/closed state of each individual collapsible
+   card (keyed "tab:cardId"), independent of the EXPAND_ALL toggle and
+   independent of re-renders. Without this, any re-render (a checkbox
+   change, a search, a range edit) would reset every card back to the
+   EXPAND_ALL default and silently discard whatever the user had opened
+   or closed by hand — which is the "tables keep collapsing" complaint. */
+let CARD_OPEN = {};
+function cardIsOpen(cardKey){
+  return CARD_OPEN.hasOwnProperty(cardKey) ? CARD_OPEN[cardKey] : EXPAND_ALL;
+}
+function cardOpenAttr(cardKey){ return cardIsOpen(cardKey) ? 'open' : ''; }
+function attachCardStateTracking(container){
+  container.querySelectorAll('details[data-cardkey]').forEach(d=>{
+    d.addEventListener('toggle', ()=>{ CARD_OPEN[d.dataset.cardkey]=d.open; });
+  });
+}
+function cssEscapeAttr(s){ return String(s).replace(/(["\\])/g,'\\$1'); }
 let BANK_TYPE_OVERRIDE = {}; // "divCode|bankKey" -> 'manual' | 'online', user override on top of the auto rule
 try{ BANK_TYPE_OVERRIDE = JSON.parse(localStorage.getItem('cp101_bank_type')||'{}'); }catch(e){ BANK_TYPE_OVERRIDE={}; }
 function saveBankType(key, type){
@@ -325,7 +451,7 @@ function copyToClipboard(text, btn){
   const done=()=>{
     if(!btn) return;
     const orig=btn.textContent;
-    btn.textContent='✓ Copied';
+    btn.innerHTML=ICO.check+' Copied';
     btn.classList.add('copied');
     setTimeout(()=>{ btn.textContent=orig; btn.classList.remove('copied'); }, 1400);
   };
@@ -560,8 +686,8 @@ function renderFileChecklist(){
 
   let html='';
   if(dupGroups.length){
-    html+=`<div class="dupwarn">⚠ <strong>${dupGroups.length} week-ending date${dupGroups.length>1?'s have':' has'}</strong> more than one file — likely a partial/incomplete re-export.
-    We've kept the file with the most data for each week checked below and unchecked the other(s). Review and adjust if that's wrong.</div>`;
+    html+=`<div class="dupwarn">${ICO.warn}<span><strong>${dupGroups.length} week-ending date${dupGroups.length>1?'s have':' has'}</strong> more than one file — likely a partial/incomplete re-export.
+    We've kept the file with the most data for each week checked below and unchecked the other(s). Review and adjust if that's wrong.</span></div>`;
   }
   html += RAW_FILES.map(f=>{
     const excluded=EXCLUDED_FILES.has(f._id);
@@ -691,6 +817,7 @@ function showResults(){
   if(!SELECTED_DIV) return;
   RESULTS = buildMergedResults();
   ENTRY_RANGE = detectDefaultMonthRange();
+  CARD_OPEN = {}; // fresh division/week selection — don't carry over stale open-state keys
 
   const active=activeFiles();
   const excludedCount = RAW_FILES.length - active.length;
@@ -700,12 +827,12 @@ function showResults(){
 
   const infoBox=document.getElementById('errs');
   const notes=[];
-  if(excludedCount>0) notes.push(`<div class="info-box">ℹ ${excludedCount} uploaded file(s) are unchecked (excluded) — use "Change Division" to review them.</div>`);
-  if(skipped>0) notes.push(`<div class="info-box">ℹ ${skipped} of ${active.length} included file(s) don't contain ${esc(divDisplay(SELECTED_DIV))} and are excluded from these results.</div>`);
+  if(excludedCount>0) notes.push(`<div class="info-box">${ICO.info}<span>${excludedCount} uploaded file(s) are unchecked (excluded) — use "Change Division" to review them.</span></div>`);
+  if(skipped>0) notes.push(`<div class="info-box">${ICO.info}<span>${skipped} of ${active.length} included file(s) don't contain ${esc(divDisplay(SELECTED_DIV))} and are excluded from these results.</span></div>`);
   const prior = infoBox.innerHTML.replace(/<div class="info-box">.*?<\/div>/,'');
   infoBox.innerHTML = notes.join('') + prior;
 
-  document.getElementById('printTitle').textContent = `CP-101 Analyzer — ${divDisplay(SELECTED_DIV)}`;
+  document.getElementById('printTitle').textContent = `CP-101 Analyzer — Cash Collection Book — ${divDisplay(SELECTED_DIV)}`;
   document.getElementById('printSub').innerHTML = `Weekly Cash Collection Book &nbsp;·&nbsp; Printed <span id="printDate"></span>`;
 
   document.getElementById('selDivTag').textContent = divDisplay(SELECTED_DIV);
@@ -735,7 +862,7 @@ function renderStats(){
   document.getElementById('statsOut').innerHTML = `
   <div class="stats-wrap">
     <div class="stats-head">
-      <h2>📊 ${esc(divDisplay(r.divCode))}</h2>
+      <h2>${esc(divDisplay(r.divCode))}</h2>
       <div class="shsub">${weekRange}</div>
     </div>
     <div class="stats-row">
@@ -762,8 +889,13 @@ function switchTab(t){
 
 function toggleExpandAll(){
   EXPAND_ALL = !EXPAND_ALL;
-  document.getElementById('expandBtn').textContent = EXPAND_ALL ? '⤢ Expand All' : '⤡ Collapse All';
-  document.querySelectorAll('#out details').forEach(d=>d.open=EXPAND_ALL);
+  document.getElementById('expandBtn').innerHTML = EXPAND_ALL
+    ? '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg> Expand All'
+    : '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M20 9V6a2 2 0 0 0-2-2h-3M4 15v3a2 2 0 0 0 2 2h3M20 15v3a2 2 0 0 1-2 2h-3"/></svg> Collapse All';
+  document.querySelectorAll('#out details').forEach(d=>{
+    d.open=EXPAND_ALL;
+    if(d.dataset.cardkey) CARD_OPEN[d.dataset.cardkey]=EXPAND_ALL;
+  });
 }
 
 function onSearch(){ if(ACTIVE_TAB==='bank') renderBankTab(); else if(ACTIVE_TAB==='cp48') renderEntryTab(); }
@@ -791,10 +923,103 @@ function onRangeChange(){
   renderEntryTab();
 }
 
+function setEntryMode(mode){
+  ENTRY_MODE = mode;
+  renderEntryTab();
+}
+function isDateExcluded(bankKey, dmy){
+  return !!(EXCLUDED_DATES[bankKey] && EXCLUDED_DATES[bankKey].has(dmy));
+}
+/* ENTRY_ROWS_CACHE holds each manual bank's full row list (as last rendered)
+   so a single date checkbox can be applied with a targeted DOM update
+   instead of tearing down and rebuilding the whole CP-48 tab. This is what
+   keeps every other card exactly as the user left it — open, closed,
+   scrolled — when they tick or untick one date. */
+let ENTRY_ROWS_CACHE = {};
+
+function toggleDateExclusion(bankKey, dmy, checkboxEl){
+  if(!EXCLUDED_DATES[bankKey]) EXCLUDED_DATES[bankKey]=new Set();
+  const set=EXCLUDED_DATES[bankKey];
+  if(set.has(dmy)) set.delete(dmy); else set.add(dmy);
+
+  const row = checkboxEl ? checkboxEl.closest('tr') : null;
+  if(row) row.classList.toggle('excludedrow', isDateExcluded(bankKey, dmy));
+  if(!updateBankCardTotals(bankKey)) renderEntryTab();
+}
+function resetExclusions(bankKey){
+  delete EXCLUDED_DATES[bankKey];
+  const card=document.querySelector(`details[data-bankkey="${cssEscapeAttr(bankKey)}"]`);
+  if(card){
+    card.querySelectorAll('tbody tr').forEach(tr=>{
+      tr.classList.remove('excludedrow');
+      const cb=tr.querySelector('input[type=checkbox]');
+      if(cb) cb.checked=true;
+    });
+  }
+  if(!updateBankCardTotals(bankKey)) renderEntryTab();
+}
+
+/* Recompute one bank card's total / copy-buffers / sub-line / reset button
+   from ENTRY_ROWS_CACHE and patch just that card's DOM. Returns false (and
+   changes nothing) if the card or its cached rows aren't available, so the
+   caller can fall back to a full re-render. */
+function updateBankCardTotals(bankKey){
+  const cache = ENTRY_ROWS_CACHE[bankKey];
+  const card = document.querySelector(`details[data-bankkey="${cssEscapeAttr(bankKey)}"]`);
+  if(!cache || !card) return false;
+
+  const keptRows = cache.allRows.filter(r=>!isDateExcluded(bankKey, r.dmy));
+  const grandTotal = keptRows.reduce((s,r)=>s+r.amount,0);
+  ENTRY_TSV_CACHE['amtonly_'+bankKey] = keptRows.map(r=>r.amount.toFixed(0)).join('\n');
+  ENTRY_TSV_CACHE[bankKey] = keptRows.map(r=>`${fmtExcelSafeDate(r.date)}\t${r.amount.toFixed(0)}`).join('\n');
+
+  const excludedSet = EXCLUDED_DATES[bankKey];
+  const excludedCount = excludedSet ? excludedSet.size : 0;
+
+  const totalEl = card.querySelector('.bc-total');
+  if(totalEl) totalEl.textContent = fn(grandTotal);
+  const totRow = card.querySelector('tr.totrow');
+  if(totRow){
+    totRow.children[1].textContent = 'Total' + (excludedCount ? ' (unchecked dates excluded)' : '');
+    totRow.children[2].textContent = fn(grandTotal);
+  }
+  const subEl = card.querySelector('.bc-sub');
+  if(subEl){
+    const otherLen = cache.otherCount;
+    subEl.textContent = `${cache.txCount} transaction day${cache.txCount===1?'':'s'}`
+      + (otherLen?`, ${otherLen} outside this range`:'')
+      + (excludedCount?`, ${excludedCount} unchecked`:'');
+  }
+  const resetBtn = card.querySelector('.btn-reset');
+  if(excludedCount && !resetBtn){
+    const undoBtn=document.createElement('button');
+    undoBtn.className='typebtn btn-reset';
+    undoBtn.innerHTML=`${ICO.undo} Reset (${excludedCount})`;
+    undoBtn.onclick=(ev)=>{ ev.preventDefault(); resetExclusions(bankKey); };
+    card.querySelector('.typebtn').insertAdjacentElement('afterend', undoBtn);
+  } else if(excludedCount && resetBtn){
+    resetBtn.innerHTML=`${ICO.undo} Reset (${excludedCount})`;
+  } else if(!excludedCount && resetBtn){
+    resetBtn.remove();
+  }
+  return true;
+}
+
+function renderEntryRow(bankKey, r){
+  const excluded = isDateExcluded(bankKey, r.dmy);
+  const cls = [r.amount===0 && !r.sparse ? 'zerorow' : '', r.other ? 'otherrow' : '', excluded ? 'excludedrow' : ''].filter(Boolean).join(' ');
+  return `<tr class="${cls}" data-dmy="${esc(r.dmy)}">
+    <td class="rowchk"><input type="checkbox" ${excluded?'':'checked'} onchange="toggleDateExclusion('${bankKey}','${r.dmy}',this)" title="Uncheck to leave this date out of the copy/paste list"></td>
+    <td>${esc(r.dmy)}</td>
+    <td class="r amt">${fn(r.amount)}</td>
+  </tr>`;
+}
+
 function renderEntryTab(){
   const el=document.getElementById('out');
   const q=(document.getElementById('searchBox').value||'').trim().toLowerCase();
   ENTRY_TSV_CACHE = {};
+  ENTRY_ROWS_CACHE = {};
 
   if(!ENTRY_RANGE) ENTRY_RANGE = detectDefaultMonthRange();
   const range = ENTRY_RANGE ? eachDateInRange(ENTRY_RANGE.from, ENTRY_RANGE.to) : [];
@@ -817,77 +1042,95 @@ function renderEntryTab(){
   let html='';
 
   html+=`<div class="rangepicker">
-    <div class="rp-label">📅 Date range for Manual banks (filled with 0 on days with no transaction, so pasted amounts line up with your CP-48 rows)</div>
+    <div class="rp-modes">
+      <button class="modebtn ${ENTRY_MODE==='full'?'on':''}" onclick="setEntryMode('full')">${ICO.calendar} Full Month</button>
+      <button class="modebtn ${ENTRY_MODE==='sparse'?'on':''}" onclick="setEntryMode('sparse')">${ICO.pin} Only Actual Dates</button>
+    </div>`;
+  if(ENTRY_MODE==='full'){
+    html+=`<div class="rp-label">Zero-filled for every day in range, so pasted amounts line up with your CP-48 rows</div>
     <div class="rp-inputs">
       <label>From <input type="date" id="rangeFrom" value="${ENTRY_RANGE?dateToIso(ENTRY_RANGE.from):''}" onchange="onRangeChange()"></label>
       <label>To <input type="date" id="rangeTo" value="${ENTRY_RANGE?dateToIso(ENTRY_RANGE.to):''}" onchange="onRangeChange()"></label>
       <span class="rp-count">${range.length} day${range.length===1?'':'s'} will be listed per bank</span>
-    </div>
-  </div>`;
+    </div>`;
+  } else {
+    html+=`<div class="rp-label">Only the dates each bank actually has a transaction on — no zero-filled days, no fixed range. Just the raw CP-101 data, ready to copy.</div>`;
+  }
+  html+=`</div>`;
 
   if(q && !manual.length && !online.length){
-    html+='<div class="empty"><div class="ei">🔎</div><div class="et">No banks match your search</div></div>';
+    html+='<div class="empty"><div class="ei">'+ICO.search.replace('class="icon"','')+'</div><div class="et">No banks match your search</div></div>';
     el.innerHTML=html;
     return;
   }
 
-  html+=`<div class="entry-sec-head manual"><h3>🖊 Manual Banks — enter date-by-date into CP-48</h3>
+  html+=`<div class="entry-sec-head manual"><h3>${ICO.pencil} Manual Banks — enter date-by-date into CP-48</h3>
     <span class="entry-count">${manual.length} bank${manual.length===1?'':'s'}</span></div>`;
   if(!manual.length){
     html+=`<div class="entry-empty">No manual banks in this list (or your search/reclassification moved them all to Online).</div>`;
   }
   for(const e of manual){
-    const rangeFromMs = ENTRY_RANGE ? ENTRY_RANGE.from.getTime() : null;
-    const rangeToMs = ENTRY_RANGE ? ENTRY_RANGE.to.getTime() : null;
-
-    const rows = range.map(d=>{
-      const key=fmtDMY(d);
-      return {date:d, dmy:key, amount:e.dateMap[key]||0, other:false};
-    });
-
-    // dates outside this bank's month — shown as their own real dated rows
-    // at the bottom of THIS bank's table only, never affecting other banks
-    // or stretching the shared calendar above.
-    const otherRows=[];
-    if(rangeFromMs!==null){
-      for(const [dateStr,amt] of Object.entries(e.dateMap)){
-        const ms=parseDMY(dateStr);
-        if(ms===0 || ms<rangeFromMs || ms>rangeToMs) otherRows.push({date:new Date(ms), dmy:dateStr, amount:amt, other:true});
+    let rows, otherRows=[];
+    if(ENTRY_MODE==='sparse'){
+      rows = Object.entries(e.dateMap)
+        .map(([dmy,amount])=>({date:new Date(parseDMY(dmy)), dmy, amount, sparse:true}))
+        .sort((a,b)=>parseDMY(a.dmy)-parseDMY(b.dmy));
+    } else {
+      const rangeFromMs = ENTRY_RANGE ? ENTRY_RANGE.from.getTime() : null;
+      const rangeToMs = ENTRY_RANGE ? ENTRY_RANGE.to.getTime() : null;
+      rows = range.map(d=>{
+        const key=fmtDMY(d);
+        return {date:d, dmy:key, amount:e.dateMap[key]||0, other:false};
+      });
+      // dates outside this bank's month — shown as their own real dated rows
+      // at the bottom of THIS bank's table only, never affecting other banks
+      // or stretching the shared calendar above.
+      if(rangeFromMs!==null){
+        for(const [dateStr,amt] of Object.entries(e.dateMap)){
+          const ms=parseDMY(dateStr);
+          if(ms===0 || ms<rangeFromMs || ms>rangeToMs) otherRows.push({date:new Date(ms), dmy:dateStr, amount:amt, other:true});
+        }
+        otherRows.sort((a,b)=>parseDMY(a.dmy)-parseDMY(b.dmy));
       }
-      otherRows.sort((a,b)=>parseDMY(a.dmy)-parseDMY(b.dmy));
     }
 
+    const excludedSet = EXCLUDED_DATES[e.bankKey];
+    const excludedCount = excludedSet ? excludedSet.size : 0;
     const allRows = rows.concat(otherRows);
-    const grandTotal = allRows.reduce((s,r)=>s+r.amount,0);
-    ENTRY_TSV_CACHE['amtonly_'+e.bankKey] = allRows.map(r=>r.amount.toFixed(0)).join('\n');
-    ENTRY_TSV_CACHE[e.bankKey] = allRows.map(r=>`${fmtExcelSafeDate(r.date)}\t${r.amount.toFixed(0)}`).join('\n');
+    const keptRows = allRows.filter(r=>!isDateExcluded(e.bankKey, r.dmy));
+    const grandTotal = keptRows.reduce((s,r)=>s+r.amount,0);
+    ENTRY_TSV_CACHE['amtonly_'+e.bankKey] = keptRows.map(r=>r.amount.toFixed(0)).join('\n');
+    ENTRY_TSV_CACHE[e.bankKey] = keptRows.map(r=>`${fmtExcelSafeDate(r.date)}\t${r.amount.toFixed(0)}`).join('\n');
     const txCount = Object.keys(e.dateMap).length;
-    html+=`<details class="bankcard entrycard" ${EXPAND_ALL?'open':''}>
+    ENTRY_ROWS_CACHE[e.bankKey] = {allRows, txCount, otherCount:otherRows.length};
+    const cardKey='cp48:'+e.bankKey;
+    html+=`<details class="bankcard entrycard" data-cardkey="${esc(cardKey)}" data-bankkey="${esc(e.bankKey)}" ${cardOpenAttr(cardKey)}>
       <summary>
-        <div class="bc-left"><span class="bc-arrow">▶</span>
+        <div class="bc-left"><span class="bc-arrow">${ICO.arrow}</span>
           <span class="bc-code">${esc(e.branchCode)} / ${esc(e.bankCode)}</span>
-          <div><div class="bc-name">${esc(e.name)}</div><div class="bc-sub">${txCount} transaction day${txCount===1?'':'s'}${otherRows.length?`, ${otherRows.length} outside this range`:''}</div></div>
+          <div><div class="bc-name">${esc(e.name)}</div><div class="bc-sub">${txCount} transaction day${txCount===1?'':'s'}${otherRows.length?`, ${otherRows.length} outside this range`:''}${excludedCount?`, ${excludedCount} unchecked`:''}</div></div>
         </div>
         <div class="bc-actions">
           <span class="bc-total">${fn(grandTotal)}</span>
-          <button class="typebtn" onclick="event.preventDefault();toggleBankType('${e.bankKey}')">↔ Move to Online</button>
-          <button class="copybtn ghost" onclick="event.preventDefault();copyToClipboard(ENTRY_TSV_CACHE['${e.bankKey}'], this)">📋 Copy with Dates</button>
-          <button class="copybtn" onclick="event.preventDefault();copyToClipboard(ENTRY_TSV_CACHE['amtonly_${e.bankKey}'], this)">📋 Copy Amounts Only</button>
+          <button class="typebtn" onclick="event.preventDefault();toggleBankType('${e.bankKey}')">${ICO.swap} Move to Online</button>
+          ${excludedCount?`<button class="typebtn btn-reset" onclick="event.preventDefault();resetExclusions('${e.bankKey}')">${ICO.undo} Reset (${excludedCount})</button>`:''}
+          <button class="copybtn ghost" onclick="event.preventDefault();copyToClipboard(ENTRY_TSV_CACHE['${e.bankKey}'], this)">${ICO.copy} Copy with Dates</button>
+          <button class="copybtn" onclick="event.preventDefault();copyToClipboard(ENTRY_TSV_CACHE['amtonly_${e.bankKey}'], this)">${ICO.copy} Copy Amounts Only</button>
         </div>
       </summary>
-      <table><thead><tr><th>Pay Date</th><th class="r">Amount</th></tr></thead><tbody>
-      ${rows.map(r=>`<tr${r.amount===0?' class="zerorow"':''}><td>${esc(r.dmy)}</td><td class="r amt">${fn(r.amount)}</td></tr>`).join('')}
-      ${otherRows.length?`<tr class="otherhead"><td colspan="2">Outside this range — shown separately, not part of the dense day-by-day list above</td></tr>`:''}
-      ${otherRows.map(r=>`<tr class="otherrow"><td>${esc(r.dmy)}</td><td class="r amt">${fn(r.amount)}</td></tr>`).join('')}
-      <tr class="totrow"><td>Total</td><td class="r">${fn(grandTotal)}</td></tr>
+      <table><thead><tr><th style="width:30px"></th><th>Pay Date</th><th class="r">Amount</th></tr></thead><tbody>
+      ${rows.map(r=>renderEntryRow(e.bankKey,r)).join('')}
+      ${otherRows.length?`<tr class="otherhead"><td colspan="3">Outside this range — shown separately, not part of the dense day-by-day list above</td></tr>`:''}
+      ${otherRows.map(r=>renderEntryRow(e.bankKey,r)).join('')}
+      <tr class="totrow"><td></td><td>Total${excludedCount?' (unchecked dates excluded)':''}</td><td class="r">${fn(grandTotal)}</td></tr>
       </tbody></table>
     </details>`;
   }
 
   ENTRY_TSV_CACHE['__online__'] = online.map(e=>`${e.name}\t${e.total.toFixed(0)}`).join('\n');
-  html+=`<div class="entry-sec-head online"><h3>💻 Online Banks — one monthly total each</h3>
+  html+=`<div class="entry-sec-head online"><h3>${ICO.laptop} Online Banks — one monthly total each</h3>
     <span class="entry-count">${online.length} bank${online.length===1?'':'s'}</span>
-    ${online.length?`<button class="copybtn" onclick="copyToClipboard(ENTRY_TSV_CACHE['__online__'], this)">📋 Copy All</button>`:''}
+    ${online.length?`<button class="copybtn" onclick="copyToClipboard(ENTRY_TSV_CACHE['__online__'], this)">${ICO.copy} Copy All</button>`:''}
   </div>`;
   if(!online.length){
     html+=`<div class="entry-empty">No online banks in this list.</div>`;
@@ -901,14 +1144,15 @@ function renderEntryTab(){
       <td>${esc(e.branchCode)} / ${esc(e.bankCode)}</td>
       <td>${esc(e.name)}</td>
       <td class="r">${fn(e.total)}</td>
-      <td><button class="typebtn" onclick="toggleBankType('${e.bankKey}')">↔ Move to Manual</button></td>
-      <td><button class="copybtn" onclick="copyToClipboard(ENTRY_TSV_CACHE['single_${e.bankKey}'], this)">📋 Copy</button></td>
+      <td><button class="typebtn" onclick="toggleBankType('${e.bankKey}')">${ICO.swap} Move to Manual</button></td>
+      <td><button class="copybtn" onclick="copyToClipboard(ENTRY_TSV_CACHE['single_${e.bankKey}'], this)">${ICO.copy} Copy</button></td>
     </tr>`;
     }).join('')}
     </tbody></table>`;
   }
 
   el.innerHTML=html;
+  attachCardStateTracking(el);
 }
 
 /* ─── By Date tab ─────────────────────────── */
@@ -924,13 +1168,14 @@ function renderDateTab(){
   }
   const dates=Object.values(byDate).sort((a,b)=>parseDMY(b.payDate)-parseDMY(a.payDate));
 
-  if(!dates.length){ el.innerHTML='<div class="empty"><div class="ei">📭</div><div class="et">No dated transactions found</div></div>'; return; }
+  if(!dates.length){ el.innerHTML='<div class="empty"><div class="ei">'+ICO.inbox.replace('class="icon"','')+'</div><div class="et">No dated transactions found</div></div>'; return; }
 
   el.innerHTML = dates.map(d=>{
     const rows = d.rows.slice().sort((a,b)=> a.bankName.localeCompare(b.bankName) || a.scrollNo-b.scrollNo);
-    return `<details class="datecard" ${EXPAND_ALL?'open':''}>
+    const cardKey='date:'+d.payDate;
+    return `<details class="datecard" data-cardkey="${esc(cardKey)}" ${cardOpenAttr(cardKey)}>
       <summary>
-        <div class="dc-left"><span class="dc-arrow">▶</span>
+        <div class="dc-left"><span class="dc-arrow">${ICO.arrow}</span>
           <div><div class="dc-date">${esc(d.payDate)}</div><div class="dc-sub">${d.rows.length} scroll row${d.rows.length>1?'s':''} across ${new Set(d.rows.map(r=>r.bankCode)).size} bank${new Set(d.rows.map(r=>r.bankCode)).size>1?'s':''}</div></div>
         </div>
         <div class="dc-total">${fn(d.total)}</div>
@@ -947,6 +1192,7 @@ function renderDateTab(){
       </tbody></table>
     </details>`;
   }).join('');
+  attachCardStateTracking(el);
 }
 
 /* ─── By Bank tab ─────────────────────────── */
@@ -957,7 +1203,7 @@ function renderBankTab(){
   if(q) banks=banks.filter(b=> b.name.toLowerCase().includes(q) || b.branchCode.includes(q) || b.bankCode.includes(q));
   banks = banks.slice().sort((a,b)=>a.name.localeCompare(b.name));
 
-  if(!banks.length){ el.innerHTML='<div class="empty"><div class="ei">🔎</div><div class="et">No banks match your search</div></div>'; return; }
+  if(!banks.length){ el.innerHTML='<div class="empty"><div class="ei">'+ICO.search.replace('class="icon"','')+'</div><div class="et">No banks match your search</div></div>'; return; }
 
   el.innerHTML = banks.map(b=>{
     const total = b.scrolls.reduce((s,sc)=>s+sc.amount,0);
@@ -965,9 +1211,10 @@ function renderBankTab(){
     const wt = b.weekTotals[b.weekTotals.length-1] || {};
     const R = wt.totals && wt.totals.R;
     const U = wt.totals && wt.totals.U;
-    return `<details class="bankcard" ${EXPAND_ALL?'open':''}>
+    const cardKey='bank:'+b.branchCode+'-'+b.bankCode;
+    return `<details class="bankcard" data-cardkey="${esc(cardKey)}" ${cardOpenAttr(cardKey)}>
       <summary>
-        <div class="bc-left"><span class="bc-arrow">▶</span>
+        <div class="bc-left"><span class="bc-arrow">${ICO.arrow}</span>
           <span class="bc-code">${esc(b.branchCode)} / ${esc(b.bankCode)}</span>
           <div><div class="bc-name">${esc(b.name)}</div><div class="bc-sub">${b.scrolls.length} scroll row${b.scrolls.length>1?'s':''}${b.weekTotals.length>1?' · '+b.weekTotals.length+' weeks':''}</div></div>
         </div>
@@ -994,13 +1241,14 @@ function renderBankTab(){
       </div>
     </details>`;
   }).join('');
+  attachCardStateTracking(el);
 }
 
 /* ─── Bank Families tab ───────────────────── */
 function renderFamiliesTab(){
   const el=document.getElementById('out');
   const fams=Object.values(RESULTS.familiesAgg).sort((a,b)=>b.amount-a.amount);
-  if(!fams.length){ el.innerHTML='<div class="empty"><div class="ei">📊</div><div class="et">No bank-family summary found in the source file(s)</div></div>'; return; }
+  if(!fams.length){ el.innerHTML='<div class="empty"><div class="ei">'+ICO.chart.replace('class="icon"','')+'</div><div class="et">No bank-family summary found in the source file(s)</div></div>'; return; }
 
   const maxAmt = Math.max(...fams.map(f=>f.amount), 1);
   const grandStubs = fams.reduce((s,f)=>s+f.stubs,0);
@@ -1021,19 +1269,47 @@ function renderFamiliesTab(){
 }
 
 /* ─── excel export ────────────────────────── */
+function showExportNotice(html, isError){
+  const box=document.createElement('div');
+  box.className = isError ? 'err-box' : 'info-box';
+  box.style.marginTop='10px';
+  box.innerHTML = (isError?ICO.error:ICO.check) + '<span>' + html + '</span>';
+  const bar=document.querySelector('.tabbar');
+  bar.insertAdjacentElement('afterend', box);
+  setTimeout(()=>box.remove(), 9000);
+}
+
 function doExport(){
   if(!RESULTS || !RESULTS.weeks.length) return;
   const wb=XLSX.utils.book_new();
   const r=RESULTS;
+  const failures=[];         // sheet build failures — collected, not fatal
+  const toc=[];               // {name, desc} for every sheet actually written
 
-  /* ── CP-48 ready sheets: one per manual bank (Date | Amount, exactly
-     what gets typed into that bank's CP-48 sheet), plus one combined
-     Online Banks Summary sheet. Added first since this is the point
-     of the export. Sheet names are deduped/truncated to Excel's 31-
-     char limit. ── */
-  const usedNames=new Set();
+  /* Every sheet is built inside its own try/catch: one bad section (a
+     stray character in a bank name, an unexpected value, etc.) is skipped
+     with a note rather than aborting the whole export and leaving the
+     person with nothing, or with only the sheets that happened to run
+     before the crash — which is what "only the first table exported"
+     almost always turns out to be. */
+  function addSheet(name, desc, buildRows){
+    try{
+      const {rows, cols} = buildRows();
+      const ws=XLSX.utils.aoa_to_sheet(rows);
+      if(cols) ws['!cols']=cols;
+      const safeName=sheetName(name);
+      XLSX.utils.book_append_sheet(wb, ws, safeName);
+      toc.push({name:safeName, desc});
+      return safeName;
+    }catch(err){
+      failures.push(name+': '+(err && err.message ? err.message : 'unknown error'));
+      return null;
+    }
+  }
+
+  const usedNames=new Set(['Contents']);
   function sheetName(base){
-    let name=base.replace(/[\\\/\?\*\[\]:]/g,' ').replace(/\s+/g,' ').trim().slice(0,28) || 'Bank';
+    let name=String(base).replace(/[\\\/\?\*\[\]:]/g,' ').replace(/\s+/g,' ').trim().slice(0,28) || 'Bank';
     let candidate=name, n=2;
     while(usedNames.has(candidate.toLowerCase())){ candidate=(name+' '+n).slice(0,31); n++; }
     usedNames.add(candidate.toLowerCase());
@@ -1051,85 +1327,130 @@ function doExport(){
   manualEntries.sort((a,b)=>a.name.localeCompare(b.name));
   onlineEntries.sort((a,b)=>a.name.localeCompare(b.name));
 
+  /* ── CP-48 ready sheets: one per manual bank (Date | Amount, exactly
+     what gets typed into that bank's CP-48 sheet), plus one combined
+     Online Banks Summary sheet. Dates the person unchecked in the CP-48
+     Entry tab are left out here too, so the export always matches what's
+     on screen. ── */
   const exportRange = ENTRY_RANGE ? eachDateInRange(ENTRY_RANGE.from, ENTRY_RANGE.to) : [];
+  let totalExcludedDates=0;
   for(const e of manualEntries){
-    const rows=[[e.name],['Branch '+e.branchCode+' / Bank '+e.bankCode],[''],['Pay Date','Amount']];
-    let rangeTotal=0;
-    for(const d of exportRange){
-      const amt = e.dateMap[fmtDMY(d)] || 0;
-      rangeTotal += amt;
-      rows.push([fmtExcelSafeDate(d), amt]);
-    }
-    rows.push(['Total (in range)', rangeTotal]);
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:16},{wch:16}];
-    XLSX.utils.book_append_sheet(wb, ws, sheetName(e.name));
+    addSheet(e.name, `CP-48 date-by-date amounts — ${e.name}`, ()=>{
+      const rows=[[e.name],['Branch '+e.branchCode+' / Bank '+e.bankCode],[''],['Pay Date','Amount']];
+      let rangeTotal=0, excludedInBank=0;
+      for(const d of exportRange){
+        const dmy=fmtDMY(d);
+        if(isDateExcluded(e.bankKey, dmy)){ excludedInBank++; continue; }
+        const amt = e.dateMap[dmy] || 0;
+        rangeTotal += amt;
+        rows.push([fmtExcelSafeDate(d), amt]);
+      }
+      if(excludedInBank){ totalExcludedDates+=excludedInBank; rows.push(['(unchecked in app, excluded)', excludedInBank]); }
+      rows.push(['Total (in range)', rangeTotal]);
+      return {rows, cols:[{wch:16},{wch:16}]};
+    });
   }
 
-  {
+  addSheet('Online Banks Summary', 'One monthly total per online bank', ()=>{
     const rows=[['Online Banks — Monthly Totals — '+divDisplay(r.divCode)],[''],
       ['Branch Code','Bank Code','Bank Name','Month Total']];
     for(const e of onlineEntries) rows.push([e.branchCode, e.bankCode, e.name, e.total]);
     rows.push(['','','Grand Total', onlineEntries.reduce((s,e)=>s+e.total,0)]);
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:12},{wch:12},{wch:32},{wch:16}];
-    XLSX.utils.book_append_sheet(wb, ws, sheetName('Online Banks Summary'));
-  }
+    return {rows, cols:[{wch:12},{wch:12},{wch:32},{wch:16}]};
+  });
 
   /* Date-wise sheet */
-  const byDate={};
-  for(const b of Object.values(r.banks)) for(const sc of b.scrolls){
-    if(!byDate[sc.payDate]) byDate[sc.payDate]={total:0,rows:[]};
-    byDate[sc.payDate].total+=sc.amount;
-    byDate[sc.payDate].rows.push([dmyToExcelSafe(sc.payDate), b.name, b.branchCode, b.bankCode, sc.scrollNo, sc.amount, sc.week, sc.month]);
-  }
-  const dateKeys=Object.keys(byDate).sort((a,b)=>parseDMY(a)-parseDMY(b));
-  const dRows=[['CP-101 — '+divDisplay(r.divCode)+' — By Date'],[''],
-    ['Pay Date','Bank Name','Branch Code','Bank Code','Scroll No','Amount','Week Progressive','Month Progressive']];
-  for(const dk of dateKeys){
-    for(const row of byDate[dk].rows) dRows.push(row);
-    dRows.push(['','','','','Date Total', byDate[dk].total]);
-    dRows.push([]);
-  }
-  const dws=XLSX.utils.aoa_to_sheet(dRows);
-  dws['!cols']=[{wch:12},{wch:32},{wch:12},{wch:12},{wch:10},{wch:14},{wch:16},{wch:16}];
-  XLSX.utils.book_append_sheet(wb,dws,'By Date');
+  addSheet('By Date', 'Every scroll row grouped by pay date', ()=>{
+    const byDate={};
+    for(const b of Object.values(r.banks)) for(const sc of b.scrolls){
+      if(!byDate[sc.payDate]) byDate[sc.payDate]={total:0,rows:[]};
+      byDate[sc.payDate].total+=sc.amount;
+      byDate[sc.payDate].rows.push([dmyToExcelSafe(sc.payDate), b.name, b.branchCode, b.bankCode, sc.scrollNo, sc.amount, sc.week, sc.month]);
+    }
+    const dateKeys=Object.keys(byDate).sort((a,b)=>parseDMY(a)-parseDMY(b));
+    const rows=[['CP-101 — '+divDisplay(r.divCode)+' — By Date'],[''],
+      ['Pay Date','Bank Name','Branch Code','Bank Code','Scroll No','Amount','Week Progressive','Month Progressive']];
+    for(const dk of dateKeys){
+      for(const row of byDate[dk].rows) rows.push(row);
+      rows.push(['','','','','Date Total', byDate[dk].total]);
+      rows.push([]);
+    }
+    return {rows, cols:[{wch:12},{wch:32},{wch:12},{wch:12},{wch:10},{wch:14},{wch:16},{wch:16}]};
+  });
 
   /* Bank-wise sheet */
-  const bRows=[['CP-101 — '+divDisplay(r.divCode)+' — By Bank'],[''],
-    ['Branch Code','Bank Code','Bank Name','Pay Date','Scroll No','Amount','Week Progressive','Month Progressive','Week File']];
-  const banksSorted=Object.values(r.banks).sort((a,b)=>a.name.localeCompare(b.name));
-  for(const b of banksSorted){
-    const sorted=b.scrolls.slice().sort((x,y)=>parseDMY(x.payDate)-parseDMY(y.payDate)||x.scrollNo-y.scrollNo);
-    sorted.forEach((sc,i)=>{
-      bRows.push([i===0?b.branchCode:'', i===0?b.bankCode:'', i===0?b.name:'', dmyToExcelSafe(sc.payDate), sc.scrollNo, sc.amount, sc.week, sc.month, sc.weekEnding]);
-    });
-    const total=b.scrolls.reduce((s,sc)=>s+sc.amount,0);
-    bRows.push(['','','Bank Total','','',total]);
-    bRows.push([]);
-  }
-  const bws=XLSX.utils.aoa_to_sheet(bRows);
-  bws['!cols']=[{wch:12},{wch:12},{wch:32},{wch:12},{wch:10},{wch:14},{wch:16},{wch:16},{wch:12}];
-  XLSX.utils.book_append_sheet(wb,bws,'By Bank');
+  addSheet('By Bank', 'Every scroll row grouped by bank', ()=>{
+    const rows=[['CP-101 — '+divDisplay(r.divCode)+' — By Bank'],[''],
+      ['Branch Code','Bank Code','Bank Name','Pay Date','Scroll No','Amount','Week Progressive','Month Progressive','Week File']];
+    const banksSorted=Object.values(r.banks).sort((a,b)=>a.name.localeCompare(b.name));
+    for(const b of banksSorted){
+      const sorted=b.scrolls.slice().sort((x,y)=>parseDMY(x.payDate)-parseDMY(y.payDate)||x.scrollNo-y.scrollNo);
+      sorted.forEach((sc,i)=>{
+        rows.push([i===0?b.branchCode:'', i===0?b.bankCode:'', i===0?b.name:'', dmyToExcelSafe(sc.payDate), sc.scrollNo, sc.amount, sc.week, sc.month, sc.weekEnding]);
+      });
+      const total=b.scrolls.reduce((s,sc)=>s+sc.amount,0);
+      rows.push(['','','Bank Total','','',total]);
+      rows.push([]);
+    }
+    return {rows, cols:[{wch:12},{wch:12},{wch:32},{wch:12},{wch:10},{wch:14},{wch:16},{wch:16},{wch:12}]};
+  });
 
   /* Bank Families sheet */
-  const fams=Object.values(r.familiesAgg).sort((a,b)=>b.amount-a.amount);
-  const fRows=[['CP-101 — '+divDisplay(r.divCode)+' — Bank Families'],[''],
-    ['Code','Bank Family','Stubs','Amount']];
-  for(const f of fams) fRows.push([f.code,f.name,f.stubs,f.amount]);
-  fRows.push(['','Grand Total', fams.reduce((s,f)=>s+f.stubs,0), fams.reduce((s,f)=>s+f.amount,0)]);
-  const fws=XLSX.utils.aoa_to_sheet(fRows);
-  fws['!cols']=[{wch:8},{wch:32},{wch:12},{wch:16}];
-  XLSX.utils.book_append_sheet(wb,fws,'Bank Families');
+  addSheet('Bank Families', 'Bank-family summary and grand total', ()=>{
+    const fams=Object.values(r.familiesAgg).sort((a,b)=>b.amount-a.amount);
+    const rows=[['CP-101 — '+divDisplay(r.divCode)+' — Bank Families'],[''],
+      ['Code','Bank Family','Stubs','Amount']];
+    for(const f of fams) rows.push([f.code,f.name,f.stubs,f.amount]);
+    rows.push(['','Grand Total', fams.reduce((s,f)=>s+f.stubs,0), fams.reduce((s,f)=>s+f.amount,0)]);
+    return {rows, cols:[{wch:8},{wch:32},{wch:12},{wch:16}]};
+  });
 
   /* Weeks included sheet */
-  const wRows=[['Weeks Included in This Export'],[''],['Week Ending','Processing Date','File']];
-  for(const w of r.weeks) wRows.push([w.weekEnding, w.procDate, w.fname]);
-  const wws=XLSX.utils.aoa_to_sheet(wRows);
-  wws['!cols']=[{wch:14},{wch:14},{wch:40}];
-  XLSX.utils.book_append_sheet(wb,wws,'Weeks Included');
+  addSheet('Weeks Included', 'Which uploaded week-files fed this export', ()=>{
+    const rows=[['Weeks Included in This Export'],[''],['Week Ending','Processing Date','File']];
+    for(const w of r.weeks) rows.push([w.weekEnding, w.procDate, w.fname]);
+    return {rows, cols:[{wch:14},{wch:14},{wch:40}]};
+  });
 
-  XLSX.writeFile(wb,'CP101_Div'+r.divCode+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  /* ── Contents sheet — placed first so it's the page that opens by
+     default. Every workbook here has many tabs (one per manual bank
+     plus the summary views); this page exists purely so nobody mistakes
+     "the first tab" for "the whole export" and stops looking.       ── */
+  const tocRows=[
+    ['CP-101 Analyzer — Export Summary'],
+    [divDisplay(r.divCode)],
+    ['Generated '+new Date().toLocaleString()],
+    [''],
+    [`This workbook has ${toc.length} sheet(s) — see the tabs at the bottom of Excel.`],
+    [''],
+    ['#','Sheet Name','Contents']
+  ];
+  toc.forEach((t,i)=>tocRows.push([i+1, t.name, t.desc]));
+  if(totalExcludedDates) tocRows.push(['', '', `Note: ${totalExcludedDates} date(s) unchecked in the CP-48 Entry tab were left out of the per-bank sheets above.`]);
+  if(failures.length) tocRows.push(['', '', `Note: ${failures.length} sheet(s) could not be built — see the warning shown after export.`]);
+  const tocWs=XLSX.utils.aoa_to_sheet(tocRows);
+  tocWs['!cols']=[{wch:5},{wch:26},{wch:60}];
+  XLSX.utils.book_append_sheet(wb, tocWs, 'Contents');
+  // Move Contents to the front so it's the sheet Excel opens on.
+  wb.SheetNames.unshift(wb.SheetNames.pop());
+
+  if(!toc.length){
+    showExportNotice('Nothing could be exported — no data is loaded for this division.', true);
+    return;
+  }
+
+  try{
+    XLSX.writeFile(wb,'CP101_Div'+r.divCode+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  }catch(err){
+    showExportNotice('Excel export failed: '+(err&&err.message?err.message:'unknown error')+'. Try again, or use Print / Save as PDF instead.', true);
+    return;
+  }
+
+  if(failures.length){
+    showExportNotice(`Exported ${toc.length} sheet(s) successfully. ${failures.length} sheet(s) failed and were skipped: ${esc(failures.join('; '))}.`, true);
+  } else {
+    showExportNotice(`Exported ${toc.length} sheet(s) to Excel — open the "Contents" tab first, then use the sheet tabs at the bottom to reach every table.`, false);
+  }
 }
 
 /* ─── file processing ─────────────────────── */
@@ -1185,10 +1506,10 @@ async function run(fileList, opts){
 
   let notes='';
   if(isFolder){
-    notes += `<div class="info-box">ℹ Folder scan: ${files.length} item(s) found, ${nonPdfCount} non-PDF skipped, ${skippedByName} PDF(s) skipped (filename doesn't look like a CP-101), ${pdfCandidates.length} checked as CP-101 candidates.</div>`;
+    notes += `<div class="info-box">${ICO.info}<span>Folder scan: ${files.length} item(s) found, ${nonPdfCount} non-PDF skipped, ${skippedByName} PDF(s) skipped (filename doesn't look like a CP-101), ${pdfCandidates.length} checked as CP-101 candidates.</span></div>`;
   }
   document.getElementById('errs').innerHTML = notes +
-    errs.map(e=>`<div class="err-box">⚠ <strong>${esc(e.f)}</strong>: ${esc(e.r)}</div>`).join('');
+    errs.map(e=>`<div class="err-box">${ICO.error}<span><strong>${esc(e.f)}</strong>: ${esc(e.r)}</span></div>`).join('');
 
   if(RAW_FILES.length){
     autoResolveDuplicates();
