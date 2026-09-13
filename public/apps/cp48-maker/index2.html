@@ -3,51 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CP-48 Generator</title>
+<title>CP-48 Maker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#1c231d; --green-950:#0e2117; --green-900:#123822; --green-800:#1a4d2e; --green-700:#1f6d42; --green-600:#2c8354;
-  --green-100:#dcecdf; --green-50:#f0f6f1;
-  --brass:#a8792e; --brass-dark:#8a611f; --brass-100:#f6ecd9;
-  --slate-700:#3c4238; --slate-500:#767d6f; --slate-300:#c9c3af;
-  --border:#ddd6c2; --border-soft:#e9e4d4;
-  --bg:#f2efe6;
-  --danger:#9c2b21; --danger-bg:#faece9; --danger-border:#e6c3ba;
-  --warn:#8a611f; --warn-bg:#f8f0dd; --warn-border:#e6d4a4;
-  --good:#1a6b43; --good-bg:#e7f2ea;
-  --grad-brand: linear-gradient(120deg,#123822 0%,#1f6d42 100%);
-  --shadow-sm:0 1px 2px rgba(28,35,29,.05), 0 1px 1px rgba(28,35,29,.04);
-  --shadow-md:0 8px 20px -6px rgba(14,33,23,.14), 0 2px 6px rgba(14,33,23,.06);
-  --shadow-lg:0 20px 48px -16px rgba(14,33,23,.24), 0 6px 16px rgba(14,33,23,.08);
-  --radius:10px;
-  --font-ui:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  --font-display:'Source Serif 4','Georgia',serif;
+  --ink:#12241f; --teal-900:#073d33; --teal-800:#0a4b40; --teal-700:#0b5d4f; --teal-600:#137964;
+  --teal-100:#e6f2ee; --teal-50:#f4f9f7;
+  --gold:#a9781f; --gold-100:#faf3e2;
+  --slate-700:#3c4c47; --slate-500:#657870; --slate-300:#a9bab3;
+  --border:#dde6e2; --border-soft:#eaf1ee;
+  --bg:#eef3f0;
+  --danger:#b3261e; --danger-bg:#fbeaea; --danger-border:#f0c2bd;
+  --warn:#8a5a00; --warn-bg:#fef6e0; --warn-border:#f2d98a;
+  --good:#1c7a45; --good-bg:#e6f4ea;
+  --shadow-sm:0 1px 2px rgba(15,45,38,.06), 0 1px 1px rgba(15,45,38,.04);
+  --shadow-md:0 4px 14px rgba(15,45,38,.08), 0 1px 3px rgba(15,45,38,.06);
+  --shadow-lg:0 12px 32px rgba(15,45,38,.14), 0 2px 8px rgba(15,45,38,.08);
+  --radius:12px;
+  --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --font-doc:Georgia,"Times New Roman",Cambria,serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-ui);background:var(--bg);
+body{font-family:var(--font-ui);background:
+     radial-gradient(1100px 480px at 15% -10%, #e3f0ea 0%, transparent 60%),
+     radial-gradient(900px 420px at 105% 0%, #eef6f1 0%, transparent 55%),
+     var(--bg);
      color:var(--ink);min-height:100vh;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
-body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background-image:linear-gradient(rgba(28,35,29,.026) 1px, transparent 1px);
-  background-size:100% 34px}
-.wrap{max-width:1020px;margin:0 auto;padding:24px 18px 40px}
-.letterhead{background:var(--grad-brand);margin:0 -18px 26px;padding:20px 18px;position:relative;box-shadow:var(--shadow-lg)}
-.letterhead::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;
-  background:linear-gradient(90deg,var(--brass),#d9b46a 45%,var(--brass) 100%)}
-.letterhead-inner{max-width:1020px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.lh-mark{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--brass-100)}
-.lh-mark svg{width:21px;height:21px}
-.lh-text{color:#fff}
-.lh-org{font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:-.005em;line-height:1.2}
-.lh-app{font-size:12px;color:rgba(255,255,255,.75);margin-top:3px;letter-spacing:.01em}
-.lh-badge{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:.05em;color:#fff;
-  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);padding:5px 11px;border-radius:20px;white-space:nowrap}
-h1{font-size:23px;font-weight:800;color:var(--green-900);margin-bottom:4px;letter-spacing:-.01em}
+.wrap{max-width:1020px;margin:0 auto;padding:32px 18px 40px}
+h1{font-size:23px;font-weight:800;color:var(--teal-900);margin-bottom:4px;letter-spacing:-.01em}
 .sub{font-size:13.5px;color:var(--slate-500);margin-bottom:26px}
 /* horizontal progress stepper */
 .stepper{display:flex;align-items:flex-start;justify-content:center;margin-bottom:26px;flex-wrap:wrap;gap:0;
@@ -55,13 +40,13 @@ h1{font-size:23px;font-weight:800;color:var(--green-900);margin-bottom:4px;lette
 .stepitem{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:not-allowed;opacity:.38;transition:opacity .18s}
 .stepitem.reachable{cursor:pointer;opacity:1}
 .stepitem.reachable:hover .stepcircle{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
-.stepcircle{width:32px;height:32px;border-radius:50%;background:var(--green-100);color:var(--green-700);font-size:13px;font-weight:800;
+.stepcircle{width:32px;height:32px;border-radius:50%;background:var(--teal-100);color:var(--teal-700);font-size:13px;font-weight:800;
             display:flex;align-items:center;justify-content:center;transition:all .18s;border:1.5px solid transparent}
-.stepitem.current .stepcircle{background:var(--green-700);color:#fff;box-shadow:0 0 0 5px var(--green-100)}
-.stepitem.done .stepcircle{background:#fff;color:var(--green-700);border-color:var(--green-700)}
+.stepitem.current .stepcircle{background:var(--teal-700);color:#fff;box-shadow:0 0 0 5px var(--teal-100)}
+.stepitem.done .stepcircle{background:#fff;color:var(--teal-700);border-color:var(--teal-700)}
 .stepitem.done .stepcircle::before{content:'✓'}
 .steplabel{font-size:10.5px;color:var(--slate-500);font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
-.stepitem.current .steplabel{color:var(--green-800)}
+.stepitem.current .steplabel{color:var(--teal-800)}
 .stepline{width:38px;height:1.5px;background:var(--border);margin:16px 8px 0;align-self:flex-start}
 @media (max-width:700px){
   .stepper{display:none}
@@ -72,67 +57,65 @@ h1{font-size:23px;font-weight:800;color:var(--green-900);margin-bottom:4px;lette
 .step.expanded{box-shadow:var(--shadow-md)}
 .step[data-hidden="true"]{display:none}
 .step-summary{display:none;align-items:center;gap:12px;padding:15px 22px;cursor:pointer;background:#fff}
-.step-summary:hover{background:var(--green-50)}
-.step-summary-icon{width:24px;height:24px;border-radius:50%;background:var(--green-700);color:#fff;font-size:12px;font-weight:700;
+.step-summary:hover{background:var(--teal-50)}
+.step-summary-icon{width:24px;height:24px;border-radius:50%;background:var(--teal-700);color:#fff;font-size:12px;font-weight:700;
                     display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:var(--shadow-sm)}
 .step-summary-text{flex:1;font-size:13.5px;color:var(--ink);font-weight:500}
-.step-summary-edit{font-size:11.5px;color:var(--green-700);font-weight:700;text-transform:uppercase;letter-spacing:.03em;
-                    padding:5px 12px;border:1px solid var(--green-700);border-radius:20px;white-space:nowrap;transition:all .15s}
-.step-summary-edit:hover{background:var(--green-700);color:#fff}
-.step-full{padding:22px 24px 24px;border-top:3px solid var(--green-700)}
+.step-summary-edit{font-size:11.5px;color:var(--teal-700);font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+                    padding:5px 12px;border:1px solid var(--teal-700);border-radius:20px;white-space:nowrap;transition:all .15s}
+.step-summary-edit:hover{background:var(--teal-700);color:#fff}
+.step-full{padding:22px 24px 24px;border-top:3px solid var(--teal-700)}
 .step.collapsed .step-summary{display:flex}
 .step.collapsed .step-full{display:none}
 .step.expanded .step-summary{display:none}
 .step.expanded .step-full{display:block}
 .step-head{display:flex;align-items:center;gap:10px;margin-bottom:5px}
-.step h2{font-size:16px;color:var(--green-900);font-weight:700;letter-spacing:-.005em}
+.step h2{font-size:16px;color:var(--teal-900);font-weight:700;letter-spacing:-.005em}
 .step-hint{font-size:12.5px;color:var(--slate-500);margin:2px 0 16px 0;line-height:1.6}
 .step-body{margin-left:0}
 /* upload bits (shared look) */
 .dz{border:1.5px dashed var(--slate-300);border-radius:10px;padding:24px 18px;text-align:center;
-    cursor:pointer;background:var(--green-50);transition:all .18s;margin-bottom:10px}
-.dz:hover,.dz.drag{border-color:var(--green-700);background:var(--green-100)}
-.dz-icon{margin-bottom:8px;color:var(--green-700);display:flex;justify-content:center}
-.dz-icon svg{width:26px;height:26px;padding:12px;box-sizing:content-box;background:var(--green-50);border-radius:14px;border:1px solid var(--border-soft)}
-.dz-title{font-size:14px;font-weight:600;color:var(--green-800);margin-bottom:3px}
+    cursor:pointer;background:var(--teal-50);transition:all .18s;margin-bottom:10px}
+.dz:hover,.dz.drag{border-color:var(--teal-700);background:var(--teal-100)}
+.dz-icon{font-size:28px;margin-bottom:6px;opacity:.85}
+.dz-title{font-size:14px;font-weight:600;color:var(--teal-800);margin-bottom:3px}
 .dz-hint{font-size:11.5px;color:var(--slate-500)}
-svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2.5px}
 .upload-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-.ubtn{background:#fff;color:var(--green-800);border:1px solid var(--border);padding:9px 16px;border-radius:8px;
-      font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .15s;display:inline-flex;align-items:center;gap:6px}
-.ubtn:hover{background:var(--green-50);border-color:var(--green-600);transform:translateY(-1px)}
+.ubtn{background:#fff;color:var(--teal-800);border:1px solid var(--border);padding:9px 16px;border-radius:8px;
+      font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .15s}
+.ubtn:hover{background:var(--teal-50);border-color:var(--teal-600);transform:translateY(-1px)}
 .load-bar{display:none;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);
           border-radius:8px;padding:12px 15px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
-.spin{width:16px;height:16px;flex-shrink:0;border:2.5px solid var(--border);border-top-color:var(--green-700);
+.spin{width:16px;height:16px;flex-shrink:0;border:2.5px solid var(--border);border-top-color:var(--teal-700);
       border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .load-txt{font-size:13px;color:var(--slate-500)}
 .err-box{background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:8px;padding:10px 14px;
          margin-bottom:7px;font-size:13px;color:var(--danger)}
-.info-box{background:var(--green-50);border:1px solid var(--border);border-radius:8px;padding:10px 14px;
-         margin-bottom:7px;font-size:13px;color:var(--green-800)}
+.info-box{background:var(--teal-50);border:1px solid var(--border);border-radius:8px;padding:10px 14px;
+         margin-bottom:7px;font-size:13px;color:var(--teal-800)}
 .warn-box{background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:8px;padding:10px 14px;
          margin-bottom:7px;font-size:13px;color:var(--warn)}
 .filelist{display:flex;flex-direction:column;gap:6px;margin-bottom:6px;max-height:220px;overflow-y:auto}
 .filerow{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;
          padding:9px 12px;font-size:13px;transition:background .12s}
-.filerow:hover{background:var(--green-50)}
-.filerow.dup{border-color:var(--brass);background:var(--brass-100)}
+.filerow:hover{background:var(--teal-50)}
+.filerow.dup{border-color:var(--gold);background:var(--gold-100)}
 .filerow.off{opacity:.5}
-.filerow input{width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--green-700)}
+.filerow input{width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--teal-700)}
 .frname{flex:1;word-break:break-all;color:var(--ink)}
 .frstat{font-size:11px;color:var(--slate-500);white-space:nowrap}
-.fdup-tag{font-size:10px;font-weight:700;background:var(--brass);color:#fff;padding:2px 9px;border-radius:10px;white-space:nowrap;letter-spacing:.02em}
+.fdup-tag{font-size:10px;font-weight:700;background:var(--gold);color:#fff;padding:2px 9px;border-radius:10px;white-space:nowrap;letter-spacing:.02em}
 /* division + month pickers */
 .picker-row{display:flex;gap:26px;flex-wrap:wrap;margin-bottom:6px}
 .picker-col{flex:1;min-width:220px}
-.picker-label{font-size:11.5px;font-weight:700;color:var(--green-800);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
+.picker-label{font-size:11.5px;font-weight:700;color:var(--teal-800);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
 .divlist{display:flex;flex-direction:column;gap:7px;max-height:220px;overflow-y:auto}
 .divopt{border:1px solid var(--border);border-radius:9px;padding:10px 13px;font-size:13px;cursor:pointer;
         display:flex;align-items:center;gap:10px;transition:all .12s;flex-wrap:wrap}
-.divopt:hover{background:var(--green-50);border-color:var(--green-600)}
-.divopt.sel{border-color:var(--green-700);background:var(--green-50);box-shadow:0 0 0 1px var(--green-700) inset}
-.divopt .dcode{font-weight:700;color:var(--green-800)}
+.divopt:hover{background:var(--teal-50);border-color:var(--teal-600)}
+.divopt.sel{border-color:var(--teal-700);background:var(--teal-50);box-shadow:0 0 0 1px var(--teal-700) inset}
+.divopt .dcode{font-weight:700;color:var(--teal-800)}
 .mstat2{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap;margin-left:auto}
 .mstat2.mgood{background:var(--good-bg);color:var(--good)}
 .mstat2.mwarn{background:var(--warn-bg);color:var(--warn)}
@@ -141,61 +124,45 @@ svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2.5px}
 .hardwarn b{display:block;margin-bottom:4px;font-size:14px;color:var(--danger)}
 .monthinput{padding:9px 13px;border:1px solid var(--border);border-radius:8px;font-size:14px;width:100%;max-width:220px;
             font-family:var(--font-ui);color:var(--ink)}
-.monthinput:focus{outline:none;border-color:var(--green-700);box-shadow:0 0 0 3px var(--green-100)}
-.gobtn{background:var(--green-700);color:#fff;border:none;padding:11px 26px;border-radius:8px;
+.monthinput:focus{outline:none;border-color:var(--teal-700);box-shadow:0 0 0 3px var(--teal-100)}
+.gobtn{background:var(--teal-700);color:#fff;border:none;padding:11px 26px;border-radius:8px;
        font-size:13.5px;font-weight:700;cursor:pointer;margin-top:12px;box-shadow:var(--shadow-sm);transition:all .15s}
-.gobtn:hover{background:var(--green-900);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.gobtn:hover{background:var(--teal-900);transform:translateY(-1px);box-shadow:var(--shadow-md)}
 .gobtn:disabled{background:var(--slate-300);cursor:not-allowed;transform:none;box-shadow:none}
 .obsec{margin-top:24px;padding-top:20px;border-top:1px solid var(--border-soft)}
 .dz.small{padding:14px 16px;margin-bottom:8px}
 .dz.small .dz-title{font-size:13px;margin-bottom:0}
-.obtotal{font-size:11px;color:var(--green-800);font-weight:700;background:var(--green-100);padding:2px 8px;border-radius:8px;margin-left:6px}
+.obtotal{font-size:11px;color:var(--teal-800);font-weight:700;background:var(--teal-100);padding:2px 8px;border-radius:8px;margin-left:6px}
 /* match table */
 .matchtable{width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.matchtable th{padding:10px 12px;text-align:left;font-size:10.5px;font-weight:700;color:var(--green-800);
-   background:var(--green-50);text-transform:uppercase;letter-spacing:.04em;border-bottom:1.5px solid var(--border)}
+.matchtable th{padding:10px 12px;text-align:left;font-size:10.5px;font-weight:700;color:var(--teal-800);
+   background:var(--teal-50);text-transform:uppercase;letter-spacing:.04em;border-bottom:1.5px solid var(--border)}
 .matchtable th.r{text-align:right}
 .matchtable td{padding:9px 12px;font-size:13.5px;border-bottom:1px solid var(--border-soft);color:var(--ink);vertical-align:middle}
 .matchtable tr:last-child td{border-bottom:none}
-.matchtable tr:hover td{background:var(--green-50)}
-.matchtable td.r{text-align:right;font-weight:600;color:var(--green-800)}
+.matchtable tr:hover td{background:var(--teal-50)}
+.matchtable td.r{text-align:right;font-weight:600;color:var(--teal-800)}
 .mstat{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap}
 .mstat.ok{background:var(--good-bg);color:var(--good)}
 .mstat.miss{background:var(--danger-bg);color:var(--danger)}
 .typebtn{background:#fff;color:var(--slate-500);border:1px solid var(--border);padding:5px 11px;border-radius:6px;
          font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s}
-.typebtn:hover{background:var(--green-50);color:var(--green-800);border-color:var(--green-600)}
+.typebtn:hover{background:var(--teal-50);color:var(--teal-800);border-color:var(--teal-600)}
 .obinput{width:100px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;text-align:right;
          font-family:var(--font-ui)}
-.obinput:focus{outline:none;border-color:var(--green-700);box-shadow:0 0 0 3px var(--green-100)}
+.obinput:focus{outline:none;border-color:var(--teal-700);box-shadow:0 0 0 3px var(--teal-100)}
 .sheetname{font-size:12px;color:var(--slate-500)}
 .unmatched-box{background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:9px;padding:13px 15px;margin-bottom:10px;font-size:13px;color:#7a2020}
 .unmatched-box ul{margin:8px 0 0 20px}
 .zeroopt{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--slate-700);margin:12px 0}
-.zeroopt input{accent-color:var(--green-700)}
-.datemode-panel{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--green-50);
-  border:1px solid var(--border-soft);border-radius:9px;padding:12px 15px;margin-bottom:14px}
-.datemode-panel .dm-label{font-size:12.5px;font-weight:700;color:var(--green-800)}
-.seggroup{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff}
-.segbtn{background:#fff;color:var(--slate-500);border:none;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;
-  transition:all .12s;border-right:1px solid var(--border)}
-.segbtn:last-child{border-right:none}
-.segbtn:hover{background:var(--green-50);color:var(--green-800)}
-.segbtn.active{background:var(--green-700);color:#fff}
-.dm-note{font-size:12px;color:var(--slate-500);flex-basis:100%}
-.datemodebtn{background:#fff;color:var(--green-800);border:1px solid var(--green-600);padding:4px 10px;border-radius:6px;
-  font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s}
-.datemodebtn:hover{background:var(--green-50)}
-.datemodebtn.isactual{border-color:var(--brass);color:var(--brass-dark)}
-.datemodebtn.isactual:hover{background:var(--brass-100)}
+.zeroopt input{accent-color:var(--teal-700)}
 /* generate step */
 .genrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
-.xbtn{background:var(--green-700);color:#fff;border:none;padding:12px 24px;border-radius:9px;
-      font-size:14px;font-weight:700;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .15s;
-      display:inline-flex;align-items:center;gap:7px}
-.xbtn:hover{background:var(--green-900);transform:translateY(-1px);box-shadow:var(--shadow-md)}
-.xbtn.secondary{background:#fff;color:var(--green-800);border:1.5px solid var(--green-700);box-shadow:none}
-.xbtn.secondary:hover{background:var(--green-50)}
+.xbtn{background:var(--teal-700);color:#fff;border:none;padding:12px 24px;border-radius:9px;
+      font-size:14px;font-weight:700;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .15s}
+.xbtn:hover{background:var(--teal-900);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.xbtn.secondary{background:#fff;color:var(--teal-800);border:1.5px solid var(--teal-700);box-shadow:none}
+.xbtn.secondary:hover{background:var(--teal-50)}
 /* print preview — styled to resemble an actual printed official form */
 .printarea{display:none}
 .pf-page{background:#fff;border:1px solid #999;padding:0;margin:0 auto 28px;max-width:760px;font-size:13px;
@@ -229,7 +196,7 @@ svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2.5px}
 @media print{
   body{background:#fff}
   .wrap{max-width:100%;padding:0}
-  .stepper, .step, .footer, .letterhead{display:none !important}
+  .stepper, .step, .footer{display:none !important}
   .printarea{display:block !important}
   .pf-page{border:none;box-shadow:none;page-break-after:always;max-width:100%}
 }
@@ -237,17 +204,9 @@ svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2.5px}
 
 </head>
 <body>
-<header class="letterhead">
-  <div class="letterhead-inner">
-    <div class="lh-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-    <div class="lh-text">
-      <div class="lh-org">CP-48 Generator</div>
-      <div class="lh-app">Fills your existing CP-48 workbook straight from this month's CP-101 PDFs</div>
-    </div>
-    <span class="lh-badge">Offline &amp; Private</span>
-  </div>
-</header>
 <div class="wrap">
+  <h1>CP-48 Maker</h1>
+  <p class="sub">Turns your CP-101 weekly PDFs into a filled CP-48 workbook, using your own template &nbsp;·&nbsp; Works offline</p>
 
   <!-- STEP 1 -->
   <div class="stepper" id="stepper">
@@ -284,7 +243,7 @@ svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2.5px}
       <div class="step-hint">Your existing .xls or .xlsx CP-48 workbook — one sheet per bank. We only fill designated cells; every formula and signature block stays exactly as-is.</div>
       <div class="step-body">
         <div class="dz" id="dzTpl" onclick="document.getElementById('fiTpl').click()">
-          <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg></div>
+          <div class="dz-icon">📘</div>
           <div class="dz-title">Drop your CP-48 file here or click to browse</div>
           <div class="dz-hint">.xls or .xlsx</div>
           <input type="file" id="fiTpl" accept=".xls,.xlsx" style="display:none">
@@ -306,14 +265,14 @@ svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2.5px}
       <div class="step-hint">Single file, multiple files, or an entire folder — usually 4-5 weekly files per month</div>
       <div class="step-body">
         <div class="dz" id="dzPdf" onclick="document.getElementById('fiPdf').click()">
-          <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2Z"/></svg></div>
+          <div class="dz-icon">📂</div>
           <div class="dz-title">Drop CP-101 PDFs here or click to browse</div>
           <div class="dz-hint">Works offline after first load</div>
           <input type="file" id="fiPdf" accept=".pdf" multiple style="display:none">
         </div>
         <div class="upload-btns">
-          <button class="ubtn" onclick="document.getElementById('fiPdf').click()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Choose Files</button>
-          <button class="ubtn" onclick="document.getElementById('fdPdf').click()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2Z"/></svg> Choose Folder</button>
+          <button class="ubtn" onclick="document.getElementById('fiPdf').click()">📄 Choose Files</button>
+          <button class="ubtn" onclick="document.getElementById('fdPdf').click()">📁 Choose Folder</button>
           <input type="file" id="fdPdf" webkitdirectory directory multiple style="display:none">
         </div>
         <div class="load-bar" id="lb"><div class="spin"></div><span class="load-txt" id="lmsg">Processing…</span></div>
@@ -351,7 +310,7 @@ svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2.5px}
           <div class="picker-label">Opening Balances (optional)</div>
           <div class="step-hint" style="margin-left:0">CP-101 has no concept of "brought forward from last month" — that has to come from somewhere else. Upload last month's completed CP-48 and I'll carry each bank's Closing Balance forward automatically as this month's Opening Balance. Skip this and every bank defaults to whatever's already in your template (usually 0) — you can still edit each one by hand in the next step either way.</div>
           <div class="dz small" id="dzPrior" onclick="document.getElementById('fiPrior').click()">
-            <div class="dz-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Drop last month's completed CP-48 here, or click to browse</div>
+            <div class="dz-title">📘 Drop last month's completed CP-48 here, or click to browse</div>
             <input type="file" id="fiPrior" accept=".xls,.xlsx" style="display:none">
           </div>
           <div id="priorStatus"></div>
@@ -371,7 +330,7 @@ svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2.5px}
     </div>
     <div class="step-full" id="step4-full">
       <div class="step-head"><h2>4. Review the match</h2></div>
-      <div class="step-hint">Matched by bank code against your template's "MIS Branch Code" — check the type (Manual/Online), date entry style, and Opening Balance are right before generating</div>
+      <div class="step-hint">Matched by bank code against your template's "MIS Branch Code" — check the type (Manual/Online) and Opening Balance are right before generating</div>
       <div class="step-body" id="matchBody"></div>
       <button class="gobtn" id="toStep5Btn" onclick="advanceTo(5)" style="display:none">Continue to Generate →</button>
     </div>
@@ -389,8 +348,8 @@ svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2.5px}
       <div class="step-hint">Both use the same data — pick whichever fits your day. For guaranteed exact formatting, open the downloaded file in LibreOffice Calc and print from there; Print Preview is a quick in-browser approximation.</div>
       <div class="step-body">
         <div class="genrow">
-          <button class="xbtn" onclick="downloadWorkbook()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Filled CP-48 (.xlsx)</button>
-          <button class="xbtn secondary" onclick="showPrintPreview()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print Preview</button>
+          <button class="xbtn" onclick="downloadWorkbook()">⬇ Download Filled CP-48 (.xlsx)</button>
+          <button class="xbtn secondary" onclick="showPrintPreview()">🖨 Print Preview</button>
         </div>
         <div id="genStatus"></div>
       </div>
@@ -398,11 +357,7 @@ svg.icon{width:15px;height:15px;flex-shrink:0;vertical-align:-2.5px}
   </div>
 
   <div class="printarea" id="printarea"></div>
-  <div class="footer"><b>Developed By Taimoor Ali</b>
-     <!-- &nbsp;·&nbsp; Bank scroll reconciliation, template-preserving fill &amp; print preview &nbsp;·&nbsp; -->
-      <!-- by Taimoor Ali<br> -->
-    <!-- <span style="font-size:11px;color:var(--slate-300)">Everything runs locally in this browser tab — no file or figure is ever uploaded anywhere</span> -->
-  </div>
+  <div class="footer">Developed by <b>Taimoor Ali</b></div>
 </div>
 
 <script>
@@ -424,28 +379,6 @@ function parseDMY(s){
 }
 function isCP101Filename(name){ return /cp[\s\-_]?101/i.test(name); }
 
-/* ─── icon set — plain inline SVG, no icon font/CDN, so this stays fully
-   offline and adds no load time. Each is a self-contained string so it
-   can drop straight into a template literal in place of an emoji. ─── */
-const ICO = (()=>{
-  const s = (paths, vb='0 0 24 24') => `<svg viewBox="${vb}" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2.5px;flex-shrink:0">${paths}</svg>`;
-  return {
-    warn:   s('<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
-    check:  s('<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'),
-    info:   s('<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'),
-    pen:    s('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>'),
-    monitor:s('<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>'),
-    pin:    s('<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1Z"/>'),
-    calendar:s('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
-    download:s('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
-    printer:s('<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>'),
-    docText:s('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/>'),
-    folder: s('<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2Z"/>'),
-    inbox:  s('<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/>'),
-    swap:   s('<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>'),
-  };
-})();
-
 let BANK_TYPE_OVERRIDE = {};
 try{ BANK_TYPE_OVERRIDE = JSON.parse(localStorage.getItem('cp101_bank_type')||'{}'); }catch(e){ BANK_TYPE_OVERRIDE={}; }
 function saveBankType(key, type){
@@ -459,28 +392,6 @@ function bankType(divCode, bankKey, name){
   const ovKey = divCode+'|'+bankKey;
   if(BANK_TYPE_OVERRIDE[ovKey]) return BANK_TYPE_OVERRIDE[ovKey];
   return isManualByName(name) ? 'manual' : 'online';
-}
-
-/* Manual banks can be filled two ways in the same CP-48 template rows
-   (14-44): "full" writes one row per calendar day of the month, 0 where
-   nothing came in — the traditional look. "actual" writes only the rows
-   that actually had a collection, leaving the rest blank — quicker to
-   read, same total either way. Defaults to a global preference; any bank
-   can be switched individually and that choice sticks. */
-let GLOBAL_DATE_MODE = localStorage.getItem('cp48_date_mode_default') || 'full';
-function saveGlobalDateMode(mode){
-  GLOBAL_DATE_MODE = mode;
-  try{ localStorage.setItem('cp48_date_mode_default', mode); }catch(e){}
-}
-let DATE_MODE_OVERRIDE = {};
-try{ DATE_MODE_OVERRIDE = JSON.parse(localStorage.getItem('cp48_date_mode_override')||'{}'); }catch(e){ DATE_MODE_OVERRIDE={}; }
-function saveDateMode(key, mode){
-  DATE_MODE_OVERRIDE[key]=mode;
-  try{ localStorage.setItem('cp48_date_mode_override', JSON.stringify(DATE_MODE_OVERRIDE)); }catch(e){}
-}
-function dateModeFor(divCode, bankKey){
-  const ovKey = divCode+'|'+bankKey;
-  return DATE_MODE_OVERRIDE[ovKey] || GLOBAL_DATE_MODE;
 }
 
 /* ─── pdf.js → array of line-strings per page ─ */
@@ -635,31 +546,6 @@ let PRIOR_CLOSING = {};       // sheetName -> last month's Closing Balance (H18)
 function excelSerial(y,m,d){
   return Math.round((Date.UTC(y,m-1,d) - Date.UTC(1899,11,30)) / 86400000);
 }
-/* Builds the 31 physical template rows (14-44) for a manual bank, in
-   either mode:
-   - "full": one entry per calendar day 1..daysInMonth, 0 where nothing
-     came in — matches the template's original row-per-day design.
-   - "actual": one entry per day that actually had a collection, packed
-     from row 14 onward in date order, remaining rows left empty.
-   Returns an array of 31 slots (index 0 = row 14), each either
-   {day, amount} or null (cleared). */
-function computeManualDateRows(dateMode, dateMap, Y, M, daysInMonth){
-  const rows = new Array(31).fill(null);
-  if(dateMode==='actual'){
-    const keys = Object.keys(dateMap).sort((a,b)=>parseDMY(a)-parseDMY(b));
-    keys.forEach((key,i)=>{
-      if(i>=31) return;
-      const d = new Date(parseDMY(key));
-      rows[i] = {day:d.getDate(), amount:dateMap[key]};
-    });
-  } else {
-    for(let day=1; day<=daysInMonth; day++){
-      const key=String(day).padStart(2,'0')+'/'+String(M).padStart(2,'0')+'/'+Y;
-      rows[day-1] = {day, amount: dateMap[key]||0};
-    }
-  }
-  return rows;
-}
 const SML_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 function findCellNode(doc, ref){
   const cells = doc.getElementsByTagName('c');
@@ -771,13 +657,13 @@ async function loadPriorMonth(file){
       if(cell && typeof cell.v === 'number'){ PRIOR_CLOSING[name] = cell.v; found++; }
     }
     if(!found){
-      statusEl.innerHTML = `<div class="warn-box">${ICO.warn} Couldn't find a Closing Balance (H18) on any sheet in this file — is it a completed CP-48 from the same template? Opening Balances will fall back to your blank template's values.</div>`;
+      statusEl.innerHTML = '<div class="warn-box">⚠ Couldn\'t find a Closing Balance (H18) on any sheet in this file — is it a completed CP-48 from the same template? Opening Balances will fall back to your blank template\'s values.</div>';
       return;
     }
-    statusEl.innerHTML = `<div class="info-box">${ICO.check} <strong>${esc(file.name)}</strong> — found a Closing Balance on ${found} sheet${found>1?'s':''}. These will be carried forward as Opening Balances automatically (still editable per bank in the next step).</div>`;
+    statusEl.innerHTML = `<div class="info-box">✓ <strong>${esc(file.name)}</strong> — found a Closing Balance on ${found} sheet${found>1?'s':''}. These will be carried forward as Opening Balances automatically (still editable per bank in the next step).</div>`;
     if(MATCHES) buildMatches(); // refresh if the review table is already showing
   }catch(e){
-    statusEl.innerHTML = `<div class="err-box">${ICO.warn} Couldn't read that file: ${esc(e.message||e)}</div>`;
+    statusEl.innerHTML = `<div class="err-box">⚠ Couldn't read that file: ${esc(e.message||e)}</div>`;
   }
 }
 
@@ -788,7 +674,7 @@ async function loadTemplate(file){
     const buf = await file.arrayBuffer();
     const format = detectFileFormat(buf);
     if(format==='unknown'){
-      statusEl.innerHTML = `<div class="err-box">${ICO.warn} This doesn't look like a valid .xls or .xlsx file.</div>`;
+      statusEl.innerHTML = '<div class="err-box">⚠ This doesn\'t look like a valid .xls or .xlsx file.</div>';
       return;
     }
     const wb = XLSX.read(buf, {type:'array'});
@@ -802,7 +688,7 @@ async function loadTemplate(file){
       }
     }
     if(!Object.keys(codeToSheet).length){
-      statusEl.innerHTML = `<div class="err-box">${ICO.warn} No "MIS Branch Code" cells found (expected at G5 on each bank sheet). This may not be a CP-48 workbook in the format I recognize.</div>`;
+      statusEl.innerHTML = '<div class="err-box">⚠ No "MIS Branch Code" cells found (expected at G5 on each bank sheet). This may not be a CP-48 workbook in the format I recognize.</div>';
       return;
     }
     TEMPLATE_WB = wb;
@@ -811,16 +697,16 @@ async function loadTemplate(file){
     TEMPLATE_NAME = file.name;
     CODE_TO_SHEET = codeToSheet;
 
-    let html = `<div class="info-box">${ICO.check} <strong>${esc(file.name)}</strong> — ${wb.SheetNames.length} sheets, ${Object.keys(codeToSheet).length} bank sheets with a recognized MIS Branch Code.</div>`;
+    let html = `<div class="info-box">✓ <strong>${esc(file.name)}</strong> — ${wb.SheetNames.length} sheets, ${Object.keys(codeToSheet).length} bank sheets with a recognized MIS Branch Code.</div>`;
     if(format==='xls'){
-      html += `<div class="warn-box">${ICO.warn} This is a legacy .xls file. I can still fill it in, but the older format doesn't let me guarantee your exact fonts/borders survive the round-trip.
+      html += `<div class="warn-box">⚠ This is a legacy .xls file. I can still fill it in, but the older format doesn't let me guarantee your exact fonts/borders survive the round-trip.
       For guaranteed pixel-identical formatting, open this in LibreOffice Calc once and use <strong>File → Save As → Excel 2007-365 (.xlsx)</strong>, then upload that version instead — everything else about this tool works the same either way.</div>`;
     }
     statusEl.innerHTML = html;
     setStepSummary(1, `${file.name} — ${wb.SheetNames.length} sheets, ${Object.keys(codeToSheet).length} bank sheets recognized`);
     advanceTo(2);
   }catch(e){
-    statusEl.innerHTML = `<div class="err-box">${ICO.warn} Couldn't read that file: ${esc(e.message||e)}</div>`;
+    statusEl.innerHTML = `<div class="err-box">⚠ Couldn't read that file: ${esc(e.message||e)}</div>`;
   }
 }
 
@@ -857,7 +743,7 @@ function renderFileChecklist(){
   dupGroups.forEach(g=>g.forEach(f=>dupIds.add(f._id)));
   let html='';
   if(dupGroups.length){
-    html+=`<div class="warn-box">${ICO.warn} ${dupGroups.length} week-ending date${dupGroups.length>1?'s have':' has'} more than one file — kept the most complete one checked below, unchecked the rest. Review if that's wrong.</div>`;
+    html+=`<div class="warn-box">⚠ ${dupGroups.length} week-ending date${dupGroups.length>1?'s have':' has'} more than one file — kept the most complete one checked below, unchecked the rest. Review if that's wrong.</div>`;
   }
   html += RAW_FILES.map(f=>{
     const excluded=EXCLUDED_FILES.has(f._id);
@@ -911,7 +797,7 @@ async function runPdf(fileList, opts){
 
   let notes='';
   if(isFolder) notes+=`<div class="info-box">ℹ Folder scan: ${files.length} item(s), ${nonPdfCount} non-PDF skipped, ${skippedByName} skipped (filename not CP-101-like), ${pdfCandidates.length} checked.</div>`;
-  document.getElementById('pdfErrs').innerHTML = notes + errs.map(e=>`<div class="err-box">${ICO.warn} <strong>${esc(e.f)}</strong>: ${esc(e.r)}</div>`).join('');
+  document.getElementById('pdfErrs').innerHTML = notes + errs.map(e=>`<div class="err-box">⚠ <strong>${esc(e.f)}</strong>: ${esc(e.r)}</div>`).join('');
 
   if(RAW_FILES.length){
     autoResolveDuplicates();
@@ -1072,7 +958,7 @@ function buildMatches(){
       otherList = otherList.slice(0,OTHER_ROW_SLOTS-1).concat([{date:overflowDates[overflowDates.length-1], amount:overflow, combined:overflowDates}]);
       otherOverflowed=true;
     }
-    rows.push({bankKey, branchCode:b.branchCode, bankCode:b.bankCode, name:b.name, dateMap:b.dateMap, total:b.total, sheetName, type, dateMode: type==='manual' ? dateModeFor(SELECTED_DIV,bankKey) : null, openingBalance, other:otherList, otherOverflowed});
+    rows.push({bankKey, branchCode:b.branchCode, bankCode:b.bankCode, name:b.name, dateMap:b.dateMap, total:b.total, sheetName, type, openingBalance, other:otherList, otherOverflowed});
   }
   rows.sort((a,b)=>a.name.localeCompare(b.name));
 
@@ -1109,25 +995,6 @@ function toggleMatchType(bankKey){
   const cur = bankType(SELECTED_DIV, bankKey, row.name);
   saveBankType(SELECTED_DIV+'|'+bankKey, cur==='manual'?'online':'manual');
   row.type = bankType(SELECTED_DIV, bankKey, row.name);
-  row.dateMode = row.type==='manual' ? dateModeFor(SELECTED_DIV,bankKey) : null;
-  renderMatchBody();
-}
-function toggleDateMode(bankKey){
-  const row = MATCHES.rows.find(r=>r.bankKey===bankKey);
-  if(!row || row.type!=='manual') return;
-  const next = row.dateMode==='actual' ? 'full' : 'actual';
-  saveDateMode(SELECTED_DIV+'|'+bankKey, next);
-  row.dateMode = next;
-  renderMatchBody();
-}
-function setGlobalDateMode(mode){
-  saveGlobalDateMode(mode);
-  if(!MATCHES) return;
-  for(const row of MATCHES.rows){
-    if(row.type!=='manual') continue;
-    const ovKey = SELECTED_DIV+'|'+row.bankKey;
-    if(!DATE_MODE_OVERRIDE[ovKey]) row.dateMode = mode; // only banks without their own override follow the new default
-  }
   renderMatchBody();
 }
 
@@ -1139,54 +1006,40 @@ function renderMatchBody(){
 
   let html='';
   if(matched.length===0){
-    html+=`<div class="hardwarn"><b>${ICO.warn} Zero banks matched — this is almost certainly the wrong division for this CP-48 file.</b>
+    html+=`<div class="hardwarn"><b>⚠ Zero banks matched — this is almost certainly the wrong division for this CP-48 file.</b>
       None of the ${MATCHES.rows.length} banks in Division ${esc(SELECTED_DIV)} have a matching "MIS Branch Code" in your uploaded template.
       Go back to Step 3 and check the match percentage shown next to each division — pick the one with the highest match instead.</div>`;
   } else if(matchRatio<0.3){
-    html+=`<div class="hardwarn"><b>${ICO.warn} Only ${matched.length} of ${MATCHES.rows.length} banks matched (${Math.round(matchRatio*100)}%).</b>
+    html+=`<div class="hardwarn"><b>⚠ Only ${matched.length} of ${MATCHES.rows.length} banks matched (${Math.round(matchRatio*100)}%).</b>
       Double-check you picked the right division in Step 3 before generating — a low match rate usually means a division/template mismatch, not missing bank sheets.</div>`;
   }
 
   const withOther = MATCHES.rows.filter(r=>r.other.length);
   if(withOther.length){
-    html+=`<div class="warn-box"><b style="display:block;margin-bottom:4px">${ICO.inbox} ${withOther.length} bank${withOther.length>1?'s have':' has'} scrolls dated outside ${String(TARGET_MONTH).padStart(2,'0')}-${TARGET_YEAR}</b>
+    html+=`<div class="warn-box"><b style="display:block;margin-bottom:4px">📥 ${withOther.length} bank${withOther.length>1?'s have':' has'} scrolls dated outside ${String(TARGET_MONTH).padStart(2,'0')}-${TARGET_YEAR}</b>
       Placed on their own real dates in extra rows right after this month's dates and before the Total — not moved to a different day. Your template's Total formula already covers these rows, so nothing needs to change there.
       <ul style="margin:8px 0 0 20px">${withOther.map(r=>`<li>${esc(r.name)}: ${r.other.map(d=>`${esc(d.date)} (${fn(d.amount)})`).join(', ')}${r.otherOverflowed?' — more than 4 extra dates, the earliest were combined onto one row':''}</li>`).join('')}</ul></div>`;
   }
 
   if(missing.length){
-    html+=`<div class="unmatched-box">${ICO.warn} ${missing.length} bank${missing.length>1?'s':''} from your CP-101 have no matching sheet in your CP-48 file (no sheet with this MIS Branch Code) — these can't be filled automatically, add a sheet for them if needed:
+    html+=`<div class="unmatched-box">⚠ ${missing.length} bank${missing.length>1?'s':''} from your CP-101 have no matching sheet in your CP-48 file (no sheet with this MIS Branch Code) — these can't be filled automatically, add a sheet for them if needed:
       <ul>${missing.map(r=>`<li>${esc(r.bankCode)} — ${esc(r.name)} (${fn(r.total)})</li>`).join('')}</ul>
     </div>`;
   }
 
-  const anyManual = MATCHES.rows.some(r=>r.type==='manual' && r.sheetName);
-  if(anyManual){
-    html+=`<div class="datemode-panel">
-      <span class="dm-label">Manual banks — default date entry:</span>
-      <span class="seggroup">
-        <button class="segbtn ${GLOBAL_DATE_MODE==='full'?'active':''}" onclick="setGlobalDateMode('full')">Full Month</button>
-        <button class="segbtn ${GLOBAL_DATE_MODE==='actual'?'active':''}" onclick="setGlobalDateMode('actual')">Actual Dates Only</button>
-      </span>
-      <span class="dm-note">Full Month writes a row for every calendar day (0 where nothing was collected) — the traditional look. Actual Dates Only writes a row for just the days money actually came in, leaving the rest blank. Same total either way — switch any single bank below with its own button.</span>
-    </div>`;
-  }
-
   html+=`<table class="matchtable"><thead><tr>
-    <th>Bank</th><th>Code</th><th>CP-48 Sheet</th><th>Type</th><th>Date Entry</th><th class="r">Opening Balance</th><th class="r">Month Total</th><th class="r">= Total (1+2)</th><th></th>
+    <th>Bank</th><th>Code</th><th>CP-48 Sheet</th><th>Type</th><th class="r">Opening Balance</th><th class="r">Month Total</th><th class="r">= Total (1+2)</th><th></th>
   </tr></thead><tbody>`;
   for(const r of matched){
-    const dm = r.type==='manual' ? r.dateMode : null;
     html+=`<tr>
       <td>${esc(r.name)}</td>
       <td class="sheetname">${esc(r.bankCode)}</td>
-      <td><span class="mstat ok">${ICO.check} ${esc(r.sheetName)}</span></td>
-      <td>${r.type==='manual'?ICO.pen+' Manual':ICO.monitor+' Online (total only)'}</td>
-      <td>${dm ? `<button class="datemodebtn ${dm==='actual'?'isactual':''}" onclick="toggleDateMode('${r.bankKey}')">${dm==='actual'?ICO.pin+' Actual Dates':ICO.calendar+' Full Month'}</button>` : '<span style="color:var(--slate-300)">—</span>'}</td>
+      <td><span class="mstat ok">✓ ${esc(r.sheetName)}</span></td>
+      <td>${r.type==='manual'?'🖊 Manual (date-wise)':'💻 Online (total only)'}</td>
       <td class="r"><input type="number" class="obinput" value="${r.openingBalance}" step="0.01" oninput="updateOpeningBalance('${r.bankKey}', this.value)"></td>
       <td class="r">${fn(r.total)}</td>
       <td class="r"><span id="tot-${r.bankKey}">${fn(r.openingBalance + r.total)}</span></td>
-      <td><button class="typebtn" onclick="toggleMatchType('${r.bankKey}')">${ICO.swap} Switch</button></td>
+      <td><button class="typebtn" onclick="toggleMatchType('${r.bankKey}')">↔ Switch</button></td>
     </tr>`;
   }
   html+=`</tbody></table>`;
@@ -1221,7 +1074,7 @@ async function buildFilledZip(){
   const Y=TARGET_YEAR, M=TARGET_MONTH, daysInMonth=MATCHES.daysInMonth;
   const monthLabel = `FOR THE MONTH OF ${String(M).padStart(2,'0')}-${Y}`;
 
-  async function fillSheet(sheetName, type, total, dateMap, opening, other, dateMode){
+  async function fillSheet(sheetName, type, total, dateMap, opening, other){
     const path = pathMap[sheetName];
     if(!path) return false;
     const xml = await zip.file(path).async('string');
@@ -1236,13 +1089,12 @@ async function buildFilledZip(){
     setNumericCellNode(doc, 'H11', opening+total);
 
     if(type==='manual'){
-      const slots = computeManualDateRows(dateMode||'full', dateMap, Y, M, daysInMonth);
-      for(let i=0;i<31;i++){
-        const row=14+i;
-        const slot=slots[i];
-        if(slot){
-          setNumericCellNode(doc, 'A'+row, excelSerial(Y,M,slot.day));
-          setNumericCellNode(doc, 'B'+row, slot.amount);
+      for(let day=1;day<=31;day++){
+        const row=13+day;
+        if(day<=daysInMonth){
+          const key=String(day).padStart(2,'0')+'/'+String(M).padStart(2,'0')+'/'+Y;
+          setNumericCellNode(doc, 'A'+row, excelSerial(Y,M,day));
+          setNumericCellNode(doc, 'B'+row, dateMap[key]||0);
         } else {
           clearCellValueNode(doc, 'A'+row);
           clearCellValueNode(doc, 'B'+row);
@@ -1281,10 +1133,10 @@ async function buildFilledZip(){
 
   for(const r of MATCHES.rows){
     if(!r.sheetName) continue;
-    await fillSheet(r.sheetName, r.type, r.total, r.dateMap, r.openingBalance, r.other, r.dateMode);
+    await fillSheet(r.sheetName, r.type, r.total, r.dateMap, r.openingBalance, r.other);
   }
   if(MATCHES.zeroOutUnmatched){
-    for(const u of MATCHES.unmatchedTemplateSheets) await fillSheet(u.sheet, 'manual', 0, {}, 0, [], 'full');
+    for(const u of MATCHES.unmatchedTemplateSheets) await fillSheet(u.sheet, 'manual', 0, {}, 0, []);
   }
   return zip;
 }
@@ -1298,7 +1150,7 @@ function buildFilledWorkbookLossy(){
   function setCell(ws, ref, value, type){ if(!ws[ref]) ws[ref]={}; ws[ref].t=type; ws[ref].v=value; delete ws[ref].w; }
   function clearCell(ws, ref){ delete ws[ref]; }
 
-  function fillSheet(sheetName, type, total, dateMap, opening, other, dateMode){
+  function fillSheet(sheetName, type, total, dateMap, opening, other){
     const ws = wb.Sheets[sheetName];
     if(!ws) return;
     other = other || [];
@@ -1309,13 +1161,12 @@ function buildFilledWorkbookLossy(){
     setCell(ws,'H10', total, 'n');
     setCell(ws,'H11', opening+total, 'n');
     if(type==='manual'){
-      const slots = computeManualDateRows(dateMode||'full', dateMap, Y, M, daysInMonth);
-      for(let i=0;i<31;i++){
-        const row=14+i;
-        const slot=slots[i];
-        if(slot){
-          setCell(ws,'A'+row, new Date(Date.UTC(Y,M-1,slot.day)), 'd');
-          setCell(ws,'B'+row, slot.amount, 'n');
+      for(let day=1;day<=31;day++){
+        const row=13+day;
+        if(day<=daysInMonth){
+          const key=String(day).padStart(2,'0')+'/'+String(M).padStart(2,'0')+'/'+Y;
+          setCell(ws,'A'+row, new Date(Date.UTC(Y,M-1,day)), 'd');
+          setCell(ws,'B'+row, dateMap[key]||0, 'n');
         } else { clearCell(ws,'A'+row); clearCell(ws,'B'+row); }
       }
     } else {
@@ -1334,8 +1185,8 @@ function buildFilledWorkbookLossy(){
       } else { clearCell(ws,'A'+row); clearCell(ws,'B'+row); }
     }
   }
-  for(const r of MATCHES.rows){ if(r.sheetName) fillSheet(r.sheetName, r.type, r.total, r.dateMap, r.openingBalance, r.other, r.dateMode); }
-  if(MATCHES.zeroOutUnmatched){ for(const u of MATCHES.unmatchedTemplateSheets) fillSheet(u.sheet,'manual',0,{},0,[],'full'); }
+  for(const r of MATCHES.rows){ if(r.sheetName) fillSheet(r.sheetName, r.type, r.total, r.dateMap, r.openingBalance, r.other); }
+  if(MATCHES.zeroOutUnmatched){ for(const u of MATCHES.unmatchedTemplateSheets) fillSheet(u.sheet,'manual',0,{},0,[]); }
   return wb;
 }
 
@@ -1349,15 +1200,15 @@ async function downloadWorkbook(){
       const zip = await buildFilledZip();
       const blob = await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
       downloadBlob(blob, fname);
-      statusEl.innerHTML = `<div class="info-box">${ICO.check} Downloaded <strong>${esc(fname)}</strong> — every formula and every bit of your original formatting is untouched; only the cells listed above were filled in. Formulas (Net Remittance, Closing Balance, and the Abstract sheet's totals) recalculate automatically when you open it.</div>`;
+      statusEl.innerHTML = `<div class="info-box">✓ Downloaded <strong>${esc(fname)}</strong> — every formula and every bit of your original formatting is untouched; only the cells listed above were filled in. Formulas (Net Remittance, Closing Balance, and the Abstract sheet's totals) recalculate automatically when you open it.</div>`;
       setStepSummary(5, `Generated ${fname}`);
     } else {
       const wb = buildFilledWorkbookLossy();
       XLSX.writeFile(wb, fname);
-      statusEl.innerHTML = `<div class="warn-box">${ICO.check} Downloaded <strong>${esc(fname)}</strong>. Since this came from a legacy .xls file, some fonts/borders may not have carried over exactly — check it, and if the formatting looks off, convert your template to .xlsx first (see the note in Step 1) and regenerate.</div>`;
+      statusEl.innerHTML = `<div class="warn-box">✓ Downloaded <strong>${esc(fname)}</strong>. Since this came from a legacy .xls file, some fonts/borders may not have carried over exactly — check it, and if the formatting looks off, convert your template to .xlsx first (see the note in Step 1) and regenerate.</div>`;
     }
   }catch(e){
-    statusEl.innerHTML = `<div class="err-box">${ICO.warn} Couldn't generate the file: ${esc(e.message||e)}</div>`;
+    statusEl.innerHTML = `<div class="err-box">⚠ Couldn't generate the file: ${esc(e.message||e)}</div>`;
   }
 }
 
@@ -1378,12 +1229,11 @@ function showPrintPreview(){
     let dateRowsHtml='';
     let rangeTotal=0;
     if(r.type==='manual'){
-      const slots = computeManualDateRows(r.dateMode||'full', r.dateMap, TARGET_YEAR, TARGET_MONTH, daysInMonth);
-      for(const slot of slots){
-        if(!slot) continue;
-        const key=String(slot.day).padStart(2,'0')+'/'+String(TARGET_MONTH).padStart(2,'0')+'/'+TARGET_YEAR;
-        rangeTotal+=slot.amount;
-        dateRowsHtml+=`<tr><td>${key}</td><td class="r">${fn(slot.amount)}</td></tr>`;
+      for(let day=1;day<=daysInMonth;day++){
+        const key=String(day).padStart(2,'0')+'/'+String(TARGET_MONTH).padStart(2,'0')+'/'+TARGET_YEAR;
+        const amt=r.dateMap[key]||0;
+        rangeTotal+=amt;
+        dateRowsHtml+=`<tr><td>${key}</td><td class="r">${fn(amt)}</td></tr>`;
       }
     } else {
       const otherSum=(r.other||[]).reduce((s,o)=>s+o.amount,0);
