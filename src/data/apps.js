@@ -98,7 +98,7 @@ const apps = [
   },
   {
     id: "cp48-maker",
-    name: "CP-48(Collection)",
+    name: "CP-48 (Collection) Generator",
     description: "Generate prefilled CP-48 from CP-101 and last month CP-48.",
     category: "Banking",
     icon: Receipt,
