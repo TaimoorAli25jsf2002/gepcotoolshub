@@ -223,6 +223,13 @@ h1{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gr
 .rp-inputs label{font-size:13px;color:var(--ink);display:flex;align-items:center;gap:6px}
 .rp-inputs input[type=date]{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font-ui)}
 .rp-count{font-size:12px;color:var(--green-800);background:var(--green-100);padding:6px 13px;border-radius:14px;font-weight:600}
+.rp-toggle{display:inline-flex;align-items:center;gap:9px;font-size:13px;color:var(--ink);cursor:pointer;user-select:none}
+.rp-toggle input{position:absolute;opacity:0;width:0;height:0}
+.rp-toggle .sw{position:relative;width:34px;height:20px;background:var(--border);border-radius:999px;transition:background .18s;flex-shrink:0}
+.rp-toggle .sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:var(--shadow-xs);transition:transform .18s}
+.rp-toggle input:checked + .sw{background:var(--grad-brand)}
+.rp-toggle input:checked + .sw::after{transform:translateX(14px)}
+.rp-toggle input:focus-visible + .sw{box-shadow:0 0 0 3px var(--green-100)}
 .rowchk{text-align:center}
 .rowchk input{cursor:pointer;accent-color:var(--green-700)}
 .zerorow td{color:var(--slate-300)}
@@ -404,6 +411,7 @@ let ACTIVE_TAB = 'cp48';
 let ENTRY_RANGE = null; // {from:Date, to:Date} — the dense day-by-day range for CP-48 entry (user-adjustable)
 let ENTRY_MODE = 'full'; // 'full' (zero-filled calendar month) | 'sparse' (only dates actually in the PDF)
 let EXCLUDED_DATES = {}; // bankKey -> Set of "DD/MM/YYYY" strings the user has unchecked out of the copy/paste list
+let SKIP_SUNDAYS = false; // when true, Sundays in the current full-month range are bulk-unchecked across all manual banks
 let EXPAND_ALL = true;
 /* CARD_OPEN remembers the open/closed state of each individual collapsible
    card (keyed "tab:cardId"), independent of the EXPAND_ALL toggle and
@@ -444,7 +452,16 @@ function toggleBankType(bankKey){
   const b = RESULTS.banks[bankKey];
   const name = b ? b.name : '';
   const cur = bankType(bankKey, name);
-  saveBankType(SELECTED_DIV+'|'+bankKey, cur==='manual' ? 'online' : 'manual');
+  const next = cur==='manual' ? 'online' : 'manual';
+  saveBankType(SELECTED_DIV+'|'+bankKey, next);
+  if(SKIP_SUNDAYS && next==='manual'){
+    // this bank just became manual — give it the same Sunday treatment as the rest
+    const sundays = sundayDmysInRange();
+    if(sundays.length){
+      if(!EXCLUDED_DATES[bankKey]) EXCLUDED_DATES[bankKey]=new Set();
+      for(const dmy of sundays) EXCLUDED_DATES[bankKey].add(dmy);
+    }
+  }
   renderEntryTab();
 }
 function copyToClipboard(text, btn){
@@ -920,6 +937,7 @@ function onRangeChange(){
   if(!ENTRY_RANGE) ENTRY_RANGE = {};
   if(fromEl.value) ENTRY_RANGE.from = isoToDate(fromEl.value);
   if(toEl.value) ENTRY_RANGE.to = isoToDate(toEl.value);
+  if(SKIP_SUNDAYS) applySundaySkip(true); // keep newly-revealed Sundays skipped too
   renderEntryTab();
 }
 
@@ -929,6 +947,35 @@ function setEntryMode(mode){
 }
 function isDateExcluded(bankKey, dmy){
   return !!(EXCLUDED_DATES[bankKey] && EXCLUDED_DATES[bankKey].has(dmy));
+}
+/* "Skip Sundays" is a bulk convenience action, not a sticky per-date rule:
+   clicking it once unchecks (or rechecks) every Sunday in the current
+   full-month range, across every manual bank, in one go. After that you're
+   free to re-check an individual Sunday by hand — that override is left
+   alone until you change the date range or flip this toggle again, at
+   which point Sundays are re-synced from scratch. */
+function sundayDmysInRange(){
+  if(!ENTRY_RANGE) return [];
+  return eachDateInRange(ENTRY_RANGE.from, ENTRY_RANGE.to).filter(d=>d.getDay()===0).map(fmtDMY);
+}
+function applySundaySkip(enable){
+  const sundays = sundayDmysInRange();
+  if(!sundays.length || !RESULTS) return;
+  for(const [bankKey,b] of Object.entries(RESULTS.banks)){
+    if(bankType(bankKey,b.name)!=='manual') continue;
+    if(enable){
+      if(!EXCLUDED_DATES[bankKey]) EXCLUDED_DATES[bankKey]=new Set();
+      for(const dmy of sundays) EXCLUDED_DATES[bankKey].add(dmy);
+    } else {
+      const set=EXCLUDED_DATES[bankKey];
+      if(set) for(const dmy of sundays) set.delete(dmy);
+    }
+  }
+}
+function toggleSkipSundays(){
+  SKIP_SUNDAYS = !SKIP_SUNDAYS;
+  applySundaySkip(SKIP_SUNDAYS);
+  renderEntryTab();
 }
 /* ENTRY_ROWS_CACHE holds each manual bank's full row list (as last rendered)
    so a single date checkbox can be applied with a targeted DOM update
@@ -1051,6 +1098,9 @@ function renderEntryTab(){
     <div class="rp-inputs">
       <label>From <input type="date" id="rangeFrom" value="${ENTRY_RANGE?dateToIso(ENTRY_RANGE.from):''}" onchange="onRangeChange()"></label>
       <label>To <input type="date" id="rangeTo" value="${ENTRY_RANGE?dateToIso(ENTRY_RANGE.to):''}" onchange="onRangeChange()"></label>
+      <label class="rp-toggle" title="Unchecks every Sunday row across all manual banks below in one go. You can still re-check an individual Sunday afterward if a bank actually posted on one.">
+        <input type="checkbox" ${SKIP_SUNDAYS?'checked':''} onchange="toggleSkipSundays()"><span class="sw"></span>Skip Sundays
+      </label>
       <span class="rp-count">${range.length} day${range.length===1?'':'s'} will be listed per bank</span>
     </div>`;
   } else {
