@@ -226,6 +226,32 @@ tr.sub td{background:var(--navy-50);font-weight:700;border-top:2px solid var(--b
       font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
 .sbtn:hover{background:var(--navy-50)}
 .sbtn.on{background:var(--navy-800);color:#fff;border-color:var(--navy-800)}
+
+/* ── copy-to-Excel buttons, Copy All bar, bank-order panel ── */
+.amtwrap{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-variant-numeric:tabular-nums}
+.cpbtn{width:24px;height:24px;padding:0;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--navy-700);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:.7;transition:all .12s;
+  font-size:13px;font-weight:700;line-height:1;flex-shrink:0}
+.cpbtn:hover,.cpbtn:focus-visible{opacity:1;background:var(--navy-50);border-color:var(--navy-600);outline:none}
+.cpbtn.ok{opacity:1;background:var(--good-bg);color:var(--good);border-color:#bfe3cc}
+.cpbtn.bad{opacity:1;background:var(--danger-bg);color:var(--danger);border-color:var(--danger-border)}
+.copybar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border-soft)}
+.copybar.flat{padding:0 0 12px;border-bottom:none}
+.cplbl{font-size:12px;font-weight:600;color:var(--navy-800);display:inline-flex;align-items:center;gap:6px}
+.cpsel{border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;color:var(--ink);background:#fff}
+.cpstat{font-size:12px;color:var(--slate-500);line-height:1.5;flex:1;min-width:200px}
+.cpstat.ok{color:var(--good)}
+.cpstat.err{color:var(--danger);font-weight:600}
+.orderpanel{flex-basis:100%;width:100%;border-top:1px solid var(--border-soft);padding-top:12px;margin-top:2px}
+.op-title{font-size:13px;font-weight:700;color:var(--navy-800);margin-bottom:4px}
+.op-hint{font-size:12px;color:var(--slate-500);margin-bottom:8px;line-height:1.5}
+.orderpanel textarea{width:100%;min-height:130px;max-height:320px;resize:vertical;border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink);
+  background:#fff;white-space:pre;overflow:auto}
+.orderpanel textarea:focus{outline:none;border-color:var(--navy-600)}
+.op-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.op-toggle{font-size:12.5px;color:var(--slate-700);display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.op-toggle input{accent-color:var(--navy-700)}
 /* footer */
 .footer{text-align:center;padding:22px 10px 8px;font-size:12px;color:var(--slate-500)}
 .footer b{color:var(--slate-700)}
@@ -236,6 +262,7 @@ tr.sub td{background:var(--navy-50);font-weight:700;border-top:2px solid var(--b
   .wrap{max-width:100%;padding:0}
   .dz, .upload-btns, .load-bar, #errs, .toolbar, .setup, .selbar, .letterhead{display:none !important}
   .empty{display:none !important}
+  .cpbtn, .copybar, .orderpanel{display:none !important}
   .print-head{display:block;text-align:center;margin-bottom:14px}
   .print-head h1{font-size:18px;color:#000;margin-bottom:2px}
   .print-head .sub{color:#444;font-size:11px}
@@ -329,8 +356,22 @@ tr.sub td{background:var(--navy-50);font-weight:700;border-top:2px solid var(--b
     <div class="btn-row">
       <button class="sbtn" id="detailBtn" onclick="toggleDetail()" style="display:none"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Show Per-File Detail</button>
       <button class="sbtn" id="combineBtn" onclick="toggleCombine()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4H6l6 8-6 8h12"/></svg> Show combined totals</button>
+      <button class="sbtn" id="orderBtn" onclick="toggleOrderPanel()">Bank order</button>
       <button class="sbtn" onclick="window.print()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print / Save as PDF</button>
       <button class="xbtn" onclick="doExport()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export to Excel</button>
+    </div>
+    <div class="orderpanel" id="orderPanel" style="display:none">
+      <div class="op-title">Bank order — match your Excel sheet</div>
+      <div class="op-hint">In Excel, select the bank cells in the exact rows you paste amounts into, copy them, and paste below
+        (5-digit bank codes or bank names, one bank per line). The tables and the “Copy all” buttons then follow this order.
+        Banks that are in your sheet but missing from a file stay as blank rows, so pasted amounts line up with your sheet.</div>
+      <textarea id="orderText" spellcheck="false" placeholder="Paste your bank column from Excel here…"></textarea>
+      <div class="op-row">
+        <button type="button" class="xbtn" onclick="applyBankOrder()">Apply order</button>
+        <button type="button" class="tinybtn" onclick="clearBankOrder()">Clear</button>
+        <label class="op-toggle"><input type="checkbox" id="orderOn" onchange="toggleBankOrder(this.checked)"> Use this order</label>
+        <span class="cpstat" id="orderStat"></span>
+      </div>
     </div>
   </div>
   <div id="summaryOut"></div>
@@ -378,6 +419,289 @@ const ICO = (()=>{
     download:s('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
     docText:s('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/>'),
   };
+})();
+
+/* ─── copy-to-Excel: per-row copy, "Copy all", and Excel bank order ───
+   Everything below is additive. Amounts are copied as plain numbers
+   (no thousands commas) so Excel always reads them as numbers.         */
+const _cps = p => '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0">'+p+'</svg>';
+const CP_SVG = {
+  copy: _cps('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
+  tick: _cps('<polyline points="20 6 9 17 4 12"/>'),
+  list: _cps('<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>')
+};
+
+function rawAmt(n){
+  const v = Math.round((Number(n)||0)*100)/100;
+  return (Math.abs(v)<0.005 ? 0 : v).toFixed(2);
+}
+
+function copyText(text){
+  return new Promise(resolve=>{
+    const fallback=()=>{
+      try{
+        const ta=document.createElement('textarea');
+        ta.value=text; ta.setAttribute('readonly','');
+        ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';
+        document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,text.length);
+        const ok=document.execCommand('copy');
+        document.body.removeChild(ta);
+        resolve(!!ok);
+      }catch(e){ resolve(false); }
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>resolve(true), fallback);
+    } else fallback();
+  });
+}
+
+/* ── per-row copy button (sits inside the existing amount cell) ── */
+function cpBtn(n){
+  return `<button type="button" class="cpbtn" data-v="${rawAmt(n)}" title="Copy this amount" aria-label="Copy this amount" onclick="copyAmt(this)">${CP_SVG.copy}</button>`;
+}
+function copyAmt(btn){
+  copyText(btn.getAttribute('data-v')).then(ok=>{
+    btn.classList.toggle('ok', ok); btn.classList.toggle('bad', !ok);
+    btn.innerHTML = ok ? CP_SVG.tick : '!';
+    clearTimeout(btn._t);
+    btn._t=setTimeout(()=>{ btn.classList.remove('ok','bad'); btn.innerHTML=CP_SVG.copy; }, 1200);
+  });
+}
+
+/* ── Excel bank order (saved in this browser so it survives reloads) ── */
+let BANK_ORDER_TEXT = '';
+let BANK_ORDER_ON   = false;
+let ORDER_DIV = null;                       // division the two values above belong to
+const ORDER_KEY = 'cp100_bank_orders_v2';   // saved per division
+const DEFAULT_ORDERS = {
+  '1242': ['01942','02942','03942','05942','11942','16942','22942','08942','57942','59942','60942','62942'].join('\n')
+};
+const OLD_1242_WITH_BLANK = ['01942','02942','03942','05942','11942','16942','22942','','08942','57942','59942','60942','62942'].join('\n');
+let ORDERS = {};
+try{ const raw=localStorage.getItem(ORDER_KEY); if(raw) ORDERS=JSON.parse(raw)||{}; }catch(e){}
+for(const [d,t] of Object.entries(DEFAULT_ORDERS)) if(!ORDERS[d]) ORDERS[d]={text:t,on:true};
+if(ORDERS['1242'] && ORDERS['1242'].text===OLD_1242_WITH_BLANK) ORDERS['1242'].text=DEFAULT_ORDERS['1242'];  // fix earlier typo
+function syncOrderForDiv(){
+  const d = (typeof SELECTED_DIV!=='undefined' && SELECTED_DIV) ? SELECTED_DIV : '_';
+  if(d===ORDER_DIV) return;
+  ORDER_DIV=d;
+  const o=ORDERS[d]||{text:'',on:false};
+  BANK_ORDER_TEXT=String(o.text||''); BANK_ORDER_ON=!!o.on && BANK_ORDER_TEXT.trim().length>0;
+  const ta=document.getElementById('orderText'); if(ta) ta.value=BANK_ORDER_TEXT;
+}
+function saveOrder(){
+  ORDERS[ORDER_DIV||'_']={text:BANK_ORDER_TEXT,on:BANK_ORDER_ON};
+  try{ localStorage.setItem(ORDER_KEY, JSON.stringify(ORDERS)); }catch(e){}
+}
+
+function orderLines(){
+  syncOrderForDiv();
+  if(!BANK_ORDER_TEXT) return [];
+  const lines = BANK_ORDER_TEXT.replace(/\r/g,'').split('\n');
+  while(lines.length && !lines[lines.length-1].trim()) lines.pop();   // never paste past the last real row
+  return lines;
+}
+function normName(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,''); }
+
+/* one pasted line -> bank code (or null).  Order of tries: 5-digit code, exact name, unique partial name */
+function resolveOrderLine(line, bl){
+  const cells = line.split('\t').map(c=>c.trim()).filter(Boolean);
+  if(!cells.length) return null;
+  for(const c of cells){
+    let code=null;
+    if(cells.length===1 && /^\d{1,5}$/.test(c)) code=c.padStart(5,'0');
+    else { const m=/(?:^|\D)(\d{5})(?:\D|$)/.exec(c); if(m) code=m[1]; }
+    if(code && bl.some(b=>b.code===code)) return code;
+  }
+  for(const c of cells){
+    const n=normName(c); if(!n) continue;
+    const hit=bl.filter(b=>b._n===n);
+    if(hit.length===1) return hit[0].code;
+  }
+  for(const c of cells){
+    const n=normName(c); if(n.length<3) continue;
+    const hit=bl.filter(b=>b._n.length>=3 && (b._n.includes(n) || n.includes(b._n)));
+    if(hit.length===1) return hit[0].code;
+  }
+  return null;
+}
+function resolveOrder(items){
+  const bl = items.map(b=>({code:b.code, _n:normName(b.name)}));
+  const lines = orderLines();
+  const rows=[], index={}, unmatched=[];
+  lines.forEach((ln,i)=>{
+    const code = ln.trim() ? resolveOrderLine(ln, bl) : null;
+    rows.push(code);
+    if(code){ if(!(code in index)) index[code]=i; }
+    else if(ln.trim()) unmatched.push(ln.trim().replace(/\t/g,' '));
+  });
+  return {rows, index, unmatched};
+}
+/* default = by bank code, exactly as before; with an order active = Excel order, unlisted banks last */
+function sortByBankOrder(items){
+  syncOrderForDiv();
+  const base = items.slice().sort((a,b)=>a.code.localeCompare(b.code));
+  if(!BANK_ORDER_ON || !orderLines().length) return base;
+  const {index} = resolveOrder(items);
+  return base.sort((a,b)=>{
+    const ia = (a.code in index) ? index[a.code] : Infinity;
+    const ib = (b.code in index) ? index[b.code] : Infinity;
+    if(ia===ib) return a.code.localeCompare(b.code);
+    return ia-ib;
+  });
+}
+function universeBanks(){
+  const m={};
+  for(const res of RESULTS) for(const b of Object.values(res.banks)){
+    if(!m[b.code]) m[b.code]={code:b.code,name:b.name||''};
+    else if((b.name||'').length>m[b.code].name.length) m[b.code].name=b.name;
+  }
+  return Object.values(m);
+}
+
+function refreshOrderUI(){
+  syncOrderForDiv();
+  const btn=document.getElementById('orderBtn'), cb=document.getElementById('orderOn'), st=document.getElementById('orderStat');
+  if(cb) cb.checked = BANK_ORDER_ON;
+  if(btn){
+    btn.classList.toggle('on', BANK_ORDER_ON);
+    btn.innerHTML = CP_SVG.list + ' Bank order' + (BANK_ORDER_ON ? ' · on' : '');
+  }
+  if(!st) return;
+  const lines = orderLines();
+  if(!lines.length){ st.className='cpstat'; st.textContent='No order set — banks are shown by bank code.'; return; }
+  const uni = universeBanks();
+  const {rows,index,unmatched} = resolveOrder(uni);
+  const matched = rows.filter(Boolean).length;
+  const notListed = uni.filter(b=>!(b.code in index));
+  let msg = `${matched} of ${lines.filter(l=>l.trim()).length} lines matched to banks in these files.`;
+  if(unmatched.length) msg += ` Not found in the uploaded files (kept as blank rows): ${esc(unmatched.slice(0,6).join(', '))}${unmatched.length>6?' …':''}.`;
+  if(notListed.length) msg += ` In the files but NOT in your list (shown last, never copied): ${esc(notListed.slice(0,6).map(b=>b.code).join(', '))}${notListed.length>6?' …':''}.`;
+  if(!BANK_ORDER_ON) msg += ' (order is switched off)';
+  st.className = 'cpstat' + (notListed.length ? ' err' : (BANK_ORDER_ON ? ' ok' : ''));
+  st.innerHTML = msg;
+}
+function rerenderForOrder(){
+  refreshOrderUI();
+  if(RESULTS.length){ render(); renderSummary(); }
+}
+function toggleOrderPanel(){
+  const p=document.getElementById('orderPanel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+  if(p.style.display!=='none') refreshOrderUI();
+}
+function applyBankOrder(){
+  BANK_ORDER_TEXT = document.getElementById('orderText').value.replace(/\r/g,'');
+  BANK_ORDER_ON = orderLines().length>0;
+  saveOrder(); rerenderForOrder();
+}
+function toggleBankOrder(on){
+  if(on && !orderLines().length){ document.getElementById('orderOn').checked=false; return; }
+  BANK_ORDER_ON = !!on;
+  saveOrder(); rerenderForOrder();
+}
+function clearBankOrder(){
+  BANK_ORDER_TEXT=''; BANK_ORDER_ON=false;
+  document.getElementById('orderText').value='';
+  saveOrder(); rerenderForOrder();
+}
+
+/* ── build the one-column text that gets pasted into Excel ──
+   values: {bankCode: amount} (already combined per bank)
+   items : every bank known for that table [{code,name}], used to match the order list */
+function buildColumn(values, items){
+  syncOrderForDiv();
+  const codes = Object.keys(values);
+  const active = BANK_ORDER_ON && orderLines().length>0;
+  if(!active){
+    const sorted = codes.slice().sort((a,b)=>a.localeCompare(b));
+    return {text:sorted.map(c=>rawAmt(values[c])).join('\n'), count:sorted.length, rows:sorted.length, ordered:false, extras:[]};
+  }
+  const {rows} = resolveOrder(items);
+  const placed = new Set(), out=[];
+  rows.forEach(code=>{
+    if(code && (code in values) && !placed.has(code)){ out.push(rawAmt(values[code])); placed.add(code); }
+    else out.push('');
+  });
+  while(out.length && out[out.length-1]==='') out.pop();
+  return {text:out.join('\n'), count:placed.size, rows:out.length, ordered:true, extras:codes.filter(c=>!placed.has(c))};
+}
+function doCopyColumn(statId, values, items){
+  const st=document.getElementById(statId);
+  const setSt=(html,cls)=>{ if(st){ st.className='cpstat'+(cls?' '+cls:''); st.innerHTML=html; } };
+  const col=buildColumn(values, items);
+  if(!col.text.trim()){
+    setSt(`${ICO.warn} Nothing to copy${col.ordered?' — none of these banks match your order list.':'.'}`, 'err');
+    return;
+  }
+  copyText(col.text).then(ok=>{
+    if(!ok){ setSt(`${ICO.warn} The browser blocked copying — click again.`, 'err'); return; }
+    let msg = `${ICO.check} Copied ${col.count} bank amount${col.count===1?'':'s'}`
+      + (col.ordered ? ` in your Excel order (${col.rows} row${col.rows===1?'':'s'}, blank where a bank isn’t in this file)` : ' sorted by bank code')
+      + ' — paste into Excel.';
+    let cls='ok';
+    if(col.extras.length){
+      const nm={}; items.forEach(b=>nm[b.code]=b.name||'');
+      msg += ` ${ICO.warn} NOT copied (missing from your order list): `
+        + col.extras.map(c=>`${esc(c)} ${esc(nm[c])} = ${fn(values[c])}`).join('; ');
+      cls='err';
+    }
+    setSt(msg, cls);
+  });
+}
+
+/* ── Copy all: one file / one result block ── */
+const CP_DATE_SEL = {};
+function copyBarHtml(i, res){
+  const set=new Set();
+  for(const b of Object.values(res.banks)) for(const sc of b.scrolls) if(sc.payDate) set.add(sc.payDate);
+  const dates=[...set].sort((a,b)=>parseDMY(a)-parseDMY(b));
+  const cur = dates.includes(CP_DATE_SEL[i]) ? CP_DATE_SEL[i] : '';
+  let sel='';
+  if(dates.length>1){
+    sel = `<label class="cplbl">Payment date
+      <select class="cpsel" id="cpd_${i}" onchange="CP_DATE_SEL[${i}]=this.value">
+        <option value="">All dates (combined)</option>
+        ${dates.map(d=>`<option value="${esc(d)}"${d===cur?' selected':''}>${esc(d)}</option>`).join('')}
+      </select></label>`;
+  }
+  return `<div class="copybar">
+    <button type="button" class="xbtn" onclick="copyAllFile(${i})">${CP_SVG.copy} Copy all bank amounts</button>
+    ${sel}
+    <span class="cpstat" id="cps_${i}">Copies the Scroll Total — one combined amount per bank, one per line</span>
+  </div>`;
+}
+function copyAllFile(i){
+  const res=RESULTS[i]; if(!res) return;
+  const sel=document.getElementById('cpd_'+i);
+  const pd = sel ? sel.value : '';
+  const items=Object.values(res.banks), values={};
+  for(const bank of items){
+    let sum=0, n=0;
+    for(const sc of bank.scrolls){ if(!pd || sc.payDate===pd){ sum+=sc.total; n++; } }
+    if(n) values[bank.code]=sum;
+  }
+  doCopyColumn('cps_'+i, values, items);
+}
+
+/* ── Copy all: whole-batch bank totals in the Monthly / Batch Summary ── */
+function copyBarSummaryHtml(){
+  return `<div class="copybar flat">
+    <button type="button" class="xbtn" onclick="copyAllSummary()">${CP_SVG.copy} Copy all bank totals</button>
+    <span class="cpstat" id="cps_sum">One combined total per bank across every included file</span>
+  </div>`;
+}
+function copyAllSummary(){
+  const s=buildBatchSummary(), items=Object.values(s.bankAgg), values={};
+  for(const b of items) values[b.code]=b.total;
+  doCopyColumn('cps_sum', values, items);
+}
+
+/* restore the saved order into the panel on load */
+(function(){
+  const ta=document.getElementById('orderText');
+  if(ta) ta.value = BANK_ORDER_TEXT;
+  refreshOrderUI();
 })();
 
 /* ─── pdf.js → array of line-strings per page ─
@@ -781,7 +1105,7 @@ function renderSummary(){
   if(RESULTS.length<2){ sEl.innerHTML=''; return; }
 
   const s=buildBatchSummary();
-  const banks=Object.values(s.bankAgg).sort((a,b)=>a.code.localeCompare(b.code));
+  const banks=sortByBankOrder(Object.values(s.bankAgg));
   const dates=Object.keys(s.dateAgg).sort((a,b)=>parseDMY(a)-parseDMY(b));
   const anyDiff = RESULTS.some(r=>r.formType==='daily');
   const dateRangeTxt = dates.length ? (dates.length>1 ? `${dates[0]} – ${dates[dates.length-1]}` : dates[0]) : '—';
@@ -802,7 +1126,7 @@ function renderSummary(){
   }
   html+=`</div>`;
 
-  html+=`<div class="summary-sec"><h3>Bank-wise Totals — Whole Batch</h3>
+  html+=`<div class="summary-sec"><h3>Bank-wise Totals — Whole Batch</h3>${copyBarSummaryHtml()}
     <table><thead><tr><th>Bank Code</th><th>Bank Name</th><th class="r">Files</th><th class="r">Scrolls</th><th class="r">Total</th>`;
   if(anyDiff) html+=`<th class="r">Difference</th><th class="r">Bank Total</th>`;
   html+=`</tr></thead><tbody>`;
@@ -810,7 +1134,7 @@ function renderSummary(){
     html+=`<tr>
       <td class="code">${esc(b.code)}</td><td>${esc(b.name)}</td>
       <td class="r">${b.fileCount}</td><td class="r">${b.scrollCount}</td>
-      <td class="amt">${fn(b.total)}</td>`;
+      <td class="amt"><span class="amtwrap"><span>${fn(b.total)}</span>${cpBtn(b.total)}</span></td>`;
     if(anyDiff) html+=`<td class="${b.diff===0?'dok':'dwarn'}">${fn(b.diff)}</td><td class="amt">${fn(b.bankTotal)}</td>`;
     html+=`</tr>`;
   }
@@ -908,7 +1232,7 @@ function render(){
   updateDiffChip(diffRows.length);
 
   for(const res of RESULTS){
-    const list=Object.values(res.banks).sort((a,b)=>a.code.localeCompare(b.code));
+    const list=sortByBankOrder(Object.values(res.banks));
     const isD=res.formType==='daily';
     const totalScrolls=list.reduce((s,b)=>s+b.scrolls.length,0);
     const anyDiff=isD&&list.some(b=>b.scrolls.some(sc=>sc.diff!==0));
@@ -929,6 +1253,8 @@ function render(){
     if(anyDiff)
       html+=`<div class="warn-ban">${ICO.warn} One or more scrolls have a non-zero DIFFERENCE — highlighted in red below, and listed in the Differences Summary above</div>`;
 
+    html+=copyBarHtml(RESULTS.indexOf(res),res);
+
     html+=`<table><thead><tr>
       <th>Bank Code</th><th>Bank Name</th><th>Payment Date</th>
       <th class="r">Scroll No</th><th class="r">Scroll Total</th>`;
@@ -945,7 +1271,7 @@ function render(){
           <td>${first?esc(bank.name):''}</td>
           <td>${esc(sc.payDate)}</td>
           <td class="r">${sc.scrollNo}</td>
-          <td class="amt">${fn(sc.total)}</td>`;
+          <td class="amt"><span class="amtwrap"><span>${fn(sc.total)}</span>${cpBtn(sc.total)}</span></td>`;
         if(isD) html+=`<td class="${sc.diff===0?'dok':'dwarn'}">${fn(sc.diff)}</td><td class="amt">${fn(sc.bankTotal)}</td>`;
         html+=`</tr>`;
         first=false;
@@ -958,7 +1284,7 @@ function render(){
         html+=`<tr class="sub">
           <td colspan="3" style="text-align:right;padding-right:16px">Combined Total — ${esc(bank.name)} (${sorted.length} scrolls)</td>
           <td></td>
-          <td class="amt">${fn(combTotal)}</td>`;
+          <td class="amt"><span class="amtwrap"><span>${fn(combTotal)}</span>${cpBtn(combTotal)}</span></td>`;
         if(isD) html+=`<td class="${combDiff===0?'dok':'dwarn'}">${fn(combDiff)}</td><td class="amt">${fn(combBankTotal)}</td>`;
         html+=`</tr>`;
       }
@@ -1011,6 +1337,7 @@ function render(){
     html+=`</div>`; // close rblock
   }
   el.innerHTML=html;
+  refreshOrderUI();
 }
 
 /* ─── excel export ────────────────────────── */
