@@ -20,10 +20,20 @@ import {
 } from "lucide-react";
 
 const apps = [
-  {
-    id: "cp100",
+ {
+    id: "cp100n",
     name: "CP-100 Verifier",
     description: "Verify CP-100 Direct or online and find payment against reference numbers.",
+    category: "Banking",
+    icon: FileCheck2,
+    path: "apps/cp100n/index.html",
+    tags: ["cp100n", "pdf", "reference", "number", "amount", "search"]
+  },
+
+  {
+    id: "cp100",
+    name: "CP-100 Verifier(Cache)",
+    description: "Verify CP-100 Direct or online and find payment against reference numbers.(Stores indexes in browser storage)",
     category: "Banking",
     icon: FileCheck2,
     path: "apps/cp100/index.html",
