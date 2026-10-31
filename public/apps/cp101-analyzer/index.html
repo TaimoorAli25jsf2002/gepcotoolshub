@@ -273,12 +273,29 @@ h1{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gr
 .footer-brand{font-size:12.5px;color:var(--slate-500)}
 .footer-brand b{color:var(--green-800);font-weight:700}
 .footer-tag{font-size:11px;color:var(--slate-300);margin-top:4px;letter-spacing:.03em}
+
+/* ── bank order (match the Excel sheet) ── */
+.sbtn.on{background:var(--grad-brand);color:#fff;border-color:transparent}
+.orderpanel{flex-basis:100%;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-xs)}
+.op-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--green-900);margin-bottom:4px}
+.op-hint{font-size:12px;color:var(--slate-500);margin-bottom:10px;line-height:1.55}
+.orderpanel textarea{width:100%;min-height:130px;max-height:320px;resize:vertical;border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink);background:#fff;white-space:pre;overflow:auto}
+.orderpanel textarea:focus{outline:none;border-color:var(--green-700);box-shadow:0 0 0 3px var(--green-100)}
+.op-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.op-toggle{font-size:12.5px;color:var(--slate-700);display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.op-toggle input{accent-color:var(--green-700)}
+.cpstat{font-size:12px;color:var(--slate-500);line-height:1.5;flex:1;min-width:200px}
+.cpstat.ok{color:var(--good)}
+.cpstat.err{color:var(--danger);font-weight:600}
+.cpstat:empty{display:none}
+.cpstat-block{margin:0 0 10px}
 .print-head{display:none}
 @media print{
   body{background:#fff}
   body::before{display:none}
   .wrap{max-width:100%;padding:0}
-  .dz,.upload-btns,.load-bar,#errs,.setup,.selbar,.tabbar,.searchbox{display:none !important}
+  .dz,.upload-btns,.load-bar,#errs,.setup,.selbar,.tabbar,.searchbox,.orderpanel,.cpstat{display:none !important}
   .empty{display:none !important}
   .print-head{display:block;text-align:center;margin-bottom:14px}
   .print-head h1{font-size:18px;color:#000;margin-bottom:2px}
@@ -358,9 +375,24 @@ h1{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gr
     </div>
     <div class="toolbtns">
       <input type="text" class="searchbox" id="searchBox" placeholder="Search bank name or code…" oninput="onSearch()" style="display:none">
+      <button class="sbtn" id="orderBtn" onclick="toggleOrderPanel()">Bank order</button>
       <button class="sbtn" id="expandBtn" onclick="toggleExpandAll()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg> Expand All</button>
       <button class="sbtn" onclick="window.print()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1"/><path d="M6 17h12v5H6z"/></svg> Print / Save as PDF</button>
       <button class="xbtn" onclick="doExport()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 18v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></svg> Export to Excel</button>
+    </div>
+    <div class="orderpanel" id="orderPanel" style="display:none">
+      <div class="op-title">Bank order — match your Excel sheet</div>
+      <div class="op-hint">In Excel, select the bank cells in the exact rows you paste amounts into, copy them, and paste below
+        (5-digit branch or bank codes, or bank names — one bank per line; “01942 / 12345” also works). Banks in the tables follow this order,
+        and “Copy Amounts in Excel Order” in the Online Banks section pastes row-for-row against your sheet: a bank that is in your list
+        but has no online amount becomes a blank row. Saved separately for each division.</div>
+      <textarea id="orderText" spellcheck="false" placeholder="Paste your bank column from Excel here…"></textarea>
+      <div class="op-row">
+        <button type="button" class="xbtn" style="padding:9px 18px;font-size:12.5px" onclick="applyBankOrder()">Apply order</button>
+        <button type="button" class="typebtn" onclick="clearBankOrder()">Clear</button>
+        <label class="op-toggle"><input type="checkbox" id="orderOn" onchange="toggleBankOrder(this.checked)"> Use this order</label>
+        <span class="cpstat" id="orderStat"></span>
+      </div>
     </div>
   </div>
 
@@ -772,11 +804,18 @@ function buildMergedResults(){
   const banks={};      // bankKey -> merged bank record
   const familiesAgg={}; // code -> {name,stubs,amount}
   const weeks=[];
+  const pdfOrder=[];   // bank keys in the order they appear in the PDF(s)
   let grandTotal=0, totalScrolls=0;
 
   for(const f of wanted){
     const div=f.divisions[SELECTED_DIV];
     weeks.push({weekEnding:f.weekEnding, procDate:f.procDate, fname:f.fname});
+    // keep the PDF's own order; a bank first seen in a later file slots in right after the bank before it
+    div.order.forEach((key,i)=>{
+      if(pdfOrder.includes(key)) return;
+      const prev = i>0 ? pdfOrder.indexOf(div.order[i-1]) : -1;
+      pdfOrder.splice(prev+1, 0, key);
+    });
 
     for(const key of div.order){
       const bank=div.banks[key];
@@ -800,8 +839,9 @@ function buildMergedResults(){
   const dateSet=new Set();
   for(const b of Object.values(banks)) for(const sc of b.scrolls) dateSet.add(sc.payDate);
 
+  const pdfIndex={}; pdfOrder.forEach((k,i)=>{ pdfIndex[k]=i; });
   return {
-    divCode:SELECTED_DIV, banks, familiesAgg, weeks,
+    divCode:SELECTED_DIV, banks, familiesAgg, weeks, pdfIndex,
     grandTotal, totalScrolls,
     bankCount:Object.keys(banks).length,
     dateCount:dateSet.size
@@ -902,6 +942,7 @@ function switchTab(t){
   else if(t==='date') renderDateTab();
   else if(t==='bank') renderBankTab();
   else renderFamiliesTab();
+  refreshOrderUI();
 }
 
 function toggleExpandAll(){
@@ -916,6 +957,204 @@ function toggleExpandAll(){
 }
 
 function onSearch(){ if(ACTIVE_TAB==='bank') renderBankTab(); else if(ACTIVE_TAB==='cp48') renderEntryTab(); }
+
+/* ─── bank order: show banks in the same order as the user's Excel sheet ───
+   Saved per division in this browser. With no order set (or switched off)
+   everything sorts by bank name exactly as before.                        */
+const ORDER_KEY = 'cp101_bank_orders_v1';
+const DEFAULT_ORDERS = {
+  '1242': ['01608','01609','01640','01610','02622','02679','03608','03609','04606','04607','11618','11623','11633','11624','11631','16605','18942','20625','20627','20708','22605','22612','22613','24605','24609','05607','05636','05642','05637','05639','05640','22621','08620','08616','08621','01942','02614','02615','02616','02617','02618','02619','02620','02621','02623','02674','02942','62942','03942','05942','08942','11942','14611','14618','16942','18615','18616','18617','18624','18627','18629','20626','31607','22942','39604','57942','59942','60942'].join('\n')
+};
+const OLD_1242_DEFAULTS = [['01942','02942','03942','05942','11942','16942','22942','08942','57942','59942','60942','62942'].join('\n')];   // earlier built-in list, replaced if still saved unchanged
+let ORDERS = {};
+try{ const raw=localStorage.getItem(ORDER_KEY); if(raw) ORDERS=JSON.parse(raw)||{}; }catch(e){ ORDERS={}; }
+for(const [d,t] of Object.entries(DEFAULT_ORDERS)) if(!ORDERS[d]) ORDERS[d]={text:t,on:true};
+if(ORDERS['1242'] && OLD_1242_DEFAULTS.includes(ORDERS['1242'].text)) ORDERS['1242'].text=DEFAULT_ORDERS['1242'];
+let BANK_ORDER_TEXT = '', BANK_ORDER_ON = false, ORDER_DIV = null;
+let _ordCache = null;
+
+function syncOrderForDiv(){
+  const d = SELECTED_DIV || '_';
+  if(d===ORDER_DIV) return;
+  ORDER_DIV=d;
+  const o=ORDERS[d]||{text:'',on:false};
+  BANK_ORDER_TEXT=String(o.text||''); BANK_ORDER_ON=!!o.on && BANK_ORDER_TEXT.trim().length>0;
+  const ta=document.getElementById('orderText'); if(ta) ta.value=BANK_ORDER_TEXT;
+}
+function saveOrder(){
+  ORDERS[ORDER_DIV||'_']={text:BANK_ORDER_TEXT,on:BANK_ORDER_ON};
+  try{ localStorage.setItem(ORDER_KEY, JSON.stringify(ORDERS)); }catch(e){}
+}
+function orderLines(){
+  syncOrderForDiv();
+  if(!BANK_ORDER_TEXT) return [];
+  const lines = BANK_ORDER_TEXT.replace(/\r/g,'').split('\n');
+  while(lines.length && !lines[lines.length-1].trim()) lines.pop();   // never paste past the last real row
+  return lines;
+}
+function normName(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,''); }
+function bankUniverse(){
+  if(!RESULTS) return [];
+  return Object.entries(RESULTS.banks).map(([k,b])=>({bankKey:k, branchCode:b.branchCode, bankCode:b.bankCode, name:b.name, _n:normName(b.name)}));
+}
+/* one pasted line -> {key, amb}. Tries: "branch / bank" pair, 5-digit branch code, 5-digit bank code, exact name, unique partial name */
+function resolveOrderLine(line, bl){
+  const cells = line.split('\t').map(c=>c.trim()).filter(Boolean);
+  if(!cells.length) return {key:null, amb:false};
+  let amb=false;
+  for(const c of cells){
+    const pm=/(\d{5})\s*[\/\-]\s*(\d{5})/.exec(c);
+    if(pm){ const k=pm[1]+'-'+pm[2]; if(bl.some(b=>b.bankKey===k)) return {key:k, amb:false}; }
+    let code=null;
+    if(cells.length===1 && /^\d{1,5}$/.test(c)) code=c.padStart(5,'0');
+    else { const m=/(?:^|\D)(\d{5})(?:\D|$)/.exec(c); if(m) code=m[1]; }
+    if(code){
+      const byBranch=bl.filter(b=>b.branchCode===code);
+      if(byBranch.length===1) return {key:byBranch[0].bankKey, amb:false};
+      const byBank=bl.filter(b=>b.bankCode===code);
+      if(byBank.length===1) return {key:byBank[0].bankKey, amb:false};
+      if(byBranch.length>1 || byBank.length>1) amb=true;
+    }
+  }
+  for(const c of cells){
+    const n=normName(c); if(!n) continue;
+    const hit=bl.filter(b=>b._n===n);
+    if(hit.length===1) return {key:hit[0].bankKey, amb:false};
+  }
+  for(const c of cells){
+    const n=normName(c); if(n.length<3) continue;
+    const hit=bl.filter(b=>b._n.length>=3 && (b._n.includes(n)||n.includes(b._n)));
+    if(hit.length===1) return {key:hit[0].bankKey, amb:false};
+  }
+  return {key:null, amb};
+}
+function resolveOrder(bl){
+  const lines=orderLines(), rows=[], index={}, unmatched=[];
+  lines.forEach((ln,i)=>{
+    const r = ln.trim() ? resolveOrderLine(ln, bl) : {key:null, amb:false};
+    rows.push(r.key);
+    if(r.key){ if(!(r.key in index)) index[r.key]=i; }
+    else if(ln.trim()) unmatched.push(ln.trim().replace(/\t/g,' ') + (r.amb ? ' (matches several banks)' : ''));
+  });
+  return {rows, index, unmatched};
+}
+function orderIndex(){
+  syncOrderForDiv();
+  if(!BANK_ORDER_ON || !RESULTS || !orderLines().length) return null;
+  if(_ordCache && _ordCache.res===RESULTS && _ordCache.text===BANK_ORDER_TEXT) return _ordCache.r;
+  const r=resolveOrder(bankUniverse());
+  _ordCache={res:RESULTS, text:BANK_ORDER_TEXT, r};
+  return r;
+}
+function bankKeyOf(x){ return x.bankKey || (x.branchCode+'-'+x.bankCode); }
+function bankRank(key){ const r=orderIndex(); if(!r) return 0; return (key in r.index) ? r.index[key] : 1e9; }
+/* default: the order banks appear in the CP-101 PDF. With an Excel order: that order first, unlisted banks after in PDF order */
+function pdfRank(key){ return (RESULTS && RESULTS.pdfIndex && key in RESULTS.pdfIndex) ? RESULTS.pdfIndex[key] : 1e9; }
+function bankCmp(a,b){
+  const ka=bankKeyOf(a), kb=bankKeyOf(b);
+  return bankRank(ka)-bankRank(kb) || pdfRank(ka)-pdfRank(kb) || String(a.name||a.bankName||'').localeCompare(String(b.name||b.bankName||''));
+}
+
+/* ── order panel ── */
+function refreshOrderUI(){
+  syncOrderForDiv();
+  const btn=document.getElementById('orderBtn'), cb=document.getElementById('orderOn'), st=document.getElementById('orderStat');
+  if(cb) cb.checked = BANK_ORDER_ON;
+  if(btn){ btn.classList.toggle('on', BANK_ORDER_ON); btn.textContent = 'Bank order' + (BANK_ORDER_ON ? ' · on' : ''); }
+  if(!st) return;
+  const lines=orderLines();
+  if(!lines.length){ st.className='cpstat'; st.textContent='No order set — banks are shown in the order they appear in your CP-101 PDF.'; return; }
+  if(!RESULTS){ st.className='cpstat'; st.textContent=''; return; }
+  const bl=bankUniverse();
+  const {rows,index,unmatched}=resolveOrder(bl);
+  const matched=rows.filter(Boolean).length;
+  const onlineKeys=bl.filter(b=>bankType(b.bankKey,b.name)==='online').map(b=>b.bankKey);
+  const notListed=bl.filter(b=>onlineKeys.includes(b.bankKey) && !(b.bankKey in index));
+  const manualListed=bl.filter(b=>(b.bankKey in index) && !onlineKeys.includes(b.bankKey));
+  let msg=`${matched} of ${lines.filter(l=>l.trim()).length} lines matched to banks in these files.`;
+  if(unmatched.length) msg+=` Not found (kept as blank rows): ${esc(unmatched.slice(0,6).join(', '))}${unmatched.length>6?' …':''}.`;
+  if(manualListed.length) msg+=` Listed but currently Manual (blank in the online copy): ${esc(manualListed.slice(0,6).map(b=>b.branchCode+'/'+b.bankCode).join(', '))}.`;
+  if(notListed.length) msg+=` ONLINE banks missing from your list (shown last, never copied): ${esc(notListed.slice(0,6).map(b=>b.branchCode+'/'+b.bankCode).join(', '))}${notListed.length>6?' …':''}.`;
+  if(!BANK_ORDER_ON) msg+=' (order is switched off)';
+  st.className='cpstat'+(notListed.length?' err':(BANK_ORDER_ON?' ok':''));
+  st.innerHTML=msg;
+}
+function rerenderForOrder(){
+  refreshOrderUI();
+  if(RESULTS && RESULTS.weeks.length) switchTab(ACTIVE_TAB);
+}
+function toggleOrderPanel(){
+  const p=document.getElementById('orderPanel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+  if(p.style.display!=='none') refreshOrderUI();
+}
+function applyBankOrder(){
+  syncOrderForDiv();
+  BANK_ORDER_TEXT=document.getElementById('orderText').value.replace(/\r/g,'');
+  BANK_ORDER_ON=orderLines().length>0;
+  saveOrder(); rerenderForOrder();
+}
+function toggleBankOrder(on){
+  if(on && !orderLines().length){ document.getElementById('orderOn').checked=false; return; }
+  BANK_ORDER_ON=!!on; saveOrder(); rerenderForOrder();
+}
+function clearBankOrder(){
+  syncOrderForDiv();
+  BANK_ORDER_TEXT=''; BANK_ORDER_ON=false;
+  document.getElementById('orderText').value='';
+  saveOrder(); rerenderForOrder();
+}
+
+/* ── Copy Amounts (Online Banks section): one amount per line, aligned to the Excel order ── */
+function cpAmt(n){ const v=Number(n||0).toFixed(0); return v==='-0' ? '0' : v; }   // whole rupees, same as the other copy buttons
+function buildOnlineColumn(values, bl){
+  const keys=Object.keys(values);
+  if(!(BANK_ORDER_ON && orderLines().length)){
+    const sorted=keys.slice().sort((a,b)=>pdfRank(a)-pdfRank(b) || String(RESULTS.banks[a].name).localeCompare(String(RESULTS.banks[b].name)));
+    return {text:sorted.map(k=>cpAmt(values[k])).join('\n'), count:sorted.length, rows:sorted.length, ordered:false, extras:[], manualListed:[]};
+  }
+  const {rows}=resolveOrder(bl);
+  const placed=new Set(), out=[], manualListed=[];
+  rows.forEach(key=>{
+    if(key && (key in values) && !placed.has(key)){ out.push(cpAmt(values[key])); placed.add(key); }
+    else { out.push(''); if(key && !(key in values) && RESULTS.banks[key]) manualListed.push(key); }
+  });
+  while(out.length && out[out.length-1]==='') out.pop();
+  return {text:out.join('\n'), count:placed.size, rows:out.length, ordered:true, extras:keys.filter(k=>!placed.has(k)), manualListed};
+}
+function copyOnlineAmounts(btn){
+  if(!RESULTS) return;
+  syncOrderForDiv();
+  const bl=bankUniverse(), values={};
+  for(const [k,b] of Object.entries(RESULTS.banks)){
+    if(bankType(k,b.name)!=='online') continue;
+    values[k]=b.scrolls.reduce((s,sc)=>s+sc.amount,0);
+  }
+  const st=document.getElementById('cps_online');
+  const setSt=(html,cls)=>{ if(st){ st.className='cpstat cpstat-block'+(cls?' '+cls:''); st.innerHTML=html; } };
+  const col=buildOnlineColumn(values, bl);
+  if(!col.text.trim()){ setSt(`${ICO.warn} Nothing to copy${col.ordered?' — none of the online banks match your order list.':'.'}`, 'err'); return; }
+  const done=(ok)=>{
+    if(!ok){ setSt(`${ICO.warn} The browser blocked copying — click again.`, 'err'); return; }
+    if(btn){ const orig=btn.innerHTML; btn.innerHTML=ICO.check+' Copied'; btn.classList.add('copied'); setTimeout(()=>{ btn.innerHTML=orig; btn.classList.remove('copied'); },1400); }
+    let msg=`${ICO.check} Copied ${col.count} online bank amount${col.count===1?'':'s'}`
+      + (col.ordered ? ` in your Excel order (${col.rows} row${col.rows===1?'':'s'}, blank where a listed bank has no online amount)` : ' in PDF order')
+      + ' — paste into Excel.';
+    let cls='ok';
+    if(col.manualListed.length){
+      msg+=` Left blank because they are Manual here: ${col.manualListed.map(k=>esc(RESULTS.banks[k].branchCode+'/'+RESULTS.banks[k].bankCode)).join(', ')}.`;
+    }
+    if(col.extras.length){
+      msg+=` ${ICO.warn} NOT copied (missing from your order list): `
+        + col.extras.map(k=>`${esc(RESULTS.banks[k].branchCode)}/${esc(RESULTS.banks[k].bankCode)} ${esc(RESULTS.banks[k].name)} = ${fn(values[k])}`).join('; ');
+      cls='err';
+    }
+    setSt(msg, cls);
+  };
+  const fallback=()=>{ try{ fallbackCopy(col.text); done(true); }catch(e){ done(false); } };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(col.text).then(()=>done(true), fallback);
+  else fallback();
+}
 
 /* ─── CP-48 Entry tab — the actual point of this app ────────
    Manual banks (FBL branches, Post Offices) need date-by-date amounts
@@ -1083,8 +1322,8 @@ function renderEntryTab(){
     const entry={bankKey, branchCode:b.branchCode, bankCode:b.bankCode, name:b.name, dateMap, total};
     if(bankType(bankKey,b.name)==='manual') manual.push(entry); else online.push(entry);
   }
-  manual.sort((a,b)=>a.name.localeCompare(b.name));
-  online.sort((a,b)=>a.name.localeCompare(b.name));
+  manual.sort(bankCmp);
+  online.sort(bankCmp);
 
   let html='';
 
@@ -1180,8 +1419,10 @@ function renderEntryTab(){
   ENTRY_TSV_CACHE['__online__'] = online.map(e=>`${e.name}\t${e.total.toFixed(0)}`).join('\n');
   html+=`<div class="entry-sec-head online"><h3>${ICO.laptop} Online Banks — one monthly total each</h3>
     <span class="entry-count">${online.length} bank${online.length===1?'':'s'}</span>
-    ${online.length?`<button class="copybtn" onclick="copyToClipboard(ENTRY_TSV_CACHE['__online__'], this)">${ICO.copy} Copy All</button>`:''}
-  </div>`;
+    ${online.length?`<button class="copybtn" onclick="copyToClipboard(ENTRY_TSV_CACHE['__online__'], this)">${ICO.copy} Copy All</button>
+    <button class="copybtn ghost" onclick="copyOnlineAmounts(this)" title="Amounts only, one per line, aligned to your Excel bank order">${ICO.copy} ${BANK_ORDER_ON?'Copy Amounts in Excel Order':'Copy Amounts Only'}</button>`:''}
+  </div>
+  <div class="cpstat cpstat-block" id="cps_online"></div>`;
   if(!online.length){
     html+=`<div class="entry-empty">No online banks in this list.</div>`;
   } else {
@@ -1221,7 +1462,7 @@ function renderDateTab(){
   if(!dates.length){ el.innerHTML='<div class="empty"><div class="ei">'+ICO.inbox.replace('class="icon"','')+'</div><div class="et">No dated transactions found</div></div>'; return; }
 
   el.innerHTML = dates.map(d=>{
-    const rows = d.rows.slice().sort((a,b)=> a.bankName.localeCompare(b.bankName) || a.scrollNo-b.scrollNo);
+    const rows = d.rows.slice().sort((a,b)=> bankRank(bankKeyOf(a))-bankRank(bankKeyOf(b)) || pdfRank(bankKeyOf(a))-pdfRank(bankKeyOf(b)) || a.bankName.localeCompare(b.bankName) || a.scrollNo-b.scrollNo);
     const cardKey='date:'+d.payDate;
     return `<details class="datecard" data-cardkey="${esc(cardKey)}" ${cardOpenAttr(cardKey)}>
       <summary>
@@ -1251,7 +1492,7 @@ function renderBankTab(){
   const q=(document.getElementById('searchBox').value||'').trim().toLowerCase();
   let banks=Object.values(RESULTS.banks);
   if(q) banks=banks.filter(b=> b.name.toLowerCase().includes(q) || b.branchCode.includes(q) || b.bankCode.includes(q));
-  banks = banks.slice().sort((a,b)=>a.name.localeCompare(b.name));
+  banks = banks.slice().sort(bankCmp);
 
   if(!banks.length){ el.innerHTML='<div class="empty"><div class="ei">'+ICO.search.replace('class="icon"','')+'</div><div class="et">No banks match your search</div></div>'; return; }
 

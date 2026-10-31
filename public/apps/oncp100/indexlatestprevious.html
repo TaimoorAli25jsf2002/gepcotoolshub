@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CP-100 Analyzer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ── quiet, low-saturation sage green on near-neutral paper — the
+     restrained, single-accent look of GitHub/Linear/Stripe rather
+     than a bright gradient. Online = green, Daily = neutral blue-gray,
+     echoing the original app's two-tone badge system. ── */
+  --ink:#232a27; --navy-950:#1c2b28; --navy-900:#25453b; --navy-800:#33604f; --navy-700:#437a65; --navy-600:#5c9580;
+  --navy-100:#dfeae4; --navy-50:#f1f6f3;
+  --copper:#5b7290; --copper-dark:#465a75; --copper-100:#e6ecf2;
+  --slate-700:#3c4542; --slate-500:#68746f; --slate-300:#c0cbc5;
+  --border:#dbe4de; --border-soft:#e8eee9;
+  --bg:#f4f6f5; --surface:#ffffff;
+  --danger:#9c2b21; --danger-bg:#faece9; --danger-border:#e6c3ba;
+  --warn:#8a611f; --warn-bg:#f8f0dd; --warn-border:#e6d4a4;
+  --good:#1a6b43; --good-bg:#e7f2ea;
+  --grad-brand: linear-gradient(120deg,#1c2b28 0%,#33604f 100%);
+  --shadow-sm:0 1px 2px rgba(28,43,40,.05), 0 1px 1px rgba(28,43,40,.04);
+  --shadow-md:0 8px 20px -6px rgba(28,43,40,.12), 0 2px 6px rgba(28,43,40,.05);
+  --shadow-lg:0 20px 48px -16px rgba(28,43,40,.2), 0 6px 16px rgba(28,43,40,.06);
+  --radius:10px;
+  --font-ui:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-display:'Source Serif 4','Georgia',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:linear-gradient(rgba(28,43,40,.022) 1px, transparent 1px);
+  background-size:100% 34px}
+svg.icon{width:14px;height:14px;flex-shrink:0;vertical-align:-2.5px}
+.wrap{max-width:960px;margin:0 auto;padding:24px 16px 40px}
+.letterhead{background:var(--grad-brand);margin:0 -16px 24px;padding:20px 16px;position:relative;box-shadow:var(--shadow-lg)}
+.letterhead::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;
+  background:linear-gradient(90deg,var(--copper),#8fbfa8 45%,var(--copper) 100%)}
+.letterhead-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.lh-mark{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--copper-100)}
+.lh-mark svg{width:21px;height:21px}
+.lh-text{color:#fff}
+.lh-org{font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:-.005em;line-height:1.2}
+.lh-app{font-size:12px;color:rgba(255,255,255,.75);margin-top:3px;letter-spacing:.01em}
+.lh-badge{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:.05em;color:#fff;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);padding:5px 11px;border-radius:20px;white-space:nowrap}
+h1{font-size:21px;font-weight:700;color:var(--navy-800);margin-bottom:4px}
+.sub{font-size:13px;color:var(--slate-500);margin-bottom:20px}
+/* drop zone */
+.dz{border:1.5px dashed var(--slate-300);border-radius:var(--radius);padding:28px 20px;text-align:center;
+    cursor:pointer;background:var(--surface);transition:border-color .15s,box-shadow .15s;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.dz:hover,.dz.drag{border-color:var(--navy-600);background:var(--navy-50)}
+.dz-icon{margin-bottom:8px;color:var(--navy-700);display:flex;justify-content:center}
+.dz-icon svg{width:24px;height:24px;padding:11px;box-sizing:content-box;background:var(--navy-50);border-radius:14px;border:1px solid var(--border-soft)}
+.dz-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--navy-800);margin-bottom:4px}
+.dz-hint{font-size:12px;color:var(--slate-500)}
+.upload-btns{display:flex;gap:8px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+.ubtn{background:#fff;color:var(--navy-800);border:1px solid var(--border);padding:9px 18px;border-radius:8px;
+      font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.ubtn:hover{background:var(--navy-50);border-color:var(--navy-600)}
+.ubtn.primary{background:var(--navy-800);color:#fff;border-color:var(--navy-800)}
+.ubtn.primary:hover{background:var(--navy-900)}
+/* loading */
+.load-bar{display:none;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);
+          border-radius:8px;padding:13px 16px;margin-bottom:12px}
+.spin{width:18px;height:18px;flex-shrink:0;border:3px solid var(--border);border-top-color:var(--navy-800);
+      border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:13px;color:var(--slate-500)}
+/* error / info */
+.err-box{background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:8px;padding:9px 14px;
+         margin-bottom:7px;font-size:13px;color:var(--danger)}
+.info-box{background:var(--navy-50);border:1px solid var(--border);border-radius:8px;padding:9px 14px;
+         margin-bottom:7px;font-size:13px;color:var(--navy-800)}
+/* setup panel */
+.setup{background:#fff;border:1px solid var(--border-soft);border-radius:var(--radius);padding:18px 18px 20px;margin-bottom:16px}
+.setup h2{font-size:15px;color:var(--navy-800);margin-bottom:2px}
+.step-h{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--navy-800);margin-bottom:2px}
+.step-h:not(:first-child){margin-top:22px}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--navy-800);color:#fff;font-size:11.5px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-num.done{background:var(--good)}
+.diffchip{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-border);
+  font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.diffchip:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
+.export-toast{display:flex;align-items:flex-start;gap:8px;background:var(--good-bg);color:var(--good);
+  border:1px solid #bfe3cc;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;animation:toastin .2s ease-out}
+.export-toast.err{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-border)}
+@keyframes toastin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.setup .shint{font-size:12px;color:var(--slate-500);margin-bottom:12px}
+.divlist{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;max-height:280px;overflow-y:auto}
+.divopt{display:flex;align-items:center;gap:10px;border:1px solid var(--border-soft);border-radius:8px;
+        padding:10px 12px;cursor:pointer;font-size:13px;transition:background .12s}
+.divopt:hover{background:var(--navy-50)}
+.divopt.sel{border-color:var(--navy-800);background:var(--navy-50)}
+.divopt .dcode{font-weight:700;color:var(--navy-800);min-width:48px}
+.divopt .dname{color:var(--slate-700);flex:1}
+.divopt .dcount{font-size:11px;color:var(--slate-500)}
+.filterrow{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.filelist{display:flex;flex-direction:column;gap:6px;margin-bottom:20px;max-height:280px;overflow-y:auto}
+.filelist-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+.flt-count{font-size:12px;color:var(--slate-500)}
+.flt-btns{display:flex;gap:6px}
+.tinybtn{background:#fff;color:var(--navy-800);border:1px solid var(--border);padding:5px 12px;border-radius:6px;
+  font-size:11.5px;font-weight:600;cursor:pointer;transition:all .12s}
+.tinybtn:hover{background:var(--navy-50);border-color:var(--navy-600)}
+.dupwarn{background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:8px;padding:11px 14px;
+         font-size:12.5px;color:var(--warn);margin-bottom:10px;line-height:1.5}
+.filerow{display:flex;align-items:center;gap:10px;border:1px solid var(--border-soft);border-radius:8px;
+         padding:9px 12px;font-size:13px;cursor:pointer;transition:background .12s}
+.filerow:hover{background:var(--navy-50)}
+.filerow.dup{border-color:var(--copper);background:var(--copper-100)}
+.filerow.off{opacity:.5}
+.filerow input{width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--navy-700)}
+.frname{flex:1;word-break:break-all;color:var(--slate-700)}
+.frdate{font-size:12px;color:var(--slate-500);white-space:nowrap}
+.frstat{font-size:11px;color:var(--slate-500);white-space:nowrap}
+.fdup-tag{font-size:10px;font-weight:700;background:var(--copper);color:#fff;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.frbtn{background:#fff;color:var(--navy-800);border:1px solid var(--border);padding:8px 16px;border-radius:8px;
+       font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.frbtn:hover{background:var(--navy-50)}
+.frbtn.sel{background:var(--navy-800);color:#fff;border-color:var(--navy-800)}
+.setup-label{font-size:12px;font-weight:700;color:var(--navy-800);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+/* sticky selection bar */
+.selbar{position:sticky;top:10px;z-index:30;display:none;align-items:center;justify-content:space-between;
+        background:var(--navy-50);border:1px solid var(--navy-100);border-radius:10px;padding:12px 16px;margin-bottom:14px;
+        gap:12px;flex-wrap:wrap;box-shadow:var(--shadow-md)}
+.selbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.selbar-tag{background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;padding:6px 13px;border-radius:6px;white-space:nowrap}
+.selbar-info{font-size:13px;color:var(--slate-700);font-weight:500}
+.changebtn{background:#fff;color:var(--navy-800);border:2px solid var(--navy-800);padding:10px 20px;border-radius:8px;
+           font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.changebtn:hover{background:var(--navy-800);color:#fff}
+/* toolbar */
+.toolbar{display:none;justify-content:space-between;align-items:center;
+         background:#fff;border:1px solid var(--border);border-radius:8px;
+         padding:10px 14px;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.fc{font-size:13px;color:var(--slate-500)}
+.xbtn{background:var(--navy-800);color:#fff;border:none;padding:8px 20px;border-radius:8px;
+      font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s}
+.xbtn:hover{background:var(--navy-900)}
+/* monthly / batch summary */
+.summary-wrap{background:#fff;border:1px solid var(--border-soft);border-radius:var(--radius);margin-bottom:22px;
+              overflow:hidden;box-shadow:var(--shadow-sm)}
+.summary-head{background:var(--grad-brand);color:#fff;padding:16px 18px}
+.summary-head h2{font-family:var(--font-display);font-size:16px;margin-bottom:3px}
+.summary-head .shsub{font-size:12px;opacity:.88}
+.summary-stats{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--border-soft)}
+.stat{flex:1;min-width:130px;padding:14px 12px;text-align:center;border-right:1px solid var(--border-soft)}
+.stat:last-child{border-right:none}
+.stat-val{font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--navy-800)}
+.stat-lbl{font-size:10.5px;color:var(--slate-500);text-transform:uppercase;letter-spacing:.03em;margin-top:3px}
+.summary-sec{padding:16px 18px;border-top:1px solid var(--border-soft)}
+.summary-sec:first-of-type{border-top:none}
+.summary-sec h3{font-size:12.5px;color:var(--navy-800);margin-bottom:10px;text-transform:uppercase;letter-spacing:.03em}
+.summary-sec table{table-layout:auto}
+/* result block */
+.rblock{background:#fff;border:1px solid var(--border-soft);border-radius:var(--radius);
+        margin-bottom:22px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.rhead{background:var(--navy-800);color:#fff;padding:12px 16px;
+       display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.rfn{font-size:14px;font-weight:600;word-break:break-all}
+.badge{font-size:11px;font-weight:700;padding:3px 11px;border-radius:12px;white-space:nowrap}
+.b-ol{background:var(--navy-100);color:var(--navy-900)}
+.b-dl{background:var(--copper-100);color:var(--copper-dark)}
+.rmeta{display:flex;gap:22px;padding:11px 16px;background:var(--navy-50);
+       border-bottom:1px solid var(--border-soft);flex-wrap:wrap}
+.mi{font-size:12px;color:var(--slate-700)}
+.ml{font-weight:700;color:var(--navy-800);margin-right:4px}
+.grand-row{display:flex;justify-content:space-between;align-items:center;
+           padding:10px 16px;background:var(--navy-100);border-bottom:1px solid var(--border)}
+.gl{font-size:13px;font-weight:700;color:var(--navy-800)}
+.gv{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--navy-800)}
+.warn-ban{background:var(--warn-bg);border-left:4px solid var(--warn);padding:9px 14px;
+          margin:10px 16px 0;font-size:12px;color:var(--warn);border-radius:0 6px 6px 0}
+/* table */
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--navy-50)}
+th{padding:9px 13px;text-align:left;font-size:11px;font-weight:700;color:var(--navy-800);
+   border-bottom:2px solid var(--border);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+th.r{text-align:right}
+td{padding:8px 13px;font-size:13px;border-bottom:1px solid var(--border-soft);color:var(--slate-700);vertical-align:middle}
+td.r{text-align:right}
+td.code{font-weight:700;color:var(--navy-800);font-size:12px;white-space:nowrap}
+td.amt{text-align:right;font-weight:600;color:var(--navy-800)}
+td.dok{text-align:right;color:var(--good)}
+td.dwarn{text-align:right;color:var(--danger);font-weight:700}
+tr:hover td{background:var(--navy-50)}
+tr.dt td{background:#f9fbfa}
+tr.sub td{background:var(--navy-50);font-weight:700;border-top:2px solid var(--border);border-bottom:2px solid var(--border)}
+.ss{font-size:11px;color:var(--slate-500);font-weight:400}
+/* divisional total block */
+.divtot{border-top:3px solid var(--navy-800);background:var(--navy-50)}
+.divtot-head{padding:10px 16px;font-size:13px;font-weight:700;color:var(--navy-800)}
+.divtot-table{width:100%;border-collapse:collapse}
+.divtot-table th{padding:7px 13px;text-align:left;font-size:10px;font-weight:700;color:var(--navy-800);
+   border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.04em;background:transparent}
+.divtot-table th.r{text-align:right}
+.divtot-table td{padding:8px 13px;font-size:13px;border-bottom:1px solid var(--border-soft);color:var(--slate-700)}
+.divtot-table td.r{text-align:right}
+.divtot-table td.amt{text-align:right;font-weight:600;color:var(--navy-800)}
+.divtot-table td.dok{text-align:right;color:var(--good)}
+.divtot-table td.dwarn{text-align:right;color:var(--danger);font-weight:700}
+.divtot-table tr.grand td{background:var(--navy-800);color:#fff;font-weight:700;font-size:14px;border-bottom:none}
+.divtot-table tr.grand td.amt{color:#fff}
+.divtot-table tr.grand td.dok,.divtot-table tr.grand td.dwarn{color:#fff}
+/* differences summary */
+.diffsum{background:#fff;border:1px solid var(--danger-border);border-radius:var(--radius);margin-bottom:22px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.diffsum-head{background:var(--danger);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.diffsum table{width:100%}
+.diffsum td.fn{font-size:12px;color:var(--slate-700);word-break:break-all}
+/* empty */
+.empty{text-align:center;padding:50px 20px;background:#fff;border-radius:var(--radius);border:1px dashed var(--slate-300)}
+.ei{margin-bottom:12px;color:var(--slate-300);display:flex;justify-content:center}
+.ei svg{width:38px;height:38px}
+.et{font-size:16px;font-weight:600;color:var(--slate-700);margin-bottom:6px}
+.eh{font-size:13px;color:var(--slate-500)}
+/* toolbar buttons (secondary style) */
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.sbtn{background:#fff;color:var(--navy-800);border:1px solid var(--border);padding:8px 16px;border-radius:8px;
+      font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.sbtn:hover{background:var(--navy-50)}
+.sbtn.on{background:var(--navy-800);color:#fff;border-color:var(--navy-800)}
+
+/* ── copy-to-Excel buttons, Copy All bar, bank-order panel ── */
+.amtwrap{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-variant-numeric:tabular-nums}
+.cpbtn{width:24px;height:24px;padding:0;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--navy-700);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:.7;transition:all .12s;
+  font-size:13px;font-weight:700;line-height:1;flex-shrink:0}
+.cpbtn:hover,.cpbtn:focus-visible{opacity:1;background:var(--navy-50);border-color:var(--navy-600);outline:none}
+.cpbtn.ok{opacity:1;background:var(--good-bg);color:var(--good);border-color:#bfe3cc}
+.cpbtn.bad{opacity:1;background:var(--danger-bg);color:var(--danger);border-color:var(--danger-border)}
+.copybar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border-soft)}
+.copybar.flat{padding:0 0 12px;border-bottom:none}
+.cplbl{font-size:12px;font-weight:600;color:var(--navy-800);display:inline-flex;align-items:center;gap:6px}
+.cpsel{border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;color:var(--ink);background:#fff}
+.cpstat{font-size:12px;color:var(--slate-500);line-height:1.5;flex:1;min-width:200px}
+.cpstat.ok{color:var(--good)}
+.cpstat.err{color:var(--danger);font-weight:600}
+.orderpanel{flex-basis:100%;width:100%;border-top:1px solid var(--border-soft);padding-top:12px;margin-top:2px}
+.op-title{font-size:13px;font-weight:700;color:var(--navy-800);margin-bottom:4px}
+.op-hint{font-size:12px;color:var(--slate-500);margin-bottom:8px;line-height:1.5}
+.orderpanel textarea{width:100%;min-height:130px;max-height:320px;resize:vertical;border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink);
+  background:#fff;white-space:pre;overflow:auto}
+.orderpanel textarea:focus{outline:none;border-color:var(--navy-600)}
+.op-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.op-toggle{font-size:12.5px;color:var(--slate-700);display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.op-toggle input{accent-color:var(--navy-700)}
+/* footer */
+.footer{text-align:center;padding:22px 10px 8px;font-size:12px;color:var(--slate-500)}
+.footer b{color:var(--slate-700)}
+/* print-only header (hidden on screen) */
+.print-head{display:none}
+@media print{
+  body{background:#fff}
+  .wrap{max-width:100%;padding:0}
+  .dz, .upload-btns, .load-bar, #errs, .toolbar, .setup, .selbar, .letterhead{display:none !important}
+  .empty{display:none !important}
+  .cpbtn, .copybar, .orderpanel{display:none !important}
+  .print-head{display:block;text-align:center;margin-bottom:14px}
+  .print-head h1{font-size:18px;color:#000;margin-bottom:2px}
+  .print-head .sub{color:#444;font-size:11px}
+  h1.screen-only, p.sub.screen-only{display:none}
+  .rblock{box-shadow:none;border:1px solid #999;page-break-inside:avoid;margin-bottom:14px}
+  .rhead{background:#eee !important;color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .badge{border:1px solid #999}
+  thead tr{background:#eee !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  tr.sub td{background:#f3f3f3 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table{font-size:11px}
+  .divtot{background:#f3f3f3 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .divtot-table tr.grand td{background:#333 !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .diffsum-head{background:#eee !important;color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .summary-wrap{page-break-inside:avoid;box-shadow:none;border:1px solid #999}
+  .summary-head{background:#eee !important;color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .footer{margin-top:20px;border-top:1px solid #ccc;padding-top:8px}
+}
+</style>
+</head>
+<body>
+<header class="letterhead">
+  <div class="letterhead-inner">
+    <div class="lh-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></div>
+    <div class="lh-text">
+      <div class="lh-org">CP-100 Analyzer</div>
+      <div class="lh-app">Extracts bank totals from On-line &amp; Daily CP-100 PDFs, by division</div>
+    </div>
+    <span class="lh-badge">Offline &amp; Private</span>
+  </div>
+</header>
+<div class="wrap">
+  <div class="print-head">
+    <h1 id="printTitle">CP-100 Analyzer</h1>
+    <div class="sub" id="printSub">Printed <span id="printDate"></span></div>
+  </div>
+
+  <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
+    <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2Z"/></svg></div>
+    <div class="dz-title">Drop CP-100 PDFs here or click to browse</div>
+    <div class="dz-hint">On-line or Daily · Single or multiple files · Works offline after first load</div>
+    <input type="file" id="fi" accept=".pdf" multiple style="display:none">
+  </div>
+  <div class="upload-btns">
+    <button class="ubtn" onclick="document.getElementById('fi').click()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Choose Files</button>
+    <button class="ubtn" onclick="document.getElementById('fd').click()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2Z"/></svg> Choose Folder</button>
+    <input type="file" id="fd" webkitdirectory directory multiple style="display:none">
+  </div>
+
+  <div class="load-bar" id="lb">
+    <div class="spin"></div>
+    <span class="load-txt" id="lmsg">Processing…</span>
+  </div>
+  <div id="errs"></div>
+
+  <div class="setup" id="setup" style="display:none">
+    <div class="step-h"><span class="step-num" id="stepNum1">1</span> Files in this upload</div>
+    <div class="shint">Uncheck any file to leave it out of every calculation below. Files sharing the same date &amp; form type are checked for duplicates automatically.</div>
+    <div class="filelist-toolbar" id="filelistToolbar" style="display:none">
+      <span class="flt-count" id="fltCount"></span>
+      <span class="flt-btns">
+        <button class="tinybtn" onclick="selectAllFiles(true)">Select All</button>
+        <button class="tinybtn" onclick="selectAllFiles(false)">Select None</button>
+      </span>
+    </div>
+    <div class="filelist" id="filelist"></div>
+    <div class="step-h"><span class="step-num" id="stepNum2">2</span> Choose a division</div>
+    <div class="shint">Found across your checked file(s) above. Data will be shown only for the division you pick.</div>
+    <div class="divlist" id="divlist"></div>
+    <div class="step-h"><span class="step-num" id="stepNum3">3</span> Which forms to include</div>
+    <div class="shint">Applies across every checked file in this upload</div>
+    <div class="filterrow" id="filterrow">
+      <button class="frbtn" data-f="all" onclick="setFormFilter('all')">All CP-100 (combined)</button>
+      <button class="frbtn" data-f="online" onclick="setFormFilter('online')">On-line only</button>
+      <button class="frbtn" data-f="daily" onclick="setFormFilter('daily')">Daily only</button>
+    </div>
+    <button class="xbtn" id="viewBtn" onclick="showResults()" disabled>View Results</button>
+    <div class="shint" id="viewHint" style="margin:8px 0 0"></div>
+  </div>
+
+  <div class="selbar" id="selbar" style="display:none">
+    <div class="selbar-left">
+      <span class="selbar-tag" id="selDivTag"></span>
+      <span class="selbar-info" id="selInfo"></span>
+      <button class="diffchip" id="diffChip" style="display:none" onclick="document.getElementById('diffsumBlock').scrollIntoView({behavior:'smooth',block:'start'})"></button>
+    </div>
+    <button class="changebtn" onclick="backToSetup()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Change Division / Filter</button>
+  </div>
+
+  <div class="toolbar" id="tb">
+    <span class="fc" id="fc"></span>
+    <div class="btn-row">
+      <button class="sbtn" id="detailBtn" onclick="toggleDetail()" style="display:none"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Show Per-File Detail</button>
+      <button class="sbtn" id="combineBtn" onclick="toggleCombine()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4H6l6 8-6 8h12"/></svg> Show combined totals</button>
+      <button class="sbtn" id="orderBtn" onclick="toggleOrderPanel()">Bank order</button>
+      <button class="sbtn" onclick="window.print()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print / Save as PDF</button>
+      <button class="xbtn" onclick="doExport()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export to Excel</button>
+    </div>
+    <div class="orderpanel" id="orderPanel" style="display:none">
+      <div class="op-title">Bank order — match your Excel sheet</div>
+      <div class="op-hint">In Excel, select the bank cells in the exact rows you paste amounts into, copy them, and paste below
+        (5-digit bank codes or bank names, one bank per line). The tables and the “Copy all” buttons then follow this order.
+        Banks that are in your sheet but missing from a file stay as blank rows, so pasted amounts line up with your sheet.</div>
+      <textarea id="orderText" spellcheck="false" placeholder="Paste your bank column from Excel here…"></textarea>
+      <div class="op-row">
+        <button type="button" class="xbtn" onclick="applyBankOrder()">Apply order</button>
+        <button type="button" class="tinybtn" onclick="clearBankOrder()">Clear</button>
+        <label class="op-toggle"><input type="checkbox" id="orderOn" onchange="toggleBankOrder(this.checked)"> Use this order</label>
+        <span class="cpstat" id="orderStat"></span>
+      </div>
+    </div>
+  </div>
+  <div id="summaryOut"></div>
+  <div id="out"></div>
+  <div class="empty" id="emp">
+    <div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg></div>
+    <div class="et">No files yet</div>
+    <div class="eh">Upload on-line or daily CP-100 PDFs (single files, multiple files, or an entire folder) to get started</div>
+  </div>
+  <div class="footer">Developed by <b>Taimoor Ali</b></div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let RAW_FILES = [];     // every successfully parsed file: {_id, fname, mainDate, procDate, formType, divisions:{code:{divName,banks}}}
+let ALL_DIVS  = {};     // code -> {divName, fileCount}
+let SELECTED_DIV = null;
+let FORM_FILTER = 'all';
+let RESULTS = [];       // filtered/shaped results currently on screen
+let COMBINE_MODE = false;
+let DETAIL_VISIBLE = true;
+let EXCLUDED_FILES = new Set(); // _id's the user (or auto-duplicate-resolution) has unchecked
+
+/* ─── helpers ─────────────────────────────── */
+function pn(s){ return parseFloat(String(s||'0').replace(/,/g,''))||0; }
+function fn(n){ return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function isCP100Filename(name){ return /cp[\s\-_]?100/i.test(name); }
+
+/* ─── icon set — plain inline SVG, no icon font/CDN, so this stays fully
+   offline and adds no load time. ─── */
+const ICO = (()=>{
+  const s = (paths) => `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2.5px;flex-shrink:0">${paths}</svg>`;
+  return {
+    warn:  s('<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
+    check: s('<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'),
+    info:  s('<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'),
+    swap:  s('<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>'),
+    chevDown: s('<polyline points="6 9 12 15 18 9"/>'),
+    chevUp:   s('<polyline points="18 15 12 9 6 15"/>'),
+    sigma: s('<path d="M18 4H6l6 8-6 8h12"/>'),
+    printer:s('<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>'),
+    download:s('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
+    docText:s('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/>'),
+  };
+})();
+
+/* ─── copy-to-Excel: per-row copy, "Copy all", and Excel bank order ───
+   Everything below is additive. Amounts are copied as plain numbers
+   (no thousands commas) so Excel always reads them as numbers.         */
+const _cps = p => '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0">'+p+'</svg>';
+const CP_SVG = {
+  copy: _cps('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
+  tick: _cps('<polyline points="20 6 9 17 4 12"/>'),
+  list: _cps('<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>')
+};
+
+function rawAmt(n){
+  const v = Math.round((Number(n)||0)*100)/100;
+  return (Math.abs(v)<0.005 ? 0 : v).toFixed(2);
+}
+
+function copyText(text){
+  return new Promise(resolve=>{
+    const fallback=()=>{
+      try{
+        const ta=document.createElement('textarea');
+        ta.value=text; ta.setAttribute('readonly','');
+        ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';
+        document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,text.length);
+        const ok=document.execCommand('copy');
+        document.body.removeChild(ta);
+        resolve(!!ok);
+      }catch(e){ resolve(false); }
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>resolve(true), fallback);
+    } else fallback();
+  });
+}
+
+/* ── per-row copy button (sits inside the existing amount cell) ── */
+function cpBtn(n){
+  return `<button type="button" class="cpbtn" data-v="${rawAmt(n)}" title="Copy this amount" aria-label="Copy this amount" onclick="copyAmt(this)">${CP_SVG.copy}</button>`;
+}
+function copyAmt(btn){
+  copyText(btn.getAttribute('data-v')).then(ok=>{
+    btn.classList.toggle('ok', ok); btn.classList.toggle('bad', !ok);
+    btn.innerHTML = ok ? CP_SVG.tick : '!';
+    clearTimeout(btn._t);
+    btn._t=setTimeout(()=>{ btn.classList.remove('ok','bad'); btn.innerHTML=CP_SVG.copy; }, 1200);
+  });
+}
+
+/* ── Excel bank order (saved in this browser so it survives reloads) ── */
+let BANK_ORDER_TEXT = '';
+let BANK_ORDER_ON   = false;
+let ORDER_DIV = null;                       // division the two values above belong to
+const ORDER_KEY = 'cp100_bank_orders_v2';   // saved per division
+const DEFAULT_ORDERS = {
+  '1242': ['01942','02942','03942','05942','11942','16942','22942','08942','57942','59942','60942','62942'].join('\n')
+};
+const OLD_1242_WITH_BLANK = ['01942','02942','03942','05942','11942','16942','22942','','08942','57942','59942','60942','62942'].join('\n');
+let ORDERS = {};
+try{ const raw=localStorage.getItem(ORDER_KEY); if(raw) ORDERS=JSON.parse(raw)||{}; }catch(e){}
+for(const [d,t] of Object.entries(DEFAULT_ORDERS)) if(!ORDERS[d]) ORDERS[d]={text:t,on:true};
+if(ORDERS['1242'] && ORDERS['1242'].text===OLD_1242_WITH_BLANK) ORDERS['1242'].text=DEFAULT_ORDERS['1242'];  // fix earlier typo
+function syncOrderForDiv(){
+  const d = (typeof SELECTED_DIV!=='undefined' && SELECTED_DIV) ? SELECTED_DIV : '_';
+  if(d===ORDER_DIV) return;
+  ORDER_DIV=d;
+  const o=ORDERS[d]||{text:'',on:false};
+  BANK_ORDER_TEXT=String(o.text||''); BANK_ORDER_ON=!!o.on && BANK_ORDER_TEXT.trim().length>0;
+  const ta=document.getElementById('orderText'); if(ta) ta.value=BANK_ORDER_TEXT;
+}
+function saveOrder(){
+  ORDERS[ORDER_DIV||'_']={text:BANK_ORDER_TEXT,on:BANK_ORDER_ON};
+  try{ localStorage.setItem(ORDER_KEY, JSON.stringify(ORDERS)); }catch(e){}
+}
+
+function orderLines(){
+  syncOrderForDiv();
+  if(!BANK_ORDER_TEXT) return [];
+  const lines = BANK_ORDER_TEXT.replace(/\r/g,'').split('\n');
+  while(lines.length && !lines[lines.length-1].trim()) lines.pop();   // never paste past the last real row
+  return lines;
+}
+function normName(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,''); }
+
+/* one pasted line -> bank code (or null).  Order of tries: 5-digit code, exact name, unique partial name */
+function resolveOrderLine(line, bl){
+  const cells = line.split('\t').map(c=>c.trim()).filter(Boolean);
+  if(!cells.length) return null;
+  for(const c of cells){
+    let code=null;
+    if(cells.length===1 && /^\d{1,5}$/.test(c)) code=c.padStart(5,'0');
+    else { const m=/(?:^|\D)(\d{5})(?:\D|$)/.exec(c); if(m) code=m[1]; }
+    if(code && bl.some(b=>b.code===code)) return code;
+  }
+  for(const c of cells){
+    const n=normName(c); if(!n) continue;
+    const hit=bl.filter(b=>b._n===n);
+    if(hit.length===1) return hit[0].code;
+  }
+  for(const c of cells){
+    const n=normName(c); if(n.length<3) continue;
+    const hit=bl.filter(b=>b._n.length>=3 && (b._n.includes(n) || n.includes(b._n)));
+    if(hit.length===1) return hit[0].code;
+  }
+  return null;
+}
+function resolveOrder(items){
+  const bl = items.map(b=>({code:b.code, _n:normName(b.name)}));
+  const lines = orderLines();
+  const rows=[], index={}, unmatched=[];
+  lines.forEach((ln,i)=>{
+    const code = ln.trim() ? resolveOrderLine(ln, bl) : null;
+    rows.push(code);
+    if(code){ if(!(code in index)) index[code]=i; }
+    else if(ln.trim()) unmatched.push(ln.trim().replace(/\t/g,' '));
+  });
+  return {rows, index, unmatched};
+}
+/* default = by bank code, exactly as before; with an order active = Excel order, unlisted banks last */
+function sortByBankOrder(items){
+  syncOrderForDiv();
+  const base = items.slice().sort((a,b)=>a.code.localeCompare(b.code));
+  if(!BANK_ORDER_ON || !orderLines().length) return base;
+  const {index} = resolveOrder(items);
+  return base.sort((a,b)=>{
+    const ia = (a.code in index) ? index[a.code] : Infinity;
+    const ib = (b.code in index) ? index[b.code] : Infinity;
+    if(ia===ib) return a.code.localeCompare(b.code);
+    return ia-ib;
+  });
+}
+function universeBanks(){
+  const m={};
+  for(const res of RESULTS) for(const b of Object.values(res.banks)){
+    if(!m[b.code]) m[b.code]={code:b.code,name:b.name||''};
+    else if((b.name||'').length>m[b.code].name.length) m[b.code].name=b.name;
+  }
+  return Object.values(m);
+}
+
+function refreshOrderUI(){
+  syncOrderForDiv();
+  const btn=document.getElementById('orderBtn'), cb=document.getElementById('orderOn'), st=document.getElementById('orderStat');
+  if(cb) cb.checked = BANK_ORDER_ON;
+  if(btn){
+    btn.classList.toggle('on', BANK_ORDER_ON);
+    btn.innerHTML = CP_SVG.list + ' Bank order' + (BANK_ORDER_ON ? ' · on' : '');
+  }
+  if(!st) return;
+  const lines = orderLines();
+  if(!lines.length){ st.className='cpstat'; st.textContent='No order set — banks are shown by bank code.'; return; }
+  const uni = universeBanks();
+  const {rows,index,unmatched} = resolveOrder(uni);
+  const matched = rows.filter(Boolean).length;
+  const notListed = uni.filter(b=>!(b.code in index));
+  let msg = `${matched} of ${lines.filter(l=>l.trim()).length} lines matched to banks in these files.`;
+  if(unmatched.length) msg += ` Not found in the uploaded files (kept as blank rows): ${esc(unmatched.slice(0,6).join(', '))}${unmatched.length>6?' …':''}.`;
+  if(notListed.length) msg += ` In the files but NOT in your list (shown last, never copied): ${esc(notListed.slice(0,6).map(b=>b.code).join(', '))}${notListed.length>6?' …':''}.`;
+  if(!BANK_ORDER_ON) msg += ' (order is switched off)';
+  st.className = 'cpstat' + (notListed.length ? ' err' : (BANK_ORDER_ON ? ' ok' : ''));
+  st.innerHTML = msg;
+}
+function rerenderForOrder(){
+  refreshOrderUI();
+  if(RESULTS.length){ render(); renderSummary(); }
+}
+function toggleOrderPanel(){
+  const p=document.getElementById('orderPanel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+  if(p.style.display!=='none') refreshOrderUI();
+}
+function applyBankOrder(){
+  BANK_ORDER_TEXT = document.getElementById('orderText').value.replace(/\r/g,'');
+  BANK_ORDER_ON = orderLines().length>0;
+  saveOrder(); rerenderForOrder();
+}
+function toggleBankOrder(on){
+  if(on && !orderLines().length){ document.getElementById('orderOn').checked=false; return; }
+  BANK_ORDER_ON = !!on;
+  saveOrder(); rerenderForOrder();
+}
+function clearBankOrder(){
+  BANK_ORDER_TEXT=''; BANK_ORDER_ON=false;
+  document.getElementById('orderText').value='';
+  saveOrder(); rerenderForOrder();
+}
+
+/* ── build the one-column text that gets pasted into Excel ──
+   values: {bankCode: amount} (already combined per bank)
+   items : every bank known for that table [{code,name}], used to match the order list */
+function buildColumn(values, items){
+  syncOrderForDiv();
+  const codes = Object.keys(values);
+  const active = BANK_ORDER_ON && orderLines().length>0;
+  if(!active){
+    const sorted = codes.slice().sort((a,b)=>a.localeCompare(b));
+    return {text:sorted.map(c=>rawAmt(values[c])).join('\n'), count:sorted.length, rows:sorted.length, ordered:false, extras:[]};
+  }
+  const {rows} = resolveOrder(items);
+  const placed = new Set(), out=[];
+  rows.forEach(code=>{
+    if(code && (code in values) && !placed.has(code)){ out.push(rawAmt(values[code])); placed.add(code); }
+    else out.push('');
+  });
+  while(out.length && out[out.length-1]==='') out.pop();
+  return {text:out.join('\n'), count:placed.size, rows:out.length, ordered:true, extras:codes.filter(c=>!placed.has(c))};
+}
+function doCopyColumn(statId, values, items){
+  const st=document.getElementById(statId);
+  const setSt=(html,cls)=>{ if(st){ st.className='cpstat'+(cls?' '+cls:''); st.innerHTML=html; } };
+  const col=buildColumn(values, items);
+  if(!col.text.trim()){
+    setSt(`${ICO.warn} Nothing to copy${col.ordered?' — none of these banks match your order list.':'.'}`, 'err');
+    return;
+  }
+  copyText(col.text).then(ok=>{
+    if(!ok){ setSt(`${ICO.warn} The browser blocked copying — click again.`, 'err'); return; }
+    let msg = `${ICO.check} Copied ${col.count} bank amount${col.count===1?'':'s'}`
+      + (col.ordered ? ` in your Excel order (${col.rows} row${col.rows===1?'':'s'}, blank where a bank isn’t in this file)` : ' sorted by bank code')
+      + ' — paste into Excel.';
+    let cls='ok';
+    if(col.extras.length){
+      const nm={}; items.forEach(b=>nm[b.code]=b.name||'');
+      msg += ` ${ICO.warn} NOT copied (missing from your order list): `
+        + col.extras.map(c=>`${esc(c)} ${esc(nm[c])} = ${fn(values[c])}`).join('; ');
+      cls='err';
+    }
+    setSt(msg, cls);
+  });
+}
+
+/* ── Copy all: one file / one result block ── */
+const CP_DATE_SEL = {};
+function copyBarHtml(i, res){
+  const set=new Set();
+  for(const b of Object.values(res.banks)) for(const sc of b.scrolls) if(sc.payDate) set.add(sc.payDate);
+  const dates=[...set].sort((a,b)=>parseDMY(a)-parseDMY(b));
+  const cur = dates.includes(CP_DATE_SEL[i]) ? CP_DATE_SEL[i] : '';
+  let sel='';
+  if(dates.length>1){
+    sel = `<label class="cplbl">Payment date
+      <select class="cpsel" id="cpd_${i}" onchange="CP_DATE_SEL[${i}]=this.value">
+        <option value="">All dates (combined)</option>
+        ${dates.map(d=>`<option value="${esc(d)}"${d===cur?' selected':''}>${esc(d)}</option>`).join('')}
+      </select></label>`;
+  }
+  return `<div class="copybar">
+    <button type="button" class="xbtn" onclick="copyAllFile(${i})">${CP_SVG.copy} Copy all bank amounts</button>
+    ${sel}
+    <span class="cpstat" id="cps_${i}">Copies the Scroll Total — one combined amount per bank, one per line</span>
+  </div>`;
+}
+function copyAllFile(i){
+  const res=RESULTS[i]; if(!res) return;
+  const sel=document.getElementById('cpd_'+i);
+  const pd = sel ? sel.value : '';
+  const items=Object.values(res.banks), values={};
+  for(const bank of items){
+    let sum=0, n=0;
+    for(const sc of bank.scrolls){ if(!pd || sc.payDate===pd){ sum+=sc.total; n++; } }
+    if(n) values[bank.code]=sum;
+  }
+  doCopyColumn('cps_'+i, values, items);
+}
+
+/* ── Copy all: whole-batch bank totals in the Monthly / Batch Summary ── */
+function copyBarSummaryHtml(){
+  return `<div class="copybar flat">
+    <button type="button" class="xbtn" onclick="copyAllSummary()">${CP_SVG.copy} Copy all bank totals</button>
+    <span class="cpstat" id="cps_sum">One combined total per bank across every included file</span>
+  </div>`;
+}
+function copyAllSummary(){
+  const s=buildBatchSummary(), items=Object.values(s.bankAgg), values={};
+  for(const b of items) values[b.code]=b.total;
+  doCopyColumn('cps_sum', values, items);
+}
+
+/* restore the saved order into the panel on load */
+(function(){
+  const ta=document.getElementById('orderText');
+  if(ta) ta.value = BANK_ORDER_TEXT;
+  refreshOrderUI();
+})();
+
+/* ─── pdf.js → array of line-strings per page ─
+   Groups text items by rounded y-coordinate (top→bottom),
+   sorts each group by x, joins with space.                  */
+async function pdfToLines(buf){
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  const pages = [];
+  const Y_TOL = 3;
+  for(let p=1;p<=pdf.numPages;p++){
+    const pg = await pdf.getPage(p);
+    const tc = await pg.getTextContent();
+    const items = tc.items.map(it=>({x:it.transform[4], y:it.transform[5], s:it.str}))
+                           .filter(it=>it.s && it.s.trim().length>0);
+    items.sort((a,b)=> (b.y-a.y) || (a.x-b.x));
+    const rows = [];
+    let cluster = [];
+    let clusterY = null;
+    for(const it of items){
+      if(clusterY===null || Math.abs(it.y-clusterY) <= Y_TOL){
+        cluster.push(it);
+        clusterY = cluster.reduce((s,c)=>s+c.y,0)/cluster.length;
+      } else {
+        rows.push(cluster);
+        cluster=[it];
+        clusterY=it.y;
+      }
+    }
+    if(cluster.length) rows.push(cluster);
+    const lines = rows.map(row=>
+      row.slice().sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ').replace(/\s+/g,' ').trim()
+    ).filter(l=>l.length>0);
+    pages.push(lines);
+  }
+  return pages;
+}
+
+/* ─── parse one CP-100 PDF — ALL divisions, ANY layout ──
+   The real CP-100 text stream prints each scroll's header across
+   THREE separate rows: "Bank <code> <name>", "PAYMENT DT <date>",
+   then "SCROLL NO <n> <code> <ref>" — never all on one line.
+   A single-line fallback pattern is also checked, in case a form
+   layout does combine them.
+   Scroll total / DIFFERENCE / BANK TOTALS are matched with regexes
+   that allow negative amounts (real data includes reversal/adjustment
+   entries with negative totals).                                     */
+async function parsePDF(buf, fname){
+  const pages = await pdfToLines(buf);
+
+  const RE_DIV    = /BANK DIV\.:\s*(\d+)\s+(.+?)\s+\d{4}\s+MAIN DATE\s+([\d\/]+)/;
+  const RE_PROC   = /PROCESSING DATE\s+([\d\/]+)/;
+  const RE_TYPE   = /\b(on-line|Daily)\b/;
+  const RE_BANKHD = /^Bank (\d{5})\s+(.+)$/;
+  const RE_PAYDT  = /^PAYMENT DT\s+([\d\/]+)/;
+  const RE_SCROLL = /^SCROLL NO (\d+)\s+(\d{5})\s+(\S+)/;
+  const RE_SCR1L  = /^SCROLL NO (\d+) Bank (\d{5}) (.+?) PAYMENT DT ([\d\/]+)/; // fallback: single-line variant
+  const RE_BTOT   = /BANK TOTALS:\s*(-?[\d,]+\.\d+)/;
+  const RE_STOT   = /Scroll total\s+(-?[\d,]+\.\d+)\s*T\s*DIFFERENCE:\s*(-?[\d,]+\.\d+)/;
+  const RE_FORM   = /CP-FORM:\s*100\b/;
+
+  let mainDate='', procDate='', formType='', sawCPForm=false;
+  let curDivCode=null, curBankCode=null, curPayDate=null, pendingBankTotal=null;
+  const divisions = {}; // code -> {divName, banks:{code:{name,scrolls:[]}}}
+
+  for(const lines of pages){
+    for(const line of lines){
+      if(!sawCPForm && RE_FORM.test(line)) sawCPForm = true;
+      if(!procDate){ const m=RE_PROC.exec(line); if(m) procDate=m[1]; }
+      if(!formType){ const m=RE_TYPE.exec(line); if(m) formType=m[1].toLowerCase().replace('-',''); }
+
+      const dm = RE_DIV.exec(line);
+      if(dm){
+        const code=dm[1], name=dm[2].trim(), md=dm[3];
+        if(!mainDate) mainDate = md;
+        if(code!==curDivCode){
+          curDivCode=code; curBankCode=null; curPayDate=null; pendingBankTotal=null;
+        }
+        if(!divisions[code]) divisions[code]={divName:name, banks:{}};
+        else if(name.length>divisions[code].divName.length) divisions[code].divName=name;
+        continue;
+      }
+      if(!curDivCode) continue;
+      const div = divisions[curDivCode];
+
+      /* fallback: bank+name+paydate all on one line */
+      const sm1 = RE_SCR1L.exec(line);
+      if(sm1){
+        const code=sm1[2], name=sm1[3].trim(), payDate=sm1[4];
+        curBankCode=code; curPayDate=payDate;
+        if(!div.banks[code]) div.banks[code]={name, scrolls:[]};
+        else if(name.length>div.banks[code].name.length) div.banks[code].name=name;
+        div.banks[code].scrolls.push({scrollNo:parseInt(sm1[1],10),payDate,total:0,diff:0,bankTotal:0,filled:false});
+        continue;
+      }
+
+      const bm = RE_BANKHD.exec(line);
+      if(bm){
+        const code=bm[1], name=bm[2].trim();
+        curBankCode=code;
+        if(!div.banks[code]) div.banks[code]={name, scrolls:[]};
+        else if(name.length>div.banks[code].name.length) div.banks[code].name=name;
+        continue;
+      }
+
+      const pm = RE_PAYDT.exec(line);
+      if(pm){ curPayDate=pm[1]; continue; }
+
+      const scm = RE_SCROLL.exec(line);
+      if(scm){
+        const scrollNo=parseInt(scm[1],10), code=scm[2];
+        if(!curBankCode) curBankCode=code;
+        if(!div.banks[code]) div.banks[code]={name:'', scrolls:[]};
+        div.banks[code].scrolls.push({scrollNo, payDate:curPayDate||'', total:0, diff:0, bankTotal:0, filled:false});
+        continue;
+      }
+
+      const btm = RE_BTOT.exec(line);
+      if(btm){ pendingBankTotal = pn(btm[1]); continue; }
+
+      const stm = RE_STOT.exec(line);
+      if(stm && curBankCode && div.banks[curBankCode] && div.banks[curBankCode].scrolls.length){
+        const arr = div.banks[curBankCode].scrolls;
+        let target=null;
+        for(let i=arr.length-1;i>=0;i--){ if(!arr[i].filled){ target=arr[i]; break; } }
+        if(!target) target = arr[arr.length-1];
+        target.total = pn(stm[1]);
+        target.diff  = pn(stm[2]);
+        target.bankTotal = pendingBankTotal!=null ? pendingBankTotal : (target.total - target.diff);
+        target.filled = true;
+        pendingBankTotal = null;
+      }
+    }
+  }
+
+  if(!formType && !sawCPForm) return {ok:false, reason:'Not a CP-100 form (on-line / Daily not found)'};
+  if(!Object.keys(divisions).length)
+    return {ok:false, reason:'No division/bank data found in this PDF'};
+
+  return {ok:true, fname, mainDate, procDate, formType: formType||'daily', divisions};
+}
+
+/* ─── duplicate-file detection (same form type + same main date) ──
+   A folder can contain two exports for the same date — a partial/
+   incomplete run and a fuller one, for example. If both were counted,
+   any bank present in both gets summed twice. We detect these groups,
+   auto-keep the most complete file in each group, and let the user
+   review/override via the checklist.                                */
+function activeFiles(){ return RAW_FILES.filter(f=>!EXCLUDED_FILES.has(f._id)); }
+
+function fileCompleteness(f){
+  let n=0;
+  for(const div of Object.values(f.divisions)) for(const bank of Object.values(div.banks)) n+=bank.scrolls.length;
+  return n;
+}
+
+function computeDuplicateGroups(){
+  const groups={};
+  for(const f of RAW_FILES){
+    const key=f.formType+'|'+f.mainDate;
+    (groups[key]=groups[key]||[]).push(f);
+  }
+  return Object.values(groups).filter(g=>g.length>1);
+}
+
+function autoResolveDuplicates(){
+  for(const g of computeDuplicateGroups()){
+    const sorted=g.slice().sort((a,b)=>fileCompleteness(b)-fileCompleteness(a));
+    for(let i=1;i<sorted.length;i++) EXCLUDED_FILES.add(sorted[i]._id);
+  }
+}
+
+function toggleFileInclusion(id){
+  if(EXCLUDED_FILES.has(id)) EXCLUDED_FILES.delete(id); else EXCLUDED_FILES.add(id);
+  renderSetup();
+}
+function selectAllFiles(select){
+  if(select) EXCLUDED_FILES.clear();
+  else RAW_FILES.forEach(f=>EXCLUDED_FILES.add(f._id));
+  renderSetup();
+}
+
+function renderFileChecklist(){
+  const box=document.getElementById('filelist');
+  if(!box) return;
+  const dupGroups=computeDuplicateGroups();
+  const dupIds=new Set();
+  dupGroups.forEach(g=>g.forEach(f=>dupIds.add(f._id)));
+
+  const toolbar=document.getElementById('filelistToolbar');
+  const activeCount = RAW_FILES.length - EXCLUDED_FILES.size;
+  if(toolbar){
+    toolbar.style.display = RAW_FILES.length>1 ? 'flex' : 'none';
+    document.getElementById('fltCount').textContent = `${activeCount} of ${RAW_FILES.length} file${RAW_FILES.length>1?'s':''} selected`;
+  }
+
+  let html='';
+  if(dupGroups.length){
+    html+=`<div class="dupwarn">${ICO.warn} <strong>${dupGroups.length} date${dupGroups.length>1?'s have':' has'}</strong> more than one file of the same form type — likely a partial/incomplete re-export.
+    To avoid double-counting the same day, we've kept the file with the most data for each date checked below and unchecked the other(s). Review and adjust if that's wrong.</div>`;
+  }
+  html += RAW_FILES.map(f=>{
+    const excluded=EXCLUDED_FILES.has(f._id);
+    const isDup=dupIds.has(f._id);
+    const score=fileCompleteness(f);
+    return `<label class="filerow${isDup?' dup':''}${excluded?' off':''}">
+      <input type="checkbox" ${excluded?'':'checked'} onchange="toggleFileInclusion('${f._id}')">
+      <span class="frname">${esc(f.fname)}</span>
+      <span class="badge ${f.formType==='daily'?'b-dl':'b-ol'}">${f.formType==='daily'?'Daily':'On-line'}</span>
+      <span class="frdate">${esc(f.mainDate)}</span>
+      <span class="frstat">${score} scroll row${score===1?'':'s'}</span>
+      ${isDup?'<span class="fdup-tag">DUPLICATE DATE</span>':''}
+    </label>`;
+  }).join('');
+  box.innerHTML = html;
+}
+
+/* ─── setup screen: division + form filter ──────────── */
+function rebuildDivisionIndex(){
+  ALL_DIVS = {};
+  for(const f of activeFiles()){
+    for(const [code, div] of Object.entries(f.divisions)){
+      if(!ALL_DIVS[code]) ALL_DIVS[code] = {divName:div.divName, fileCount:0};
+      ALL_DIVS[code].fileCount++;
+    }
+  }
+}
+
+function renderSetup(){
+  renderFileChecklist();
+  rebuildDivisionIndex();
+  const codes = Object.keys(ALL_DIVS).sort();
+  const dl = document.getElementById('divlist');
+  dl.innerHTML = codes.map(code=>{
+    const d = ALL_DIVS[code];
+    const sel = SELECTED_DIV===code ? ' sel' : '';
+    return `<div class="divopt${sel}" onclick="selectDivision('${code}')">
+      <span class="dcode">${esc(code)}</span>
+      <span class="dname">${esc(d.divName)}</span>
+      <span class="dcount">${d.fileCount} file${d.fileCount>1?'s':''}</span>
+    </div>`;
+  }).join('');
+
+  // form-filter counts, scoped to the checked files (so the number matches what you'll actually get)
+  const active = activeFiles();
+  const olCount = active.filter(f=>f.formType==='online').length;
+  const dlCount = active.filter(f=>f.formType==='daily').length;
+  document.querySelector('.frbtn[data-f="all"]').textContent = `All CP-100 (${active.length})`;
+  document.querySelector('.frbtn[data-f="online"]').textContent = `On-line only (${olCount})`;
+  document.querySelector('.frbtn[data-f="daily"]').textContent = `Daily only (${dlCount})`;
+  document.querySelectorAll('.frbtn').forEach(b=>b.classList.toggle('sel', b.dataset.f===FORM_FILTER));
+
+  // step progress badges
+  document.getElementById('stepNum1').classList.toggle('done', active.length>0);
+  document.getElementById('stepNum1').innerHTML = active.length>0 ? ICO.check : '1';
+  document.getElementById('stepNum2').classList.toggle('done', !!SELECTED_DIV);
+  document.getElementById('stepNum2').innerHTML = SELECTED_DIV ? ICO.check : '2';
+
+  document.getElementById('viewBtn').disabled = !SELECTED_DIV;
+  document.getElementById('viewHint').textContent = SELECTED_DIV ? '' : (codes.length ? 'Pick a division above to continue.' : 'Uncheck a file above, or upload one, to see divisions here.');
+  document.getElementById('setup').style.display = RAW_FILES.length ? 'block' : 'none';
+  document.getElementById('selbar').style.display = 'none';
+  document.getElementById('tb').style.display = 'none';
+  document.getElementById('summaryOut').innerHTML = '';
+  document.getElementById('out').innerHTML = '';
+  document.getElementById('emp').style.display = RAW_FILES.length ? 'none' : 'block';
+  updateDiffChip(0);
+}
+
+function selectDivision(code){
+  SELECTED_DIV = code;
+  renderSetup();
+}
+function setFormFilter(f){
+  FORM_FILTER = f;
+  renderSetup();
+}
+function backToSetup(){
+  renderSetup();
+}
+
+function showResults(){
+  if(!SELECTED_DIV) return;
+  const active = activeFiles();
+  const excludedCount = RAW_FILES.length - active.length;
+  const wanted = active.filter(f=>{
+    if(FORM_FILTER!=='all' && f.formType!==FORM_FILTER) return false;
+    return !!f.divisions[SELECTED_DIV];
+  });
+  const skippedForFilter = active.length - wanted.length;
+
+  RESULTS = wanted.map(f=>{
+    const div = f.divisions[SELECTED_DIV];
+    const banks = {};
+    for(const [code, bank] of Object.entries(div.banks)) banks[code] = Object.assign({code}, bank);
+    return {
+      fname:f.fname, mainDate:f.mainDate, procDate:f.procDate, formType:f.formType,
+      divCode:SELECTED_DIV, divName:div.divName, banks
+    };
+  });
+
+  document.getElementById('setup').style.display = 'none';
+
+  const infoBox = document.getElementById('errs');
+  const notes=[];
+  if(excludedCount>0) notes.push(`<div class="info-box">${ICO.info} ${excludedCount} uploaded file(s) are unchecked (excluded) in the file list and are not included anywhere below — use "Change Division / Filter" to review them.</div>`);
+  if(skippedForFilter>0) notes.push(`<div class="info-box">${ICO.info} ${skippedForFilter} of ${active.length} included file(s) don't match the current filter (division not present, or form type excluded) and are hidden from the results below.</div>`);
+  const note = notes.join('');
+  // keep existing error boxes, just refresh the info note (identified by data attribute)
+  const prior = infoBox.innerHTML.replace(/<div class="info-box">.*?<\/div>/,'');
+  infoBox.innerHTML = note + prior;
+
+  const divInfo = ALL_DIVS[SELECTED_DIV];
+  document.getElementById('printTitle').textContent = `CP-100 Analyzer — Division ${SELECTED_DIV}`;
+  document.getElementById('printSub').innerHTML = `${esc(divInfo?divInfo.divName:'')} &nbsp;·&nbsp; Printed <span id="printDate"></span>`;
+
+  const filterLabel = FORM_FILTER==='all' ? 'All CP-100 (combined)' : (FORM_FILTER==='online' ? 'On-line only' : 'Daily only');
+  document.getElementById('selDivTag').textContent = `Division ${SELECTED_DIV}`;
+  document.getElementById('selInfo').textContent = `${divInfo?divInfo.divName:''} · ${filterLabel}`;
+  document.getElementById('selbar').style.display = 'flex';
+
+  if(RESULTS.length){
+    const ol=RESULTS.filter(r=>r.formType==='online').length;
+    const dl=RESULTS.filter(r=>r.formType==='daily').length;
+    const parts=[];
+    if(ol) parts.push(ol+' on-line'); if(dl) parts.push(dl+' daily');
+    document.getElementById('fc').textContent =
+      `Division ${SELECTED_DIV} — ${divInfo?divInfo.divName:''} · ${RESULTS.length} file${RESULTS.length>1?'s':''} (${parts.join(', ')})`;
+    document.getElementById('tb').style.display='flex';
+    document.getElementById('emp').style.display='none';
+
+    const detailBtn = document.getElementById('detailBtn');
+    if(RESULTS.length>1){
+      detailBtn.style.display='inline-block';
+      DETAIL_VISIBLE = RESULTS.length<=3;
+    } else {
+      detailBtn.style.display='none';
+      DETAIL_VISIBLE = true;
+    }
+    updateDetailBtn();
+    renderSummary();
+    render();
+  } else {
+    document.getElementById('tb').style.display='none';
+    document.getElementById('summaryOut').innerHTML='';
+    document.getElementById('out').innerHTML='';
+    document.getElementById('emp').style.display='block';
+  }
+}
+
+/* ─── per-file detail show/hide (large batches default to summary-only) ── */
+function updateDetailBtn(){
+  const btn=document.getElementById('detailBtn');
+  btn.innerHTML = DETAIL_VISIBLE ? (ICO.chevUp+' Hide Per-File Detail') : (ICO.chevDown+' Show Per-File Detail');
+  document.getElementById('out').style.display = DETAIL_VISIBLE ? 'block' : 'none';
+}
+function toggleDetail(){
+  DETAIL_VISIBLE = !DETAIL_VISIBLE;
+  updateDetailBtn();
+}
+
+/* ─── date helper: CP-100 dates are DD/MM/YYYY ──────── */
+function parseDMY(s){
+  const m=/(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s||'');
+  if(!m) return 0;
+  return new Date(+m[3], +m[2]-1, +m[1]).getTime();
+}
+
+/* ─── batch / monthly aggregation across every included file ── */
+function buildBatchSummary(){
+  const bankAgg={}, dateAgg={};
+  let grandTotal=0, grandDiff=0, grandScrolls=0;
+  const bankSet=new Set();
+  for(const res of RESULTS){
+    if(!dateAgg[res.mainDate]) dateAgg[res.mainDate]={total:0,diff:0,scrollCount:0,bankCodes:new Set(),fnames:[]};
+    dateAgg[res.mainDate].fnames.push(res.fname);
+    for(const bank of Object.values(res.banks)){
+      bankSet.add(bank.code);
+      if(!bankAgg[bank.code]) bankAgg[bank.code]={code:bank.code,name:bank.name,total:0,diff:0,bankTotal:0,scrollCount:0,fileCount:0};
+      let touched=false;
+      for(const sc of bank.scrolls){
+        bankAgg[bank.code].total+=sc.total;
+        bankAgg[bank.code].diff+=sc.diff;
+        bankAgg[bank.code].bankTotal+=sc.bankTotal;
+        bankAgg[bank.code].scrollCount++;
+        dateAgg[res.mainDate].total+=sc.total;
+        dateAgg[res.mainDate].diff+=sc.diff;
+        dateAgg[res.mainDate].scrollCount++;
+        dateAgg[res.mainDate].bankCodes.add(bank.code);
+        grandTotal+=sc.total; grandDiff+=sc.diff; grandScrolls++;
+        touched=true;
+      }
+      if(touched) bankAgg[bank.code].fileCount++;
+      if(bank.name && bank.name.length>bankAgg[bank.code].name.length) bankAgg[bank.code].name=bank.name;
+    }
+  }
+  return {bankAgg, dateAgg, grandTotal, grandDiff, grandScrolls, bankCount:bankSet.size};
+}
+
+function renderSummary(){
+  const sEl=document.getElementById('summaryOut');
+  if(RESULTS.length<2){ sEl.innerHTML=''; return; }
+
+  const s=buildBatchSummary();
+  const banks=sortByBankOrder(Object.values(s.bankAgg));
+  const dates=Object.keys(s.dateAgg).sort((a,b)=>parseDMY(a)-parseDMY(b));
+  const anyDiff = RESULTS.some(r=>r.formType==='daily');
+  const dateRangeTxt = dates.length ? (dates.length>1 ? `${dates[0]} – ${dates[dates.length-1]}` : dates[0]) : '—';
+  const divInfo = ALL_DIVS[SELECTED_DIV];
+
+  let html=`<div class="summary-wrap">
+    <div class="summary-head">
+      <h2>📅 Monthly / Batch Summary — Division ${esc(SELECTED_DIV)}, ${esc(divInfo?divInfo.divName:'')}</h2>
+      <div class="shsub">Combined totals across all ${RESULTS.length} included files &nbsp;·&nbsp; ${esc(dateRangeTxt)}</div>
+    </div>
+    <div class="summary-stats">
+      <div class="stat"><div class="stat-val">${fn(s.grandTotal)}</div><div class="stat-lbl">Total Amount (PKR)</div></div>
+      <div class="stat"><div class="stat-val">${RESULTS.length}</div><div class="stat-lbl">Files / Days</div></div>
+      <div class="stat"><div class="stat-val">${s.bankCount}</div><div class="stat-lbl">Unique Banks</div></div>
+      <div class="stat"><div class="stat-val">${s.grandScrolls}</div><div class="stat-lbl">Total Scrolls</div></div>`;
+  if(anyDiff){
+    html+=`<div class="stat"><div class="stat-val" style="color:${s.grandDiff===0?'#2e7d32':'#c62828'}">${fn(s.grandDiff)}</div><div class="stat-lbl">Total Difference</div></div>`;
+  }
+  html+=`</div>`;
+
+  html+=`<div class="summary-sec"><h3>Bank-wise Totals — Whole Batch</h3>${copyBarSummaryHtml()}
+    <table><thead><tr><th>Bank Code</th><th>Bank Name</th><th class="r">Files</th><th class="r">Scrolls</th><th class="r">Total</th>`;
+  if(anyDiff) html+=`<th class="r">Difference</th><th class="r">Bank Total</th>`;
+  html+=`</tr></thead><tbody>`;
+  for(const b of banks){
+    html+=`<tr>
+      <td class="code">${esc(b.code)}</td><td>${esc(b.name)}</td>
+      <td class="r">${b.fileCount}</td><td class="r">${b.scrollCount}</td>
+      <td class="amt"><span class="amtwrap"><span>${fn(b.total)}</span>${cpBtn(b.total)}</span></td>`;
+    if(anyDiff) html+=`<td class="${b.diff===0?'dok':'dwarn'}">${fn(b.diff)}</td><td class="amt">${fn(b.bankTotal)}</td>`;
+    html+=`</tr>`;
+  }
+  html+=`<tr class="sub">
+    <td colspan="2" style="text-align:right;padding-right:16px">Grand Total</td>
+    <td class="r">${RESULTS.length}</td><td class="r">${s.grandScrolls}</td>
+    <td class="amt">${fn(s.grandTotal)}</td>`;
+  if(anyDiff) html+=`<td class="${s.grandDiff===0?'dok':'dwarn'}">${fn(s.grandDiff)}</td><td class="amt">${fn(s.grandTotal-s.grandDiff)}</td>`;
+  html+=`</tr></tbody></table></div>`;
+
+  html+=`<div class="summary-sec"><h3>Date-wise Totals</h3>
+    <table><thead><tr><th>Main Date</th><th>File</th><th class="r">Banks</th><th class="r">Scrolls</th><th class="r">Total</th>`;
+  if(anyDiff) html+=`<th class="r">Difference</th>`;
+  html+=`</tr></thead><tbody>`;
+  for(const d of dates){
+    const dr=s.dateAgg[d];
+    html+=`<tr>
+      <td>${esc(d)}</td><td class="fn">${esc(dr.fnames.join(', '))}</td>
+      <td class="r">${dr.bankCodes.size}</td><td class="r">${dr.scrollCount}</td>
+      <td class="amt">${fn(dr.total)}</td>`;
+    if(anyDiff) html+=`<td class="${dr.diff===0?'dok':'dwarn'}">${fn(dr.diff)}</td>`;
+    html+=`</tr>`;
+  }
+  html+=`</tbody></table></div></div>`;
+
+  sEl.innerHTML=html;
+}
+
+/* ─── render ──────────────────────────────── */
+function toggleCombine(){
+  COMBINE_MODE = !COMBINE_MODE;
+  const btn=document.getElementById('combineBtn');
+  btn.classList.toggle('on', COMBINE_MODE);
+  btn.innerHTML = COMBINE_MODE ? (ICO.check+' Combined totals shown') : (ICO.sigma+' Show combined totals');
+  render();
+}
+
+function buildDifferencesSummary(){
+  const rows=[];
+  for(const res of RESULTS){
+    const isD = res.formType==='daily';
+    if(!isD) continue;
+    const list=Object.values(res.banks).sort((a,b)=>a.code?a.code.localeCompare(b.code):0);
+    for(const [code,bank] of Object.entries(res.banks)){
+      for(const sc of bank.scrolls){
+        if(sc.diff!==0){
+          rows.push({fname:res.fname, code, name:bank.name, payDate:sc.payDate, scrollNo:sc.scrollNo, total:sc.total, diff:sc.diff, bankTotal:sc.bankTotal});
+        }
+      }
+    }
+  }
+  rows.sort((a,b)=> a.fname.localeCompare(b.fname) || a.code.localeCompare(b.code));
+  return rows;
+}
+
+function updateDiffChip(count){
+  const chip = document.getElementById('diffChip');
+  if(!chip) return;
+  if(count>0){
+    chip.style.display='inline-flex';
+    chip.innerHTML = `${ICO.warn} ${count} difference${count>1?'s':''} found — jump to them`;
+  } else {
+    chip.style.display='none';
+  }
+}
+
+function render(){
+  const el=document.getElementById('out');
+  if(!RESULTS.length){ el.innerHTML=''; return; }
+  let html='';
+
+  /* ── differences summary (across all included files) ── */
+  const diffRows = buildDifferencesSummary();
+  if(diffRows.length){
+    html += `<div class="diffsum" id="diffsumBlock">
+      <div class="diffsum-head">${ICO.warn} Differences Summary — ${diffRows.length} scroll${diffRows.length>1?'s':''} with a non-zero DIFFERENCE</div>
+      <table><thead><tr>
+        <th>File</th><th>Bank Code</th><th>Bank Name</th><th>Payment Date</th>
+        <th class="r">Scroll No</th><th class="r">Scroll Total</th><th class="r">Difference</th><th class="r">Bank Total</th>
+      </tr></thead><tbody>`;
+    for(const r of diffRows){
+      html += `<tr>
+        <td class="fn">${esc(r.fname)}</td>
+        <td class="code">${esc(r.code)}</td>
+        <td>${esc(r.name)}</td>
+        <td>${esc(r.payDate)}</td>
+        <td class="r">${r.scrollNo}</td>
+        <td class="amt">${fn(r.total)}</td>
+        <td class="dwarn">${fn(r.diff)}</td>
+        <td class="amt">${fn(r.bankTotal)}</td>
+      </tr>`;
+    }
+    html += `</tbody></table></div>`;
+  }
+  updateDiffChip(diffRows.length);
+
+  for(const res of RESULTS){
+    const list=sortByBankOrder(Object.values(res.banks));
+    const isD=res.formType==='daily';
+    const totalScrolls=list.reduce((s,b)=>s+b.scrolls.length,0);
+    const anyDiff=isD&&list.some(b=>b.scrolls.some(sc=>sc.diff!==0));
+
+    html+=`<div class="rblock">
+      <div class="rhead">
+        <span class="rfn">${esc(res.fname)}</span>
+        <span class="badge ${isD?'b-dl':'b-ol'}">${isD?'Daily':'On-line'}</span>
+      </div>
+      <div class="rmeta">
+        <span class="mi"><span class="ml">Main Date:</span>${esc(res.mainDate)}</span>
+        <span class="mi"><span class="ml">Proc Date:</span>${esc(res.procDate)}</span>
+        <span class="mi"><span class="ml">Division:</span>${esc(res.divCode)} — ${esc(res.divName)}</span>
+        <span class="mi"><span class="ml">Banks:</span>${list.length}</span>
+        <span class="mi"><span class="ml">Scroll rows:</span>${totalScrolls}</span>
+      </div>`;
+
+    if(anyDiff)
+      html+=`<div class="warn-ban">${ICO.warn} One or more scrolls have a non-zero DIFFERENCE — highlighted in red below, and listed in the Differences Summary above</div>`;
+
+    html+=copyBarHtml(RESULTS.indexOf(res),res);
+
+    html+=`<table><thead><tr>
+      <th>Bank Code</th><th>Bank Name</th><th>Payment Date</th>
+      <th class="r">Scroll No</th><th class="r">Scroll Total</th>`;
+    if(isD) html+=`<th class="r">Difference</th><th class="r">Bank Total</th>`;
+    html+=`</tr></thead><tbody>`;
+
+    for(const bank of list){
+      const sorted=bank.scrolls.slice().sort((a,b)=>
+        a.payDate.localeCompare(b.payDate) || a.scrollNo-b.scrollNo);
+      let first=true;
+      for(const sc of sorted){
+        html+=`<tr>
+          <td class="code">${first?bank.code:''}</td>
+          <td>${first?esc(bank.name):''}</td>
+          <td>${esc(sc.payDate)}</td>
+          <td class="r">${sc.scrollNo}</td>
+          <td class="amt"><span class="amtwrap"><span>${fn(sc.total)}</span>${cpBtn(sc.total)}</span></td>`;
+        if(isD) html+=`<td class="${sc.diff===0?'dok':'dwarn'}">${fn(sc.diff)}</td><td class="amt">${fn(sc.bankTotal)}</td>`;
+        html+=`</tr>`;
+        first=false;
+      }
+
+      if(COMBINE_MODE && sorted.length>1){
+        const combTotal = sorted.reduce((s,sc)=>s+sc.total,0);
+        const combDiff   = sorted.reduce((s,sc)=>s+sc.diff, 0);
+        const combBankTotal = sorted.reduce((s,sc)=>s+sc.bankTotal, 0);
+        html+=`<tr class="sub">
+          <td colspan="3" style="text-align:right;padding-right:16px">Combined Total — ${esc(bank.name)} (${sorted.length} scrolls)</td>
+          <td></td>
+          <td class="amt"><span class="amtwrap"><span>${fn(combTotal)}</span>${cpBtn(combTotal)}</span></td>`;
+        if(isD) html+=`<td class="${combDiff===0?'dok':'dwarn'}">${fn(combDiff)}</td><td class="amt">${fn(combBankTotal)}</td>`;
+        html+=`</tr>`;
+      }
+    }
+    html+=`</tbody></table>`;
+
+    /* ── divisional total — every bank's every scroll, grouped by
+       payment date, plus a single grand total for the whole file. ── */
+    const byDate={};
+    let grandTotal=0, grandDiff=0, grandScrollCount=0;
+    for(const bank of list){
+      for(const sc of bank.scrolls){
+        if(!byDate[sc.payDate]) byDate[sc.payDate]={payDate:sc.payDate,total:0,diff:0,scrollCount:0,bankCodes:new Set()};
+        byDate[sc.payDate].total+=sc.total;
+        byDate[sc.payDate].diff +=sc.diff;
+        byDate[sc.payDate].scrollCount++;
+        byDate[sc.payDate].bankCodes.add(bank.code);
+        grandTotal+=sc.total; grandDiff+=sc.diff; grandScrollCount++;
+      }
+    }
+    const dateRows=Object.values(byDate).sort((a,b)=>a.payDate.localeCompare(b.payDate));
+    const multiDateFile = dateRows.length>1;
+
+    html+=`<div class="divtot">
+      <div class="divtot-head">📊 Divisional Total — ${esc(res.divCode)}, ${esc(res.divName)}</div>
+      <table class="divtot-table"><thead><tr>
+        <th>Payment Date</th><th class="r">Banks</th><th class="r">Scrolls</th><th class="r">Total</th>`;
+    if(isD) html+=`<th class="r">Difference</th>`;
+    html+=`</tr></thead><tbody>`;
+    for(const dr of dateRows){
+      html+=`<tr>
+        <td>${esc(dr.payDate)}</td>
+        <td class="r">${dr.bankCodes.size}</td>
+        <td class="r">${dr.scrollCount}</td>
+        <td class="amt">${fn(dr.total)}</td>`;
+      if(isD) html+=`<td class="${dr.diff===0?'dok':'dwarn'}">${fn(dr.diff)}</td>`;
+      html+=`</tr>`;
+    }
+    if(multiDateFile){
+      html+=`<tr class="grand">
+        <td>All Dates — Grand Total</td>
+        <td class="r">${list.length}</td>
+        <td class="r">${grandScrollCount}</td>
+        <td class="amt">${fn(grandTotal)}</td>`;
+      if(isD) html+=`<td class="${grandDiff===0?'dok':'dwarn'}">${fn(grandDiff)}</td>`;
+      html+=`</tr>`;
+    }
+    html+=`</tbody></table></div>`;
+
+    html+=`</div>`; // close rblock
+  }
+  el.innerHTML=html;
+  refreshOrderUI();
+}
+
+/* ─── excel export ────────────────────────── */
+function doExport(){
+  if(!RESULTS.length) return;
+  const wb=XLSX.utils.book_new();
+
+  /* monthly / batch summary sheet, if more than one file */
+  if(RESULTS.length>1){
+    const s=buildBatchSummary();
+    const banks=Object.values(s.bankAgg).sort((a,b)=>a.code.localeCompare(b.code));
+    const dates=Object.keys(s.dateAgg).sort((a,b)=>parseDMY(a)-parseDMY(b));
+    const anyDiff = RESULTS.some(r=>r.formType==='daily');
+    const divInfo = ALL_DIVS[SELECTED_DIV];
+
+    const mrows=[
+      ['Monthly / Batch Summary — Division '+SELECTED_DIV+' — '+(divInfo?divInfo.divName:'')],[''],
+      ['Files included', RESULTS.length],
+      ['Unique banks', s.bankCount],
+      ['Total scrolls', s.grandScrolls],
+      ['Total amount (PKR)', s.grandTotal],
+    ];
+    if(anyDiff) mrows.push(['Total difference', s.grandDiff]);
+    mrows.push([''],['BANK-WISE TOTALS']);
+    const bHdr=['Bank Code','Bank Name','Files','Scrolls','Total (PKR)'];
+    if(anyDiff) bHdr.push('Difference','Bank Total (PKR)');
+    mrows.push(bHdr);
+    for(const b of banks){
+      const row=[b.code,b.name,b.fileCount,b.scrollCount,b.total];
+      if(anyDiff) row.push(b.diff,b.bankTotal);
+      mrows.push(row);
+    }
+    const grow=['GRAND TOTAL','',RESULTS.length,s.grandScrolls,s.grandTotal];
+    if(anyDiff) grow.push(s.grandDiff, s.grandTotal-s.grandDiff);
+    mrows.push(grow);
+
+    mrows.push([''],['DATE-WISE TOTALS']);
+    const dHdr=['Main Date','File(s)','Banks','Scrolls','Total (PKR)'];
+    if(anyDiff) dHdr.push('Difference');
+    mrows.push(dHdr);
+    for(const d of dates){
+      const dr=s.dateAgg[d];
+      const row=[d, dr.fnames.join(', '), dr.bankCodes.size, dr.scrollCount, dr.total];
+      if(anyDiff) row.push(dr.diff);
+      mrows.push(row);
+    }
+    const mws=XLSX.utils.aoa_to_sheet(mrows);
+    mws['!cols']=[{wch:26},{wch:34},{wch:12},{wch:10},{wch:16},{wch:12},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,mws,'Monthly Summary');
+  }
+
+  /* differences sheet, if any */
+  const diffRows = buildDifferencesSummary();
+  if(diffRows.length){
+    const drows=[['Differences Summary — Division '+SELECTED_DIV],[''],
+      ['File','Bank Code','Bank Name','Payment Date','Scroll No','Scroll Total (PKR)','Difference','Bank Total (PKR)']];
+    for(const r of diffRows) drows.push([r.fname,r.code,r.name,r.payDate,r.scrollNo,r.total,r.diff,r.bankTotal]);
+    const dws=XLSX.utils.aoa_to_sheet(drows);
+    dws['!cols']=[{wch:28},{wch:12},{wch:34},{wch:14},{wch:10},{wch:16},{wch:12},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,dws,'Differences');
+  }
+
+  for(const res of RESULTS){
+    const isD=res.formType==='daily';
+    const list=Object.values(res.banks).sort((a,b)=>a.code.localeCompare(b.code));
+
+    const rows=[
+      ['CP-100 Analyzer — Division '+res.divCode+' Bank Totals'],[''],
+      ['File', res.fname],
+      ['Form Type', isD?'Daily':'On-line'],
+      ['Main Date', res.mainDate],
+      ['Processing Date', res.procDate],
+      ['Division', res.divCode+' — '+res.divName],['']
+    ];
+    const hdr=['Bank Code','Bank Name','Payment Date','Scroll No','Scroll Total (PKR)'];
+    if(isD) hdr.push('Difference','Bank Total (PKR)');
+    rows.push(hdr);
+
+    for(const bank of list){
+      const sorted=bank.scrolls.slice().sort((a,b)=>
+        a.payDate.localeCompare(b.payDate) || a.scrollNo-b.scrollNo);
+      sorted.forEach((sc,i)=>{
+        const row=[i===0?bank.code:'', i===0?bank.name:'', sc.payDate, sc.scrollNo, sc.total];
+        if(isD) row.push(sc.diff, sc.bankTotal);
+        rows.push(row);
+      });
+      if(sorted.length>1){
+        const combTotal=sorted.reduce((s,sc)=>s+sc.total,0);
+        const combDiff =sorted.reduce((s,sc)=>s+sc.diff, 0);
+        const combBankTotal=sorted.reduce((s,sc)=>s+sc.bankTotal, 0);
+        const row=['','Combined Total — '+bank.name+' ('+sorted.length+' scrolls)','','',combTotal];
+        if(isD) row.push(combDiff, combBankTotal);
+        rows.push(row);
+      }
+    }
+
+    const byDate={};
+    let grandTotal=0, grandDiff=0, grandScrollCount=0;
+    for(const bank of list){
+      for(const sc of bank.scrolls){
+        if(!byDate[sc.payDate]) byDate[sc.payDate]={total:0,diff:0,scrollCount:0,bankCodes:new Set()};
+        byDate[sc.payDate].total+=sc.total;
+        byDate[sc.payDate].diff +=sc.diff;
+        byDate[sc.payDate].scrollCount++;
+        byDate[sc.payDate].bankCodes.add(bank.code);
+        grandTotal+=sc.total; grandDiff+=sc.diff; grandScrollCount++;
+      }
+    }
+    const dateKeys=Object.keys(byDate).sort();
+
+    rows.push([]);
+    rows.push(['DIVISIONAL TOTAL — '+res.divCode+', '+res.divName]);
+    const dHdr=['Payment Date','Banks','Scrolls','Total (PKR)'];
+    if(isD) dHdr.push('Difference');
+    rows.push(dHdr);
+    for(const dk of dateKeys){
+      const dr=byDate[dk];
+      const row=[dk, dr.bankCodes.size, dr.scrollCount, dr.total];
+      if(isD) row.push(dr.diff);
+      rows.push(row);
+    }
+    if(dateKeys.length>1){
+      const row=['ALL DATES — GRAND TOTAL', list.length, grandScrollCount, grandTotal];
+      if(isD) row.push(grandDiff);
+      rows.push(row);
+    }
+
+    const sn=((isD?'DL_':'OL_')+res.mainDate.replace(/\//g,'-')).slice(0,31);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:40},{wch:14},{wch:10},{wch:18},{wch:14},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,ws,sn);
+  }
+  const fname = 'CP100_Div'+SELECTED_DIV+'_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  try{
+    XLSX.writeFile(wb,fname);
+    showExportToast(`${ICO.check} Exported <strong>${esc(fname)}</strong> — ${wb.SheetNames.length} sheet${wb.SheetNames.length>1?'s':''}.`, false);
+  }catch(err){
+    showExportToast(`${ICO.warn} Export failed: ${esc(err&&err.message?err.message:'unknown error')}. Try again, or use Print / Save as PDF instead.`, true);
+  }
+}
+
+function showExportToast(html, isError){
+  const box=document.createElement('div');
+  box.className = 'export-toast' + (isError?' err':'');
+  box.innerHTML = html;
+  const bar=document.getElementById('tb');
+  bar.insertAdjacentElement('afterend', box);
+  setTimeout(()=>box.remove(), 7000);
+}
+
+/* ─── file processing ─────────────────────── */
+async function run(fileList, opts){
+  opts = opts || {};
+  const isFolder = !!opts.isFolder;
+  const files = [...fileList];
+  if(!files.length) return;
+
+  const lb=document.getElementById('lb');
+  lb.style.display='flex';
+  document.getElementById('out').innerHTML='';
+  document.getElementById('errs').innerHTML='';
+  document.getElementById('setup').style.display='none';
+  document.getElementById('selbar').style.display='none';
+  document.getElementById('summaryOut').innerHTML='';
+  document.getElementById('tb').style.display='none';
+  document.getElementById('emp').style.display='none';
+  RAW_FILES = [];
+  RESULTS = [];
+  SELECTED_DIV = null;
+  EXCLUDED_FILES = new Set();
+
+  let pdfCandidates = files.filter(f=>f.name.toLowerCase().endsWith('.pdf'));
+  const nonPdfCount = files.length - pdfCandidates.length;
+
+  let skippedByName = 0;
+  if(isFolder){
+    const before = pdfCandidates.length;
+    pdfCandidates = pdfCandidates.filter(f=>isCP100Filename(f.name));
+    skippedByName = before - pdfCandidates.length;
+  }
+
+  const errs=[];
+  if(!isFolder && nonPdfCount>0){
+    files.filter(f=>!f.name.toLowerCase().endsWith('.pdf'))
+         .forEach(f=>errs.push({f:f.name, r:'Not a PDF file'}));
+  }
+
+  for(let i=0;i<pdfCandidates.length;i++){
+    const f=pdfCandidates[i];
+    document.getElementById('lmsg').textContent =
+      `Processing ${i+1} of ${pdfCandidates.length}: ${f.name}`;
+    try{
+      const buf=await f.arrayBuffer();
+      const res=await parsePDF(buf,f.name);
+      if(res.ok){ res._id = 'f'+i+'_'+res.fname; RAW_FILES.push(res); }
+      else errs.push({f:f.name, r:res.reason});
+    }catch(e){ errs.push({f:f.name, r:e.message||'Failed to read PDF'}); }
+  }
+
+  lb.style.display='none';
+
+  let notes='';
+  if(isFolder){
+    notes += `<div class="info-box">${ICO.info} Folder scan: ${files.length} item(s) found, ${nonPdfCount} non-PDF skipped, ${skippedByName} PDF(s) skipped (filename doesn't look like a CP-100), ${pdfCandidates.length} checked as CP-100 candidates.</div>`;
+  }
+  document.getElementById('errs').innerHTML = notes +
+    errs.map(e=>`<div class="err-box">${ICO.warn} <strong>${esc(e.f)}</strong>: ${esc(e.r)}</div>`).join('');
+
+  if(RAW_FILES.length){
+    autoResolveDuplicates();
+    renderSetup();
+  } else if(!errs.length && !isFolder){
+    document.getElementById('emp').style.display='block';
+  } else {
+    document.getElementById('emp').style.display = RAW_FILES.length ? 'none' : 'block';
+  }
+}
+
+/* ─── events ──────────────────────────────── */
+const dz=document.getElementById('dz'), fi=document.getElementById('fi'), fd=document.getElementById('fd');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');run(e.dataTransfer.files,{isFolder:false})});
+fi.addEventListener('change',e=>{run(e.target.files,{isFolder:false});e.target.value='';});
+fd.addEventListener('change',e=>{run(e.target.files,{isFolder:true});e.target.value='';});
+
+/* ─── print support ──────────────────────────
+   Stamp the print date, and make sure combined totals AND per-file
+   detail are visible in the printed/PDF output regardless of the
+   on-screen toggle state (then restore the user's previous screen
+   view afterwards).                                                 */
+let _preprintCombine = null;
+let _preprintDetail  = null;
+window.addEventListener('beforeprint', ()=>{
+  const pd = document.getElementById('printDate');
+  if(pd) pd.textContent = new Date().toLocaleString();
+  if(!COMBINE_MODE){ _preprintCombine=false; COMBINE_MODE=true; }
+  if(!DETAIL_VISIBLE){ _preprintDetail=false; DETAIL_VISIBLE=true; }
+  if(_preprintCombine===false || _preprintDetail===false){
+    render();
+    document.getElementById('out').style.display='block';
+  }
+});
+window.addEventListener('afterprint', ()=>{
+  if(_preprintCombine===false){ COMBINE_MODE=false; _preprintCombine=null; }
+  if(_preprintDetail===false){ DETAIL_VISIBLE=false; _preprintDetail=null; updateDetailBtn(); }
+  render();
+});
+</script>
+</body>
+</html>
